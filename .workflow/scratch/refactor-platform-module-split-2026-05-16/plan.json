@@ -1,0 +1,57 @@
+{
+  "scope": "crates/astrbot-platform/src",
+  "status": "completed",
+  "strategy": "incremental module split with unchanged public exports",
+  "total_tasks": 1,
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Split platform crate root into core, registry, manager, built, and adapters modules",
+      "status": "completed",
+      "type": "refactor",
+      "category": "dependencies",
+      "risk": "low",
+      "read_first": [
+        "E:/Playground/Astrbot/astrbot/core/platform/register.py",
+        "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
+        "crates/astrbot-platform/src/lib.rs",
+        "crates/astrbot-platform/src/tests.rs"
+      ],
+      "files": [
+        {
+          "path": "crates/astrbot-platform/src/lib.rs",
+          "action": "replace crate-root implementation with module declarations and public re-exports"
+        },
+        {
+          "path": "crates/astrbot-platform/src/core.rs",
+          "action": "move shared traits, config, constants, sinks, and validation"
+        },
+        {
+          "path": "crates/astrbot-platform/src/built.rs",
+          "action": "move BuiltPlatform aggregation"
+        },
+        {
+          "path": "crates/astrbot-platform/src/registry.rs",
+          "action": "move PlatformRegistry and built-in factories"
+        },
+        {
+          "path": "crates/astrbot-platform/src/manager.rs",
+          "action": "move PlatformManager orchestration"
+        },
+        {
+          "path": "crates/astrbot-platform/src/adapters",
+          "action": "move concrete mock, console, webchat, and onebot adapters under a dedicated adapter namespace"
+        }
+      ],
+      "convergence": {
+        "criteria": [
+          "crate root contains only module declarations, test module, and public re-exports",
+          "concrete platform implementations live under crates/astrbot-platform/src/adapters",
+          "PlatformRegistry remains the only construction boundary for configured platform types",
+          "existing public tests continue to pass"
+        ],
+        "verification": "cargo test -p astrbot-platform"
+      }
+    }
+  ]
+}

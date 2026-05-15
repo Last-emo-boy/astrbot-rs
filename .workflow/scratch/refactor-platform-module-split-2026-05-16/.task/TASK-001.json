@@ -1,0 +1,24 @@
+{
+  "id": "TASK-001",
+  "title": "Split platform crate root into modules",
+  "status": "completed",
+  "type": "refactor",
+  "category": "dependencies",
+  "description": "Move the large flat astrbot-platform crate root into core, built, registry, manager, and adapters modules while preserving public exports.",
+  "read_first": [
+    "E:/Playground/Astrbot/astrbot/core/platform/register.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
+    "crates/astrbot-platform/src/lib.rs",
+    "crates/astrbot-platform/src/tests.rs"
+  ],
+  "risk": "low",
+  "verification": "cargo test -p astrbot-platform",
+  "convergence": {
+    "criteria": [
+      "crate root is thin",
+      "adapters are under crates/astrbot-platform/src/adapters",
+      "registry and manager are separate modules",
+      "platform tests pass"
+    ]
+  }
+}

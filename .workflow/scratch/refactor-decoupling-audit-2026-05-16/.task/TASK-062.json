@@ -1,7 +1,7 @@
 {
   "id": "TASK-062",
   "title": "Separate realtime chat WebSocket, OpenAPI chat, audio-frame, and subscription gateway boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "realtime-chat-gateway-boundary",
   "description": "AstrBot live chat and OpenAPI chat routes combine WebSocket auth, per-connection session state, audio frame assembly, attachment conversion, queue subscription, and bot response persistence. Rust should keep this as a web gateway boundary rather than mixing it with WebChat transport, agent feedback, or provider streaming.",
@@ -41,5 +41,26 @@
     ],
     "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T07:42:35+08:00",
+  "files_modified": [
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/tests.rs",
+    "crates/astrbot-web/src/realtime/mod.rs",
+    "crates/astrbot-web/src/realtime/session.rs",
+    "crates/astrbot-web/src/realtime/audio.rs",
+    "crates/astrbot-web/src/realtime/open_api.rs",
+    "crates/astrbot-web/src/tests/realtime.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-062.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-062-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-062/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-platform",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-062","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-062 from the scratch refactor plan. Separate realtime chat WebSocket session state, live audio frame assembly, OpenAPI chat DTOs, and subscription enqueue planning in astrbot-web; update TASK-062 status and summary; run cargo fmt --all, cargo test -p astrbot-web, cargo test -p astrbot-platform, cargo clippy --workspace -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

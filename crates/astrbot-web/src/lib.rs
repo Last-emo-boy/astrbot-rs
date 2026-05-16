@@ -4,6 +4,7 @@ mod error;
 mod history;
 mod management;
 mod message_parts;
+mod realtime;
 mod routes;
 mod server;
 
@@ -22,6 +23,13 @@ pub use management::{
     PluginMarketPlanResponse, PresentedApiKey, ProviderManagementResponse, authorize_api_key,
     extract_bearer_token, extract_presented_api_key, hash_api_key, management_router,
     management_router_with_auth,
+};
+pub use realtime::{
+    DEFAULT_LIVE_AUDIO_FORMAT, LiveAudioBuffer, LiveAudioError, LiveAudioFormat, LiveAudioWavFile,
+    OpenApiChatAuthContext, OpenApiChatEnqueuePlan, OpenApiChatGateway, OpenApiChatGatewayError,
+    OpenApiChatGatewayRequest, OpenApiChatMessagePart, OpenApiChatMessageRequest,
+    OpenApiChatResponseMode, OpenApiChatSubscriptionPlan, RealtimeConnectionSession,
+    RealtimeProcessingState, RealtimeSubscription, required_openapi_chat_scopes,
 };
 pub use routes::webchat_router;
 pub use server::{

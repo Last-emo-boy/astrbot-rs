@@ -1,7 +1,7 @@
 {
   "id": "TASK-055",
   "title": "Split plugin integration tests by registry, filters, loader, manifest, SDK, sandbox, and tool behavior",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "plugin-test-boundary",
   "description": "Plugin tests now cover registry ordering, filters, manifest/SDK, loader lifecycle, dependencies, hot reload, extensions, sandbox decisions, and tool execution in one file. Split them before Star parity adds dynamic loading and Python compatibility tests.",
@@ -33,5 +33,27 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo clippy -p astrbot-plugin -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:43:03+08:00",
+  "files_modified": [
+    "crates/astrbot-plugin/src/tests.rs",
+    "crates/astrbot-plugin/src/tests/mod.rs",
+    "crates/astrbot-plugin/src/tests/registry.rs",
+    "crates/astrbot-plugin/src/tests/filters.rs",
+    "crates/astrbot-plugin/src/tests/manifest_sdk.rs",
+    "crates/astrbot-plugin/src/tests/loader.rs",
+    "crates/astrbot-plugin/src/tests/dependency.rs",
+    "crates/astrbot-plugin/src/tests/tool.rs",
+    "crates/astrbot-plugin/src/tests/sandbox.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-055.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-055-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-055/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-plugin",
+    "cargo clippy -p astrbot-plugin -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "low"
 }

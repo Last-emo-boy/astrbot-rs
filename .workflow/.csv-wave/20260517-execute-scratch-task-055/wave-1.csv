@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-055","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-055 from the scratch refactor plan. Split crates/astrbot-plugin/src/tests.rs into tests/mod.rs and focused registry, filters, manifest_sdk, loader, dependency, tool, and sandbox modules without runtime behavior changes; update TASK-055 status and summary; run cargo fmt --all, cargo test -p astrbot-plugin, cargo clippy -p astrbot-plugin -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

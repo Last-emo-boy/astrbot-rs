@@ -1,7 +1,7 @@
 {
   "id": "TASK-047",
   "title": "Define computer-use booter, component, tool, and skill-sync boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "computer-use-boundary",
   "description": "AstrBot's computer-use surface combines local/remote sandbox booters, shell/python/filesystem/browser components, sandbox skill synchronization, tool discovery, capabilities, and prompt fragments. Rust should isolate those as a separate computer-use boundary before tool execution or agent runner code grows this surface directly.",
@@ -48,5 +48,22 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T02:14:39+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-computer/Cargo.toml",
+    "crates/astrbot-computer/src/lib.rs",
+    "crates/astrbot-computer/src/booter.rs",
+    "crates/astrbot-computer/src/components.rs",
+    "crates/astrbot-computer/src/skill_sync.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-computer",
+    "cargo test -p astrbot-plugin",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "high"
 }

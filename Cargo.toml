@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/astrbot-agent",
+    "crates/astrbot-computer",
     "crates/astrbot-conversation",
     "crates/astrbot-core",
     "crates/astrbot-cron",

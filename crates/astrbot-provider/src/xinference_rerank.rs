@@ -1,15 +1,12 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 
 use crate::http::{build_http_client, extract_error_message, join_api_path, json_bearer_headers};
-use crate::protocol::xinference::{
-    XinferenceLaunchModelRequest, XinferenceRerankRequest, parse_launch_model_uid,
-    parse_running_model_uid, parse_xinference_rerank_response,
-};
+use crate::model_resolver::{XinferenceModelResolver, XinferenceModelType};
+use crate::protocol::xinference::{XinferenceRerankRequest, parse_xinference_rerank_response};
 use crate::{RerankProvider, RerankRequest, RerankResponse};
 
 #[derive(Clone, Debug)]
@@ -54,10 +51,6 @@ impl XinferenceRerankConfig {
         self
     }
 
-    fn models_url(&self) -> String {
-        join_api_path(&self.api_base, "v1/models")
-    }
-
     fn rerank_url(&self) -> String {
         join_api_path(&self.api_base, "v1/rerank")
     }
@@ -67,7 +60,7 @@ impl XinferenceRerankConfig {
 pub struct XinferenceRerankProvider {
     config: XinferenceRerankConfig,
     client: reqwest::Client,
-    model_uid: Arc<Mutex<Option<String>>>,
+    model_resolver: XinferenceModelResolver,
 }
 
 impl XinferenceRerankProvider {
@@ -80,79 +73,19 @@ impl XinferenceRerankProvider {
                 "invalid Xinference rerank API key header",
             )?,
         )?;
+        let model_resolver = XinferenceModelResolver::new(
+            client.clone(),
+            &config.api_base,
+            config.model.clone(),
+            XinferenceModelType::Rerank,
+            config.launch_model_if_not_running,
+        );
 
         Ok(Self {
             config,
             client,
-            model_uid: Arc::new(Mutex::new(None)),
+            model_resolver,
         })
-    }
-
-    fn cached_model_uid(&self) -> Result<Option<String>> {
-        self.model_uid
-            .lock()
-            .map(|model_uid| model_uid.clone())
-            .map_err(|_| AstrbotError::Provider("Xinference model UID cache poisoned".to_string()))
-    }
-
-    fn cache_model_uid(&self, model_uid: String) -> Result<String> {
-        let mut cached = self.model_uid.lock().map_err(|_| {
-            AstrbotError::Provider("Xinference model UID cache poisoned".to_string())
-        })?;
-        *cached = Some(model_uid.clone());
-        Ok(model_uid)
-    }
-
-    async fn resolve_model_uid(&self) -> Result<String> {
-        if let Some(model_uid) = self.cached_model_uid()? {
-            return Ok(model_uid);
-        }
-
-        if let Some(model_uid) = self.find_running_model_uid().await? {
-            return self.cache_model_uid(model_uid);
-        }
-
-        if self.config.launch_model_if_not_running {
-            let model_uid = self.launch_model().await?;
-            return self.cache_model_uid(model_uid);
-        }
-
-        Err(AstrbotError::Provider(format!(
-            "Xinference rerank model {} is not running and auto-launch is disabled",
-            self.config.model
-        )))
-    }
-
-    async fn find_running_model_uid(&self) -> Result<Option<String>> {
-        let response = self
-            .client
-            .get(self.config.models_url())
-            .send()
-            .await
-            .map_err(|err| {
-                AstrbotError::Provider(format!("Xinference list models request failed: {err}"))
-            })?;
-
-        let body = response_body_or_error(response, "Xinference list models").await?;
-        parse_running_model_uid(&body, &self.config.model)
-    }
-
-    async fn launch_model(&self) -> Result<String> {
-        let response = self
-            .client
-            .post(self.config.models_url())
-            .json(&XinferenceLaunchModelRequest {
-                model_name: self.config.model.clone(),
-                model_type: "rerank",
-            })
-            .send()
-            .await
-            .map_err(|err| {
-                AstrbotError::Provider(format!("Xinference launch model request failed: {err}"))
-            })?;
-
-        let body = response_body_or_error(response, "Xinference launch model").await?;
-        parse_launch_model_uid(&body)
     }
 
     fn build_payload(
@@ -178,7 +111,7 @@ impl XinferenceRerankProvider {
 #[async_trait]
 impl RerankProvider for XinferenceRerankProvider {
     async fn rerank(&self, request: RerankRequest) -> Result<RerankResponse> {
-        let model_uid = self.resolve_model_uid().await?;
+        let model_uid = self.model_resolver.resolve_model_uid().await?;
         let response = self
             .client
             .post(self.config.rerank_url())

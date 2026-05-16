@@ -1,7 +1,7 @@
 {
   "id": "TASK-053",
   "title": "Extract Xinference model resolver lifecycle boundary",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-model-resolver-boundary",
   "description": "Xinference STT and rerank adapters still duplicate model UID cache, list-running-models, optional launch, and not-running error policy. AstrBot repeats this in separate sources; Rust can improve it with a typed resolver shared by self-hosted model providers.",
@@ -46,5 +46,23 @@
     ],
     "verification_command": "cargo test -p astrbot-provider --test xinference_stt --test xinference_rerank && cargo clippy -p astrbot-provider -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:25:14+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/model_resolver/mod.rs",
+    "crates/astrbot-provider/src/model_resolver/xinference.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-053.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-053-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-053/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider --test xinference_stt --test xinference_rerank",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "medium"
 }

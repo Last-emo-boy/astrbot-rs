@@ -16,6 +16,7 @@ mod manager;
 mod media;
 mod minimax_tts;
 mod mock;
+mod model_resolver;
 mod openai_compatible;
 mod openai_embedding;
 mod openai_stt;

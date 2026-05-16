@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-061","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-061 from the scratch refactor plan. Introduce a new astrbot-session crate with session waiter, per-session lock, and active event interruption boundaries; update TASK-061 status and summary; run cargo fmt --all, cargo test -p astrbot-session, cargo test -p astrbot-core, cargo test -p astrbot-pipeline, cargo clippy --workspace -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

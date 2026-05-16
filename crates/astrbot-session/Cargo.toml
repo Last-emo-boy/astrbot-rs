@@ -1,0 +1,10 @@
+[package]
+name = "astrbot-session"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+astrbot-core = { path = "../astrbot-core" }
+serde.workspace = true
+tokio.workspace = true

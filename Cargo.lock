@@ -200,6 +200,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "astrbot-session"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "astrbot-skill"
 version = "0.1.0"
 dependencies = [

@@ -14,6 +14,7 @@ members = [
     "crates/astrbot-plugin",
     "crates/astrbot-render",
     "crates/astrbot-runtime",
+    "crates/astrbot-session",
     "crates/astrbot-persona",
     "crates/astrbot-skill",
     "crates/astrbot-storage",

@@ -5,9 +5,10 @@ use async_trait::async_trait;
 use crate::Result;
 
 use super::{
-    MessageChain, MessageComponent, MessageEvent, MessageEventResult, MessageSender,
-    MessageSession, MessageSink, MessageStream, ProviderContentPart, ProviderContextMessage,
-    ProviderRequest, ProviderToolPlaceholder, ResultContentType,
+    ForwardMessageReference, MessageChain, MessageComponent, MessageEvent, MessageEventResult,
+    MessageSender, MessageSession, MessageSink, MessageStream, ProviderContentPart,
+    ProviderContextMessage, ProviderRequest, ProviderToolPlaceholder, QuotedImageReference,
+    QuotedImageReferenceKind, QuotedMessage, ResultContentType,
 };
 
 struct NoopSink;
@@ -119,6 +120,28 @@ fn provider_request_builds_from_event_and_accepts_placeholders() {
     assert_eq!(request.contexts.len(), 1);
     assert_eq!(request.extra_user_content_parts.len(), 1);
     assert_eq!(request.tool_placeholders.len(), 1);
+}
+
+#[test]
+fn quoted_message_domain_models_text_images_and_forward_refs() {
+    let quote = QuotedMessage::new()
+        .with_message_id("msg-1")
+        .with_sender_name("Alice")
+        .with_text("quoted text")
+        .with_image_ref(QuotedImageReference::url("https://example.test/a.png"))
+        .with_image_ref(QuotedImageReference::url("https://example.test/a.png"))
+        .with_forward_ref(ForwardMessageReference::new("forward-1").with_preview_text("nested"));
+
+    assert_eq!(quote.message_id.as_deref(), Some("msg-1"));
+    assert_eq!(quote.text.as_deref(), Some("quoted text"));
+    assert_eq!(quote.image_refs().len(), 1);
+    assert_eq!(quote.image_refs()[0].kind, QuotedImageReferenceKind::Url);
+    assert_eq!(
+        quote.image_ref_values(),
+        vec!["https://example.test/a.png".to_string()]
+    );
+    assert_eq!(quote.forward_refs().len(), 1);
+    assert!(quote.has_content());
 }
 
 #[test]

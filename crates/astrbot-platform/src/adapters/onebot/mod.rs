@@ -10,10 +10,12 @@ use self::message::plain_text_message;
 use crate::{PlatformAdapter, PlatformTransport, RecordingSink, SentMessage};
 
 mod event;
+mod forward;
 mod message;
 mod session;
 mod transport;
 
+pub use forward::{OneBotForwardParseResult, OneBotForwardParser};
 pub use session::{OneBotSession, OneBotSessionKind};
 pub use transport::{OneBotTransport, OneBotTransportMode};
 

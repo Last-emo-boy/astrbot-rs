@@ -141,6 +141,7 @@ dependencies = [
  "astrbot-core",
  "astrbot-observability",
  "async-trait",
+ "serde_json",
  "sha1",
  "tokio",
 ]

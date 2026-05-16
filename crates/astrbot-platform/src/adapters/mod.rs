@@ -5,24 +5,27 @@ mod onebot;
 mod webchat;
 
 pub use common::{
-    DecodedWebhookPayload, EncryptedWebhookEnvelope, InMemoryPlatformQueueStore,
-    LongConnectionClient, LongConnectionCommand, LongConnectionEndpoint, LongConnectionFrame,
-    LongConnectionReconnectPolicy, LongConnectionState, LongConnectionWaiters, NoopTransport,
-    PendingWebhookResponse, PlainWebhookPayloadCodec, PlatformApiClient, PlatformApiError,
-    PlatformApiErrorKind, PlatformApiMethod, PlatformApiRequest, PlatformApiResponse,
-    PlatformCallbackQueue, PlatformMediaKind, PlatformMediaReference, PlatformMediaSource,
-    PlatformMediaUpload, PlatformMediaUploadClient, PlatformQueueDirection, PlatformQueueItem,
-    PlatformQueueStats, PlatformRateLimit, PlatformRetryDecision, PlatformRetryPolicy,
-    PlatformRetryReason, PlatformTransport, PlatformTransportKind, PlatformTransportState,
-    RichEventMedia, RichEventPart, RichEventReaction, RichEventThread, RichPlatformEvent,
-    Sha1SortedFieldsVerifier, WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint,
-    WebhookEventDeduplicator, WebhookHttpMethod, WebhookPayloadCodec, WebhookRequest,
-    WebhookResponse, WebhookRoute, WebhookServer, WebhookServerState, WebhookSignatureInput,
-    WebhookSignatureVerdict, WebhookSignatureVerifier,
+    DecodedWebhookPayload, EmbeddedQuoteParser, EncryptedWebhookEnvelope,
+    InMemoryPlatformQueueStore, LongConnectionClient, LongConnectionCommand,
+    LongConnectionEndpoint, LongConnectionFrame, LongConnectionReconnectPolicy,
+    LongConnectionState, LongConnectionWaiters, NoopTransport, PendingWebhookResponse,
+    PlainWebhookPayloadCodec, PlatformApiClient, PlatformApiError, PlatformApiErrorKind,
+    PlatformApiMethod, PlatformApiRequest, PlatformApiResponse, PlatformCallbackQueue,
+    PlatformMediaKind, PlatformMediaReference, PlatformMediaSource, PlatformMediaUpload,
+    PlatformMediaUploadClient, PlatformQueueDirection, PlatformQueueItem, PlatformQueueStats,
+    PlatformQuoteParser, PlatformQuoteRequest, PlatformQuoteResolution, PlatformRateLimit,
+    PlatformRetryDecision, PlatformRetryPolicy, PlatformRetryReason, PlatformTransport,
+    PlatformTransportKind, PlatformTransportState, RichEventMedia, RichEventPart,
+    RichEventReaction, RichEventThread, RichPlatformEvent, Sha1SortedFieldsVerifier,
+    WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint, WebhookEventDeduplicator,
+    WebhookHttpMethod, WebhookPayloadCodec, WebhookRequest, WebhookResponse, WebhookRoute,
+    WebhookServer, WebhookServerState, WebhookSignatureInput, WebhookSignatureVerdict,
+    WebhookSignatureVerifier,
 };
 pub use console::{ConsolePlatform, ConsoleSink};
 pub use mock::MockPlatform;
 pub use onebot::{
-    OneBotPlatform, OneBotSession, OneBotSessionKind, OneBotTransport, OneBotTransportMode,
+    OneBotForwardParseResult, OneBotForwardParser, OneBotPlatform, OneBotSession,
+    OneBotSessionKind, OneBotTransport, OneBotTransportMode,
 };
 pub use webchat::WebChatPlatform;

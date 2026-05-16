@@ -2,6 +2,7 @@ mod api_client;
 mod long_connection;
 mod media;
 mod queue;
+mod quote;
 mod retry;
 mod rich_event;
 mod security;
@@ -23,6 +24,9 @@ pub use media::{
 pub use queue::{
     InMemoryPlatformQueueStore, PendingWebhookResponse, PlatformCallbackQueue,
     PlatformQueueDirection, PlatformQueueItem, PlatformQueueStats,
+};
+pub use quote::{
+    EmbeddedQuoteParser, PlatformQuoteParser, PlatformQuoteRequest, PlatformQuoteResolution,
 };
 pub use retry::{
     PlatformRateLimit, PlatformRetryDecision, PlatformRetryPolicy, PlatformRetryReason,

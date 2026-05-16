@@ -1,7 +1,7 @@
 {
   "id": "TASK-041",
   "title": "Split event bus dispatch, pipeline routing, and event logging boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "event-bus-routing-boundary",
   "description": "Rust EventBus is small today, but AstrBot routes events by config-specific PipelineScheduler and logs platform/session outlines inside the bus. Split dispatch, scheduler routing, event logging, and future backpressure policy before multiple pipeline configs and lifecycle events grow inside one core event module.",
@@ -42,5 +42,19 @@
     ],
     "verification_command": "cargo test -p astrbot-core && cargo test -p astrbot-pipeline && cargo test --workspace"
   },
+  "completed_at": "2026-05-17T01:09:56+08:00",
+  "files_modified": [
+    "crates/astrbot-core/src/event.rs",
+    "crates/astrbot-core/src/event/mod.rs",
+    "crates/astrbot-core/src/event/router.rs",
+    "crates/astrbot-core/src/event/logging.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-core",
+    "cargo test -p astrbot-pipeline",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "medium"
 }

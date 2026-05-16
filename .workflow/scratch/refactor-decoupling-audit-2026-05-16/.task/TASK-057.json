@@ -1,7 +1,7 @@
 {
   "id": "TASK-057",
   "title": "Extract provider TTS option normalization and factory config mapping boundary",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-tts-factory-boundary",
   "description": "TTS factory construction currently mixes provider option aliases, parsing, defaults, headers, and concrete config mapping for OpenAI, Gemini, Volcengine, MiniMax, and GSVI. Split option normalization from protocol parsing and media artifact writing so new TTS providers do not grow one factory file.",
@@ -40,5 +40,26 @@
     ],
     "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:53:42+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/factories/tts.rs",
+    "crates/astrbot-provider/src/factories/tts/mod.rs",
+    "crates/astrbot-provider/src/factories/tts/options.rs",
+    "crates/astrbot-provider/src/factories/tts/openai.rs",
+    "crates/astrbot-provider/src/factories/tts/gemini.rs",
+    "crates/astrbot-provider/src/factories/tts/volcengine.rs",
+    "crates/astrbot-provider/src/factories/tts/minimax.rs",
+    "crates/astrbot-provider/src/factories/tts/gsvi.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-057.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-057-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-057/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "medium"
 }

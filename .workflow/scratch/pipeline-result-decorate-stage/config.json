@@ -1,0 +1,15 @@
+{
+  "task_id": "M4-T1-result-decorate-stage",
+  "milestone": "M4-respond-decoration",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/result_decorate/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/respond/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py"
+  ],
+  "scope": [
+    "Add ResultDecorateStage after process and before respond.",
+    "Implement reply prefix decoration as the first minimal result transform.",
+    "Keep TTS, T2I, segmented reply, hooks, and response-side safety deferred."
+  ]
+}

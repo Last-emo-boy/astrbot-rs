@@ -1,0 +1,56 @@
+{
+  "id": "TASK-012",
+  "title": "Extract WebChat attachment/message-part service boundary before dashboard media storage",
+  "status": "completed",
+  "type": "refactor",
+  "category": "webchat-media-boundary",
+  "description": "Introduce explicit message-part and attachment service boundaries before adding dashboard media upload/history storage.",
+  "read_first": [
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-platform/src",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py",
+    "E:/Playground/Astrbot/astrbot/core/platform_message_history_mgr.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/message_parts.rs",
+      "action": "create",
+      "target": "HTTP DTO to MessageChain conversion",
+      "change": "Keep WebChat HTTP route handlers thin and put typed message part normalization in a dedicated module."
+    },
+    {
+      "path": "crates/astrbot-web/src/attachment.rs",
+      "action": "create",
+      "target": "attachment service port",
+      "change": "Prepare upload/storage lookup boundary without tying routes to concrete storage."
+    },
+    {
+      "path": "crates/astrbot-web/src/history.rs",
+      "action": "create",
+      "target": "history readback boundary",
+      "change": "Prepare conversation history DTO assembly separately from platform internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing WebChat routes keep current behavior.",
+      "Attachment/history services are ports or thin modules, not dashboard-specific logic.",
+      "Message part conversion keeps AstrBot's webchat helper ideas while using Rust typed DTOs."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-platform && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T12:30:00+08:00",
+  "files_modified": [
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/attachment.rs",
+    "crates/astrbot-web/src/history.rs",
+    "crates/astrbot-web/src/routes.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-web",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

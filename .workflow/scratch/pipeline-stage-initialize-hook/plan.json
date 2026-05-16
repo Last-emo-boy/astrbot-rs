@@ -1,0 +1,39 @@
+{
+  "task": "M1-T2 stage initialize hook",
+  "status": "completed",
+  "completed_at": "2026-05-15T23:31:11+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add initialize hook to PipelineStage",
+      "description": "Add a default no-op initialize method compatible with current synchronous runtime construction.",
+      "scope": [
+        "crates/astrbot-pipeline/src/stage.rs"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Initialize scheduler stages",
+      "description": "Add PipelineScheduler::initialize and ensure runtime calls it for registry-built default pipelines.",
+      "scope": [
+        "crates/astrbot-pipeline/src/scheduler.rs",
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Verify initialize behavior",
+      "description": "Add tests proving registry-built schedulers invoke stage initialize hooks in stage order.",
+      "scope": [
+        "crates/astrbot-pipeline/src/registry.rs"
+      ],
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-runtime"
+  ]
+}

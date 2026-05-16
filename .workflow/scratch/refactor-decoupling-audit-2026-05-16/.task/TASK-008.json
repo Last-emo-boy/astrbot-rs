@@ -1,0 +1,75 @@
+{
+  "id": "TASK-008",
+  "title": "Split provider config and factory modules by capability/family",
+  "status": "completed",
+  "type": "refactor",
+  "category": "second-pass-provider",
+  "description": "Split provider config structs and concrete provider factory builders by capability/family after the first provider facade split.",
+  "read_first": [
+    "crates/astrbot-provider/src/config.rs",
+    "crates/astrbot-provider/src/factories.rs",
+    "crates/astrbot-provider/src/manager.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/config",
+      "action": "create",
+      "target": "provider config module tree",
+      "change": "Split chat, speech, TTS, embedding, and rerank config types while preserving public re-exports."
+    },
+    {
+      "path": "crates/astrbot-provider/src/factories",
+      "action": "create",
+      "target": "provider factory module tree",
+      "change": "Move concrete factory builders into capability/family modules."
+    },
+    {
+      "path": "crates/astrbot-provider/src/manager",
+      "action": "create",
+      "target": "provider manager capability routing modules",
+      "change": "Split chat, speech, TTS, embedding, and rerank routing/termination helpers while preserving ProviderManager as the public facade."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "astrbot_provider public config exports remain compatible.",
+      "ProviderRegistry built-ins remain behaviorally identical.",
+      "Factory modules mirror AstrBot provider capability buckets without duplicating registry logic."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T12:10:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/config.rs",
+    "crates/astrbot-provider/src/config/chat.rs",
+    "crates/astrbot-provider/src/config/speech.rs",
+    "crates/astrbot-provider/src/config/tts.rs",
+    "crates/astrbot-provider/src/config/embedding.rs",
+    "crates/astrbot-provider/src/config/rerank.rs",
+    "crates/astrbot-provider/src/factories.rs",
+    "crates/astrbot-provider/src/factories/common.rs",
+    "crates/astrbot-provider/src/factories/chat.rs",
+    "crates/astrbot-provider/src/factories/speech.rs",
+    "crates/astrbot-provider/src/factories/tts.rs",
+    "crates/astrbot-provider/src/factories/embedding.rs",
+    "crates/astrbot-provider/src/factories/rerank.rs",
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-provider/src/manager/config_set.rs",
+    "crates/astrbot-provider/src/manager/lifecycle.rs",
+    "crates/astrbot-provider/src/manager/chat.rs",
+    "crates/astrbot-provider/src/manager/speech.rs",
+    "crates/astrbot-provider/src/manager/tts.rs",
+    "crates/astrbot-provider/src/manager/embedding.rs",
+    "crates/astrbot-provider/src/manager/rerank.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

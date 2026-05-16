@@ -1,0 +1,38 @@
+{
+  "task": "M1-T3 default pipeline builder",
+  "status": "completed",
+  "completed_at": "2026-05-15T23:44:30+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add DefaultPipelineBuilder",
+      "description": "Create a named builder for built-in registry, scheduler construction, and initialization.",
+      "scope": [
+        "crates/astrbot-pipeline/src"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Use builder from runtime",
+      "description": "Replace runtime direct registry/scheduler/initialize sequence with DefaultPipelineBuilder.",
+      "scope": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Verify builder behavior",
+      "description": "Add tests for built-in stage order and initialized scheduler returned by builder.",
+      "scope": [
+        "crates/astrbot-pipeline/src"
+      ],
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-runtime"
+  ]
+}

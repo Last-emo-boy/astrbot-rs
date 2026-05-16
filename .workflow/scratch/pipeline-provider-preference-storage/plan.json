@@ -1,0 +1,32 @@
+{
+  "id": "pipeline-provider-preference-storage",
+  "task_id": "M5-T2-provider-preference-storage",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-provider-manager",
+      "status": "completed",
+      "summary": "Compared AstrBot provider manager session preference lookup and default fallback behavior."
+    },
+    {
+      "id": "preference-port",
+      "status": "completed",
+      "summary": "Added ProviderPreferencePort, NoProviderPreferencePort, and InMemoryProviderPreferencePort."
+    },
+    {
+      "id": "provider-request-selection",
+      "status": "completed",
+      "summary": "Provider fallback now applies session preference to ProviderRequest.provider_id without overriding explicit plugin requests."
+    },
+    {
+      "id": "provider-manager-routing",
+      "status": "completed",
+      "summary": "ProviderManager now implements ChatProvider and routes ChatRequest.provider_id to configured providers."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Added provider manager routing tests and ProcessStage provider preference coverage."
+    }
+  ]
+}

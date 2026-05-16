@@ -1,0 +1,73 @@
+{
+  "id": "TASK-004",
+  "title": "Split astrbot-web HTTP boundary",
+  "status": "completed",
+  "type": "refactor",
+  "category": "transport-boundary",
+  "description": "Separate WebChat HTTP DTOs, route wiring, server startup, message conversion, error mapping, and tests so dashboard/API breadth can grow without coupling to lib.rs.",
+  "read_first": [
+    "crates/astrbot-web/src/lib.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/webchat_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/dto.rs",
+      "action": "create",
+      "target": "HTTP DTOs",
+      "change": "Move submit/history response structs and serde helpers."
+    },
+    {
+      "path": "crates/astrbot-web/src/message_parts.rs",
+      "action": "create",
+      "target": "DTO to MessageChain conversion",
+      "change": "Move submit payload normalization and response serialization."
+    },
+    {
+      "path": "crates/astrbot-web/src/routes.rs",
+      "action": "create",
+      "target": "router handlers",
+      "change": "Move axum route handlers."
+    },
+    {
+      "path": "crates/astrbot-web/src/server.rs",
+      "action": "create",
+      "target": "server startup",
+      "change": "Move serve_webchat helpers."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "lib.rs exposes the public web API without owning all implementation details.",
+      "HTTP layer still only calls WebChatPlatform boundary.",
+      "Existing WebChat tests pass."
+    ],
+    "verification_command": "cargo test -p astrbot-web"
+  },
+  "implementation_steps": [
+    "Move DTOs and serde helpers first.",
+    "Move MessageChain conversion functions with focused tests.",
+    "Move routes and server helpers.",
+    "Run web package tests."
+  ],
+  "risk": "medium",
+  "completed_at": "2026-05-16T10:10:00+08:00",
+  "result": {
+    "summary": "astrbot-web lib.rs is now a facade; DTOs, error mapping, message-part conversion, route handlers, server helpers, and tests live in focused modules while public exports remain compatible.",
+    "files_modified": [
+      "crates/astrbot-web/src/lib.rs",
+      "crates/astrbot-web/src/dto.rs",
+      "crates/astrbot-web/src/error.rs",
+      "crates/astrbot-web/src/message_parts.rs",
+      "crates/astrbot-web/src/routes.rs",
+      "crates/astrbot-web/src/server.rs",
+      "crates/astrbot-web/src/tests.rs"
+    ],
+    "verification": [
+      "cargo fmt --all",
+      "cargo test -p astrbot-web",
+      "cargo test --workspace",
+      "cargo clippy --workspace -- -D warnings"
+    ]
+  }
+}

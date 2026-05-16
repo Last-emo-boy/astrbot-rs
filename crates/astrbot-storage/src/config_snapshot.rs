@@ -1,0 +1,118 @@
+use std::collections::HashMap;
+use std::sync::RwLock;
+
+use astrbot_core::{AstrbotError, Result};
+use async_trait::async_trait;
+use serde_json::Value;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConfigSnapshotRecord {
+    pub snapshot_id: String,
+    pub config: Value,
+    pub note: Option<String>,
+}
+
+impl ConfigSnapshotRecord {
+    pub fn new(snapshot_id: impl Into<String>, config: Value) -> Self {
+        Self {
+            snapshot_id: snapshot_id.into(),
+            config,
+            note: None,
+        }
+    }
+
+    pub fn with_note(mut self, note: impl Into<String>) -> Self {
+        self.note = Some(note.into());
+        self
+    }
+}
+
+#[async_trait]
+pub trait ConfigSnapshotRepository: Send + Sync {
+    async fn put_snapshot(&self, record: ConfigSnapshotRecord) -> Result<()>;
+
+    async fn snapshot(&self, snapshot_id: &str) -> Result<Option<ConfigSnapshotRecord>>;
+
+    async fn latest_snapshot(&self) -> Result<Option<ConfigSnapshotRecord>>;
+}
+
+#[derive(Default)]
+pub struct InMemoryConfigSnapshotRepository {
+    order: RwLock<Vec<String>>,
+    snapshots: RwLock<HashMap<String, ConfigSnapshotRecord>>,
+}
+
+impl InMemoryConfigSnapshotRepository {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+#[async_trait]
+impl ConfigSnapshotRepository for InMemoryConfigSnapshotRepository {
+    async fn put_snapshot(&self, record: ConfigSnapshotRecord) -> Result<()> {
+        let snapshot_id = record.snapshot_id.clone();
+        self.snapshots
+            .write()
+            .map_err(|err| AstrbotError::Pipeline(format!("config snapshot lock: {err}")))?
+            .insert(snapshot_id.clone(), record);
+        let mut order = self
+            .order
+            .write()
+            .map_err(|err| AstrbotError::Pipeline(format!("config snapshot order lock: {err}")))?;
+        if !order.contains(&snapshot_id) {
+            order.push(snapshot_id);
+        }
+        Ok(())
+    }
+
+    async fn snapshot(&self, snapshot_id: &str) -> Result<Option<ConfigSnapshotRecord>> {
+        Ok(self
+            .snapshots
+            .read()
+            .map_err(|err| AstrbotError::Pipeline(format!("config snapshot lock: {err}")))?
+            .get(snapshot_id)
+            .cloned())
+    }
+
+    async fn latest_snapshot(&self) -> Result<Option<ConfigSnapshotRecord>> {
+        let latest_id = self
+            .order
+            .read()
+            .map_err(|err| AstrbotError::Pipeline(format!("config snapshot order lock: {err}")))?
+            .last()
+            .cloned();
+        match latest_id {
+            Some(snapshot_id) => self.snapshot(&snapshot_id).await,
+            None => Ok(None),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ConfigSnapshotRecord, ConfigSnapshotRepository, InMemoryConfigSnapshotRepository};
+    use serde_json::json;
+
+    #[tokio::test]
+    async fn latest_snapshot_returns_last_inserted_record() {
+        let repository = InMemoryConfigSnapshotRepository::new();
+        repository
+            .put_snapshot(ConfigSnapshotRecord::new("snap-1", json!({"version": 1})))
+            .await
+            .expect("snapshot should store");
+        repository
+            .put_snapshot(ConfigSnapshotRecord::new("snap-2", json!({"version": 2})))
+            .await
+            .expect("snapshot should store");
+
+        let latest = repository
+            .latest_snapshot()
+            .await
+            .expect("snapshot should load")
+            .expect("snapshot should exist");
+
+        assert_eq!(latest.snapshot_id, "snap-2");
+        assert_eq!(latest.config, json!({"version": 2}));
+    }
+}

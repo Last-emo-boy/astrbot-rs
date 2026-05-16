@@ -1,0 +1,10 @@
+{
+  "task": "Add OpenAI-compatible streaming response collection",
+  "skill": "maestro-quick",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T21:28:00+08:00",
+  "status": "completed"
+}

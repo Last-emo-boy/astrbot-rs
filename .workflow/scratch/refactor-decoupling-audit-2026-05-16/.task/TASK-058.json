@@ -1,0 +1,46 @@
+{
+  "id": "TASK-058",
+  "title": "Define dashboard and OpenAPI auth, API-key scope, and route middleware boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "management-auth-api-key-boundary",
+  "description": "AstrBot dashboard auth, JWT login, API key CRUD, OpenAPI scopes, and route middleware are separate concerns from dashboard status DTOs. Rust should add typed auth and API-key ports before management mutations or external OpenAPI routes grow.",
+  "read_first": [
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/server.rs",
+    "crates/astrbot-storage/src",
+    "E:/Playground/Astrbot/astrbot/dashboard/server.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/auth.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/api_key.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/open_api.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/management/auth.rs",
+      "action": "create",
+      "target": "dashboard authentication boundary",
+      "change": "Separate JWT/session auth policy from management route handlers."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/api_key.rs",
+      "action": "create",
+      "target": "OpenAPI API-key boundary",
+      "change": "Model API-key scopes, hashing, issuance, revocation, and request extraction outside route handlers."
+    },
+    {
+      "path": "crates/astrbot-storage/src/api_key.rs",
+      "action": "create",
+      "target": "API-key repository port",
+      "change": "Persist API keys through storage traits rather than dashboard internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Management routes can be protected without embedding JWT/API-key logic in every handler.",
+      "OpenAPI scopes are typed and testable independently.",
+      "API keys use storage/repository ports instead of direct route state."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

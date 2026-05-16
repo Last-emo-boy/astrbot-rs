@@ -1,0 +1,48 @@
+{
+  "id": "TASK-045",
+  "title": "Introduce cron and proactive agent job boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "cron-proactive-boundary",
+  "description": "AstrBot CronJobManager stores scheduled jobs, wakes the main agent with special events, injects conversation history, and persists agent history. Rust should define cron/proactive job scheduling and active-agent wake boundaries before such logic grows inside runtime handle, plugin tools, or WebChat routes.",
+  "read_first": [
+    "crates/astrbot-runtime/src/handle.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "crates/astrbot-pipeline/src",
+    "crates/astrbot-storage/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/cron/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/cron/events.py",
+    "E:/Playground/Astrbot/astrbot/core/tools/cron_tools.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-cron/src/job.rs",
+      "action": "create",
+      "target": "cron job model",
+      "change": "Define typed basic and active-agent job metadata independent of scheduler implementation."
+    },
+    {
+      "path": "crates/astrbot-cron/src/scheduler.rs",
+      "action": "create",
+      "target": "scheduler runtime",
+      "change": "Own start/stop/sync/run behavior outside RuntimeHandle."
+    },
+    {
+      "path": "crates/astrbot-cron/src/proactive.rs",
+      "action": "create",
+      "target": "active-agent wake flow",
+      "change": "Keep proactive agent request construction outside plugin tools and WebChat transport."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Runtime supervises cron as a service boundary rather than owning job logic.",
+      "Cron storage and scheduling can be tested without a live WebChat route.",
+      "Active-agent wake events enter the same pipeline/event boundary as platform messages."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

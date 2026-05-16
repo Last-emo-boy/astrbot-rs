@@ -1,0 +1,33 @@
+{
+  "task": "Add runtime config default normalization",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot config integrity behavior",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/config/astrbot_config.py"
+      ],
+      "convergence_criteria": "Runtime config loader learns from AstrBot's missing-default writeback behavior"
+    },
+    {
+      "id": "T2",
+      "title": "Normalize runtime config files on load",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "RuntimeConfig creates missing files and writes back missing top-level default keys"
+    },
+    {
+      "id": "T3",
+      "title": "Test normalization behavior",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "Tests cover missing config creation and missing default key writeback"
+    }
+  ]
+}

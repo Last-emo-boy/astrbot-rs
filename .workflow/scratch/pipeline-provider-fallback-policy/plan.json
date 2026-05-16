@@ -1,0 +1,35 @@
+{
+  "task_id": "M3-T3-provider-fallback-policy",
+  "steps": [
+    {
+      "id": "policy-config",
+      "title": "Add ProviderFallbackConfig to PipelineContext",
+      "status": "completed"
+    },
+    {
+      "id": "stage-behavior",
+      "title": "Apply fallback enable, wake gating, and provider error mapping",
+      "status": "completed"
+    },
+    {
+      "id": "runtime-wiring",
+      "title": "Expose provider fallback config through RuntimeConfig",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover disabled fallback, wake gating, plugin request bypass, and error response",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    },
+    {
+      "id": "verification",
+      "title": "Run formatting, tests, clippy, CLI smoke, and workflow JSON checks",
+      "status": "completed"
+    }
+  ]
+}

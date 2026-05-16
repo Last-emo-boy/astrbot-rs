@@ -1,0 +1,73 @@
+{
+  "id": "TASK-037",
+  "title": "Introduce multimodal request preparation and image caption boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "multimodal-agent-boundary",
+  "description": "AstrBot main-agent has separate concerns for image captioning, quoted image fallback, provider modality checks, and unsupported image replacement. Rust currently forwards image_urls through MessageChain/ProviderRequest and concrete providers. Add a dedicated multimodal preparation boundary before main-agent parity grows inside ProcessStage or providers.",
+  "read_first": [
+    "crates/astrbot-core/src/message/provider_request.rs",
+    "crates/astrbot-pipeline/src/stages/provider.rs",
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/anthropic.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/quoted_message/image_refs.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/entities.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/multimodal/mod.rs",
+      "action": "create",
+      "target": "multimodal facade",
+      "change": "Expose image caption, quoted image, and modality filter boundaries from astrbot-agent."
+    },
+    {
+      "path": "crates/astrbot-agent/src/multimodal/image_caption.rs",
+      "action": "create",
+      "target": "image caption policy",
+      "change": "Define provider-selected image captioning and caption insertion without coupling it to ProcessStage."
+    },
+    {
+      "path": "crates/astrbot-agent/src/multimodal/capability_filter.rs",
+      "action": "create",
+      "target": "provider modality guard",
+      "change": "Centralize image/tool modality fallback behavior before provider requests are sent."
+    },
+    {
+      "path": "crates/astrbot-agent/src/multimodal/quoted_image.rs",
+      "action": "create",
+      "target": "quoted image attachment policy",
+      "change": "Append quoted fallback image refs and attachment text through a typed policy separate from selected_text quote context."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProcessStage does not grow image caption or modality fallback logic directly.",
+      "Provider adapters keep protocol serialization only.",
+      "Quote image fallback has a typed policy separate from selected_text quote context."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test -p astrbot-provider && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T21:01:47+08:00",
+  "files_modified": [
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/multimodal/mod.rs",
+    "crates/astrbot-agent/src/multimodal/capability_filter.rs",
+    "crates/astrbot-agent/src/multimodal/image_caption.rs",
+    "crates/astrbot-agent/src/multimodal/quoted_image.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-agent",
+    "cargo clippy -p astrbot-agent -- -D warnings",
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-provider",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

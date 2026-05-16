@@ -1,0 +1,57 @@
+{
+  "id": "TASK-039",
+  "title": "Define text-to-image rendering and template boundary before T2I parity",
+  "status": "completed",
+  "type": "refactor",
+  "category": "t2i-render-boundary",
+  "description": "AstrBot has a large T2I rendering surface with remote/local strategies, templates, file service choices, and markdown-like layout behavior. Keep this out of RespondStage and WebChat routes by defining a rendering crate boundary before T2I parity.",
+  "read_first": [
+    "crates/astrbot-core/src/message/result.rs",
+    "crates/astrbot-pipeline/src/stages/respond.rs",
+    "crates/astrbot-web/src/message_parts.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/renderer.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/local_strategy.py",
+    "E:/Playground/Astrbot/astrbot/core/config/default.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-render/src/t2i.rs",
+      "action": "create",
+      "target": "text-to-image renderer port",
+      "change": "Define renderer input/output contracts independent of pipeline and HTTP transport."
+    },
+    {
+      "path": "crates/astrbot-render/src/template.rs",
+      "action": "create",
+      "target": "T2I template model",
+      "change": "Represent active template, strategy selection, and output artifact metadata."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "RespondStage remains transport-agnostic and does not render images directly.",
+      "WebChat routes only expose rendered artifact descriptors through existing attachment/storage boundaries.",
+      "T2I strategy selection is typed and testable."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T22:16:58+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-render/Cargo.toml",
+    "crates/astrbot-render/src/lib.rs",
+    "crates/astrbot-render/src/t2i.rs",
+    "crates/astrbot-render/src/template.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-render",
+    "cargo clippy -p astrbot-render -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

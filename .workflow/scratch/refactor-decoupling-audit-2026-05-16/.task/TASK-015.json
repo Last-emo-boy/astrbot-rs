@@ -1,0 +1,59 @@
+{
+  "id": "TASK-015",
+  "title": "Split CLI command parsing, command handlers, and WebChat server launcher",
+  "status": "completed",
+  "type": "refactor",
+  "category": "cli-entrypoint-boundary",
+  "description": "Keep the CLI entrypoint thin before dashboard/server flags grow by moving argument parsing, init/run/smoke commands, and WebChat server launcher code into focused modules.",
+  "read_first": [
+    "crates/astrbot-cli/src/main.rs",
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-web/src/server.rs"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-cli/src/args.rs",
+      "action": "create",
+      "target": "CLI argument parsing",
+      "change": "Move command enum and parse helpers out of main.rs."
+    },
+    {
+      "path": "crates/astrbot-cli/src/commands",
+      "action": "create",
+      "target": "CLI command handlers",
+      "change": "Group init, run, and smoke command behavior by module."
+    },
+    {
+      "path": "crates/astrbot-cli/src/webchat_server.rs",
+      "action": "create",
+      "target": "WebChat server launcher",
+      "change": "Move PendingWebChatServer/WebChatServerHandle and launch logic away from command parsing."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "CLI command behavior and defaults remain unchanged.",
+      "main.rs only wires argument parsing to command execution.",
+      "WebChat server launch still uses runtime-created platform handles."
+    ],
+    "verification_command": "cargo test -p astrbot-cli && cargo test --workspace"
+  },
+  "risk": "low",
+  "completed_at": "2026-05-16T13:50:00+08:00",
+  "files_modified": [
+    "crates/astrbot-cli/src/main.rs",
+    "crates/astrbot-cli/src/args.rs",
+    "crates/astrbot-cli/src/commands/mod.rs",
+    "crates/astrbot-cli/src/commands/init.rs",
+    "crates/astrbot-cli/src/commands/run.rs",
+    "crates/astrbot-cli/src/commands/smoke.rs",
+    "crates/astrbot-cli/src/webchat_server.rs",
+    "crates/astrbot-cli/src/tests.rs"
+  ],
+  "verification": [
+    "cargo test -p astrbot-cli",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

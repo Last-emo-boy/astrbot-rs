@@ -1,0 +1,9 @@
+{
+  "task": "Add runtime config default normalization",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T20:14:55+08:00",
+  "status": "completed"
+}

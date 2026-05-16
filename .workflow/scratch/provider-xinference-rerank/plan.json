@@ -1,0 +1,35 @@
+{
+  "task_id": "M7-T2l-xinference-rerank-provider",
+  "title": "Add AstrBot-compatible Xinference rerank provider",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2l-1",
+      "title": "Study AstrBot Xinference rerank source",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_rerank_source.py",
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py"
+      ]
+    },
+    {
+      "id": "M7-T2l-2",
+      "title": "Implement provider and registry factory",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/xinference_rerank.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2l-3",
+      "title": "Add direct and registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/xinference_rerank.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "task_id": "M2-T2-whitelist-session-rate-limit-ports",
+  "steps": [
+    {
+      "id": "context-ports",
+      "title": "Add typed whitelist/session/rate policy config to PipelineContext",
+      "status": "completed"
+    },
+    {
+      "id": "stages",
+      "title": "Implement whitelist, session status, and rate limit stages",
+      "status": "completed"
+    },
+    {
+      "id": "registry",
+      "title": "Register policy stages after wake and before plugin/provider/respond",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover allow/deny/limit behavior without concrete storage",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    }
+  ]
+}

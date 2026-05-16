@@ -1,0 +1,73 @@
+{
+  "id": "TASK-038",
+  "title": "Define data path, temp artifact root, and cleanup policy boundary",
+  "status": "completed",
+  "type": "refactor",
+  "category": "path-temp-boundary",
+  "description": "Current Rust code uses std::env::temp_dir and local path choices in provider tests, TTS providers, config IO, and WebChat attachment code. AstrBot centralizes data/plugin/temp paths and temp cleanup. Add a typed path policy before persistent storage, media artifacts, and dashboard file APIs expand.",
+  "read_first": [
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-runtime/src/config_io.rs",
+    "crates/astrbot-provider/src/audio.rs",
+    "crates/astrbot-web/src/attachment.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/utils/astrbot_path.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/temp_dir_cleaner.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/exporter.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/importer.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/path_config.rs",
+      "action": "create",
+      "target": "runtime path configuration",
+      "change": "Define data_dir, temp_dir, plugin_dir, attachment_dir, and generated_media_dir inputs."
+    },
+    {
+      "path": "crates/astrbot-storage/src/temp_artifact.rs",
+      "action": "create",
+      "target": "temporary artifact lifecycle",
+      "change": "Own temp artifact allocation and cleanup policy for providers, web attachments, and future backup/import flows."
+    },
+    {
+      "path": "crates/astrbot-provider/src/media/artifact.rs",
+      "action": "update",
+      "target": "generated media default output root",
+      "change": "Derive default TTS output from the temp artifact root instead of std::env::temp_dir."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider and web code do not hardcode temp root policy.",
+      "Runtime config owns path defaults and normalization.",
+      "Cleanup policy is testable without provider/network dependencies."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T21:19:56+08:00",
+  "files_modified": [
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-runtime/src/path_config.rs",
+    "crates/astrbot-runtime/src/config/schema.rs",
+    "crates/astrbot-runtime/src/config/ui_metadata.rs",
+    "crates/astrbot-runtime/src/tests/config_schema.rs",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/temp_artifact.rs",
+    "crates/astrbot-provider/Cargo.toml",
+    "crates/astrbot-provider/src/media/artifact.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-storage",
+    "cargo test -p astrbot-runtime",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-storage -- -D warnings",
+    "cargo clippy -p astrbot-runtime -- -D warnings",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

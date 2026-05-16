@@ -1,0 +1,28 @@
+{
+  "task_id": "M7-T2u-gsvi-tts-provider",
+  "milestone": "M7-platform-provider-dashboard-breadth",
+  "status": "completed",
+  "created_at": "2026-05-16T08:20:00+08:00",
+  "reference": "E:/Playground/Astrbot/astrbot/core/provider/sources/gsvi_tts_source.py",
+  "provider_type": "gsvi_tts_api",
+  "capability": "text_to_speech",
+  "implementation": {
+    "provider": "crates/astrbot-provider/src/gsvi_tts.rs",
+    "registry": "crates/astrbot-provider/src/registry.rs",
+    "runtime_config": "crates/astrbot-runtime/src/lib.rs",
+    "tests": [
+      "crates/astrbot-provider/tests/gsvi_tts.rs",
+      "crates/astrbot-provider/tests/provider_registry.rs"
+    ]
+  },
+  "astrbot_compatibility": {
+    "config_keys": [
+      "api_base",
+      "character",
+      "emotion"
+    ],
+    "transport": "http-get",
+    "path": "/tts",
+    "response_audio_format": "wav"
+  }
+}

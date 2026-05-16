@@ -1,0 +1,50 @@
+{
+  "id": "TASK-053",
+  "title": "Extract Xinference model resolver lifecycle boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-model-resolver-boundary",
+  "description": "Xinference STT and rerank adapters still duplicate model UID cache, list-running-models, optional launch, and not-running error policy. AstrBot repeats this in separate sources; Rust can improve it with a typed resolver shared by self-hosted model providers.",
+  "read_first": [
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    "crates/astrbot-provider/src/protocol/xinference.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_rerank_source.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/model_resolver/mod.rs",
+      "action": "create",
+      "target": "provider model resolver facade",
+      "change": "Expose a small resolver API for lazy model UID lookup and caching."
+    },
+    {
+      "path": "crates/astrbot-provider/src/model_resolver/xinference.rs",
+      "action": "create",
+      "target": "Xinference list/launch/cache resolver",
+      "change": "Centralize model UID cache, list models call, launch call, model type, and not-running policy."
+    },
+    {
+      "path": "crates/astrbot-provider/src/xinference_stt.rs",
+      "action": "modify",
+      "target": "STT adapter",
+      "change": "Use the shared resolver while keeping multipart transcription concerns local."
+    },
+    {
+      "path": "crates/astrbot-provider/src/xinference_rerank.rs",
+      "action": "modify",
+      "target": "rerank adapter",
+      "change": "Use the shared resolver while keeping rerank payload dispatch local."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Xinference model cache/list/launch logic is not duplicated between STT and rerank adapters.",
+      "Adapters pass model type and requested model into a resolver instead of owning lifecycle details.",
+      "Existing Xinference STT and rerank tests continue to cover running, launched, and disabled auto-launch paths."
+    ],
+    "verification_command": "cargo test -p astrbot-provider --test xinference_stt --test xinference_rerank && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium"
+}

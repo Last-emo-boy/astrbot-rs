@@ -1,0 +1,79 @@
+{
+  "id": "TASK-003",
+  "title": "Split provider public traits and registry tests by capability",
+  "status": "completed",
+  "type": "refactor",
+  "category": "testability",
+  "description": "Move provider trait/request/response/mock definitions out of lib.rs and split the 1386-line provider_registry integration test by capability.",
+  "read_first": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/chat.rs",
+      "action": "create",
+      "target": "chat trait and DTOs",
+      "change": "Move ChatProvider, ChatRequest, ChatResponse, and mock chat provider."
+    },
+    {
+      "path": "crates/astrbot-provider/src/speech.rs",
+      "action": "create",
+      "target": "STT trait and DTOs",
+      "change": "Move SpeechToTextProvider request/response/mock types."
+    },
+    {
+      "path": "crates/astrbot-provider/src/tts.rs",
+      "action": "create",
+      "target": "TTS trait and DTOs",
+      "change": "Move TextToSpeechProvider request/response/mock types."
+    },
+    {
+      "path": "crates/astrbot-provider/tests/provider_registry",
+      "action": "create",
+      "target": "capability test modules",
+      "change": "Split registry tests into chat, speech, tts, embedding, rerank, and lifecycle modules."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "lib.rs is a public facade with module declarations and re-exports.",
+      "Provider registry tests are grouped by capability.",
+      "Existing external imports continue to compile."
+    ],
+    "verification_command": "cargo test -p astrbot-provider"
+  },
+  "implementation_steps": [
+    "Move public traits to capability modules.",
+    "Keep compatibility re-exports from lib.rs.",
+    "Split provider_registry test helpers before moving test cases.",
+    "Run provider tests."
+  ],
+  "risk": "medium",
+  "completed_at": "2026-05-16T09:55:00+08:00",
+  "result": {
+    "summary": "Provider public traits/request/response/mock providers moved out of lib.rs into capability modules; provider_registry integration tests split by capability while preserving crate-root re-exports.",
+    "files_modified": [
+      "crates/astrbot-provider/src/lib.rs",
+      "crates/astrbot-provider/src/chat.rs",
+      "crates/astrbot-provider/src/speech.rs",
+      "crates/astrbot-provider/src/tts.rs",
+      "crates/astrbot-provider/src/embedding.rs",
+      "crates/astrbot-provider/src/rerank.rs",
+      "crates/astrbot-provider/src/mock.rs",
+      "crates/astrbot-provider/tests/provider_registry.rs",
+      "crates/astrbot-provider/tests/provider_registry/chat.rs",
+      "crates/astrbot-provider/tests/provider_registry/speech.rs",
+      "crates/astrbot-provider/tests/provider_registry/tts.rs",
+      "crates/astrbot-provider/tests/provider_registry/embedding.rs",
+      "crates/astrbot-provider/tests/provider_registry/rerank.rs",
+      "crates/astrbot-provider/tests/provider_registry/lifecycle.rs"
+    ],
+    "verification": [
+      "cargo fmt --all --check",
+      "cargo test -p astrbot-provider",
+      "cargo test --workspace",
+      "cargo clippy --workspace -- -D warnings"
+    ]
+  }
+}

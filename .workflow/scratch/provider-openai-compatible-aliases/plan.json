@@ -1,0 +1,41 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2a-openai-compatible-provider-aliases",
+  "title": "OpenAI-compatible provider aliases",
+  "status": "completed",
+  "objective": "Mirror AstrBot's OpenAI-compatible provider source names through registry-only provider aliases.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot provider manager dynamic imports and OpenAI-compatible subclasses."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Register zhipu, groq, xai, aihubmix, and openrouter chat provider aliases behind ProviderRegistry."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Preserve AstrBot default OpenRouter and AIHubMix headers while allowing custom headers through config."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add provider registry tests and runtime config conversion coverage."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    ".workflow/scratch/provider-openai-compatible-aliases"
+  ]
+}

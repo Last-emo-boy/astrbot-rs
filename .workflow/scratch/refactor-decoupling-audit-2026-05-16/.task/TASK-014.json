@@ -1,0 +1,65 @@
+{
+  "id": "TASK-014",
+  "title": "Extract provider HTTP base URL, error parsing, and request helper boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-http-boundary",
+  "description": "Introduce shared provider HTTP helper modules only where repeated behavior is already visible across concrete chat, voice, embedding, and rerank providers.",
+  "read_first": [
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/openai_stt.rs",
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/http",
+      "action": "create",
+      "target": "provider HTTP support module tree",
+      "change": "Move repeated API-base normalization, bearer/header assembly, JSON error extraction, and small request helper routines into focused modules."
+    },
+    {
+      "path": "crates/astrbot-provider/src/*",
+      "action": "update",
+      "target": "concrete provider adapters",
+      "change": "Use shared helpers only where behavior is already duplicated; keep provider-specific payload mapping local to each adapter."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider-specific request/response mapping stays inside concrete provider modules.",
+      "Shared helpers do not erase AstrBot provider capability/family boundaries.",
+      "Existing provider tests remain the authority for payload, error, and auth behavior."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T13:20:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/http.rs",
+    "crates/astrbot-provider/src/http/auth.rs",
+    "crates/astrbot-provider/src/http/client.rs",
+    "crates/astrbot-provider/src/http/error.rs",
+    "crates/astrbot-provider/src/http/url.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/openai_embedding.rs",
+    "crates/astrbot-provider/src/openai_stt.rs",
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/vllm_rerank.rs",
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/gemini.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "TASK-050",
+  "title": "Extract quoted and forwarded message parser boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "quote-forward-parser-boundary",
+  "description": "AstrBot's quoted-message parser handles reply chains, OneBot forward nodes, nested text extraction, and quoted image references outside the main pipeline. Rust should keep quote/forward parsing in a dedicated boundary before multimodal quote handling or platform-specific reply lookup expands.",
+  "read_first": [
+    "crates/astrbot-core/src/message",
+    "crates/astrbot-platform/src/adapters/onebot",
+    "crates/astrbot-pipeline/src/context/quote.rs",
+    "crates/astrbot-agent/src/multimodal"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/utils/quoted_message/chain_parser.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/aiocqhttp/aiocqhttp_message_event.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial/qqofficial_message_event.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-core/src/message/quote.rs",
+      "action": "create",
+      "target": "quoted message domain model",
+      "change": "Represent quoted text, image references, and forward-node references without binding to OneBot DTOs."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/quote.rs",
+      "action": "create",
+      "target": "platform quote parser port",
+      "change": "Keep platform-specific reply/forward lookup outside ProcessStage and provider request building."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/onebot/forward.rs",
+      "action": "create",
+      "target": "OneBot forward payload parser",
+      "change": "Isolate nested OneBot forward/message parsing from generic adapter message conversion."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Quote context policy consumes normalized quote data rather than adapter payloads.",
+      "Forwarded message parsing can be tested without running the pipeline.",
+      "Quoted media extraction feeds future multimodal preparation through typed data."
+    ],
+    "verification_command": "cargo test -p astrbot-core && cargo test -p astrbot-platform && cargo test --workspace"
+  },
+  "risk": "medium"
+}

@@ -1,0 +1,43 @@
+{
+  "id": "TASK-072",
+  "title": "Introduce ChatUI project, session membership, and ownership boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "chatui-project-boundary",
+  "description": "AstrBot dashboard has ChatUI project routes for project CRUD, session membership, and per-user ownership checks. Existing Rust conversation/storage tasks cover history, but do not capture project membership and ownership as a separate domain.",
+  "read_first": [
+    "crates/astrbot-storage/src/conversation.rs",
+    "crates/astrbot-web/src/management",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/chatui_project.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/conversation.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-conversation/src/project.rs",
+      "action": "create",
+      "target": "ChatUI project domain",
+      "change": "Define project metadata, ownership policy, and project/session DTOs outside web handlers."
+    },
+    {
+      "path": "crates/astrbot-storage/src/chat_project.rs",
+      "action": "create",
+      "target": "project repository ports",
+      "change": "Add repository traits for project CRUD and session membership independent from conversation message history."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/chat_projects.rs",
+      "action": "create",
+      "target": "dashboard project API boundary",
+      "change": "Route project operations through domain/storage ports with explicit creator ownership checks."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Project CRUD and session membership do not depend on WebChat transport routes.",
+      "Ownership checks are expressed as domain policy, not repeated route conditionals.",
+      "Conversation history storage stays separate from project membership storage."
+    ],
+    "verification_command": "cargo test -p astrbot-storage && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

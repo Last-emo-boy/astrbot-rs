@@ -1,0 +1,79 @@
+{
+  "id": "TASK-002",
+  "title": "Split provider registry, manager, factories, config, and options",
+  "status": "completed",
+  "type": "refactor",
+  "category": "dependencies",
+  "description": "Apply AstrBot-inspired capability buckets to Rust module layout so registry.rs no longer owns constants, config, factories, manager, and option parsing at once.",
+  "read_first": [
+    "crates/astrbot-provider/src/registry.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/constants.rs",
+      "action": "create",
+      "target": "provider type constants",
+      "change": "Move provider type constants and alias lists."
+    },
+    {
+      "path": "crates/astrbot-provider/src/capability.rs",
+      "action": "create",
+      "target": "capability metadata",
+      "change": "Move ProviderCapability and adapter metadata."
+    },
+    {
+      "path": "crates/astrbot-provider/src/config/mod.rs",
+      "action": "create",
+      "target": "provider configs",
+      "change": "Move chat, STT, TTS, embedding, and rerank config structs."
+    },
+    {
+      "path": "crates/astrbot-provider/src/factories/mod.rs",
+      "action": "create",
+      "target": "provider factories",
+      "change": "Move concrete provider factory functions by capability."
+    },
+    {
+      "path": "crates/astrbot-provider/src/manager.rs",
+      "action": "create",
+      "target": "provider manager",
+      "change": "Move ProviderManager and capability trait impls."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "registry.rs contains registry data structure and registration methods only.",
+      "ProviderManager lives outside registry.rs.",
+      "Concrete provider factories are grouped by capability."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "implementation_steps": [
+    "Move constants/capability metadata first.",
+    "Move config structs with re-exports.",
+    "Move factory functions without changing registration behavior.",
+    "Move ProviderManager after registry imports settle.",
+    "Run provider tests and clippy."
+  ],
+  "risk": "high",
+  "completed_at": "2026-05-16T09:45:00+08:00",
+  "result": {
+    "files_modified": [
+      "crates/astrbot-provider/src/lib.rs",
+      "crates/astrbot-provider/src/registry.rs",
+      "crates/astrbot-provider/src/constants.rs",
+      "crates/astrbot-provider/src/capability.rs",
+      "crates/astrbot-provider/src/config.rs",
+      "crates/astrbot-provider/src/factories.rs",
+      "crates/astrbot-provider/src/manager.rs"
+    ],
+    "verification": [
+      "cargo check -p astrbot-provider",
+      "cargo fmt --all --check",
+      "cargo test -p astrbot-provider",
+      "cargo test --workspace",
+      "cargo clippy --workspace -- -D warnings"
+    ]
+  }
+}

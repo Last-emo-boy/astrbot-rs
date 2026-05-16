@@ -1,0 +1,45 @@
+{
+  "id": "TASK-063",
+  "title": "Define file token, static asset, and scoped download service boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "file-token-static-boundary",
+  "description": "AstrBot dashboard serves file-token downloads and dashboard static assets through dedicated routes. Rust has WebChat attachment ports and path/temp tasks, but still needs a scoped download/static asset boundary before dashboard files, plugin logos, backups, and OpenAPI file uploads expand.",
+  "read_first": [
+    "crates/astrbot-web/src",
+    "crates/astrbot-storage/src/attachment.rs",
+    "crates/astrbot-runtime/src/config.rs",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/file.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/static_file.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/server.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-storage/src/file_token.rs",
+      "action": "create",
+      "target": "file-token repository boundary",
+      "change": "Map opaque download tokens to scoped file records outside web handlers."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/files.rs",
+      "action": "create",
+      "target": "scoped download route boundary",
+      "change": "Serve dashboard/plugin/backup files through typed token checks rather than raw paths."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/dashboard_assets.rs",
+      "action": "create",
+      "target": "dashboard static asset policy",
+      "change": "Separate bundled/user-provided dashboard asset path selection from HTTP route code."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "HTTP routes never accept unchecked filesystem paths.",
+      "Dashboard static asset selection is runtime policy, not route logic.",
+      "File-token access can be tested through storage ports."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

@@ -1,0 +1,66 @@
+{
+  "id": "TASK-018",
+  "title": "Define plugin loader, lifecycle, dependency, and hot-reload boundaries before Star parity",
+  "status": "completed",
+  "type": "refactor",
+  "category": "plugin-lifecycle-boundary",
+  "description": "AstrBot StarManager mixes plugin discovery, metadata parsing, dependency install, dynamic import, hot reload, enable/disable, uninstall, tool cleanup, and platform adapter cleanup. Rust should define these as separate loader/lifecycle/store boundaries before implementing broad plugin loading.",
+  "read_first": [
+    "crates/astrbot-plugin/src/lib.rs",
+    "crates/astrbot-plugin/src/manifest.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "crates/astrbot-plugin/src/sandbox.rs",
+    "E:/Playground/Astrbot/astrbot/core/star/star_manager.py",
+    "E:/Playground/Astrbot/astrbot/core/star/context.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/loader/mod.rs",
+      "action": "create",
+      "target": "plugin loader facade",
+      "change": "Define loader orchestration without coupling it to registry, sandbox runtime, or platform extensions."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/loader/metadata.rs",
+      "action": "create",
+      "target": "plugin metadata parsing",
+      "change": "Parse manifest/metadata independently of loading and activation."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/loader/lifecycle.rs",
+      "action": "create",
+      "target": "plugin activation lifecycle",
+      "change": "Separate enable, disable, terminate, reload, and unload events from disk discovery."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "The current SDK/sandbox public API remains stable.",
+      "Dynamic loading remains deferred unless explicitly scoped.",
+      "The design leaves room for both native Rust plugins and Python compatibility bridges."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T15:45:00+08:00",
+  "files_modified": [
+    "crates/astrbot-plugin/src/lib.rs",
+    "crates/astrbot-plugin/src/loader/mod.rs",
+    "crates/astrbot-plugin/src/loader/metadata.rs",
+    "crates/astrbot-plugin/src/loader/dependency.rs",
+    "crates/astrbot-plugin/src/loader/lifecycle.rs",
+    "crates/astrbot-plugin/src/loader/store.rs",
+    "crates/astrbot-plugin/src/loader/hot_reload.rs",
+    "crates/astrbot-plugin/src/extension/mod.rs",
+    "crates/astrbot-plugin/src/extension/platform.rs",
+    "crates/astrbot-plugin/src/extension/web_api.rs",
+    "crates/astrbot-plugin/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-plugin",
+    "cargo clippy -p astrbot-plugin -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

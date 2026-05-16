@@ -1,0 +1,76 @@
+{
+  "id": "TASK-001",
+  "title": "Split astrbot-runtime crate root",
+  "status": "completed",
+  "type": "refactor",
+  "category": "god-object",
+  "description": "Move runtime config DTOs, provider/policy config, lifecycle assembly, runtime handle, ports, and config IO out of crates/astrbot-runtime/src/lib.rs while preserving public re-exports.",
+  "read_first": [
+    "crates/astrbot-runtime/src/lib.rs",
+    "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py",
+    "E:/Playground/Astrbot/astrbot/core/initial_loader.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/lib.rs",
+      "action": "split",
+      "target": "facade root",
+      "change": "Keep module declarations and public re-exports only."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/config.rs",
+      "action": "create",
+      "target": "runtime config root",
+      "change": "Own RuntimeConfig and shared config defaults."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/assembly.rs",
+      "action": "create",
+      "target": "manager assembly",
+      "change": "Own provider/platform/plugin/default pipeline construction helpers."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/handle.rs",
+      "action": "create",
+      "target": "runtime handle",
+      "change": "Own RuntimeHandle start/stop/restart logic."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "crates/astrbot-runtime/src/lib.rs is a thin facade.",
+      "Existing public imports still compile.",
+      "No behavior changes in runtime tests."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "implementation_steps": [
+    "Extract config types first and re-export them from lib.rs.",
+    "Extract manager assembly helpers without changing signatures.",
+    "Extract RuntimeHandle and lifecycle tests last.",
+    "Run package tests, then workspace tests."
+  ],
+  "risk": "high",
+  "completed_at": "2026-05-16T09:20:00+08:00",
+  "result": {
+    "files_modified": [
+      "crates/astrbot-runtime/src/lib.rs",
+      "crates/astrbot-runtime/src/config.rs",
+      "crates/astrbot-runtime/src/provider_config.rs",
+      "crates/astrbot-runtime/src/policy_config.rs",
+      "crates/astrbot-runtime/src/platform_config.rs",
+      "crates/astrbot-runtime/src/handle.rs",
+      "crates/astrbot-runtime/src/assembly.rs",
+      "crates/astrbot-runtime/src/ports.rs",
+      "crates/astrbot-runtime/src/defaults.rs",
+      "crates/astrbot-runtime/src/config_io.rs",
+      "crates/astrbot-runtime/src/tests.rs"
+    ],
+    "verification": [
+      "cargo check -p astrbot-runtime",
+      "cargo fmt --all --check",
+      "cargo test -p astrbot-runtime",
+      "cargo test --workspace"
+    ]
+  }
+}

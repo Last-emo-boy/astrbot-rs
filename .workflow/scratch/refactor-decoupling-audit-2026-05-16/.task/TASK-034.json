@@ -1,0 +1,66 @@
+{
+  "id": "TASK-034",
+  "title": "Extract provider test media fixture and temp path helpers",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-test-media-boundary",
+  "description": "TASK-016 completed the shared HTTP fixture migration. Provider tests still repeat temp audio file/output directory helpers and manual cleanup. Extract media fixture and temp path support so voice/STT/TTS parity tests stay behavior-focused.",
+  "read_first": [
+    "crates/astrbot-provider/tests/openai_tts.rs",
+    "crates/astrbot-provider/tests/openai_stt.rs",
+    "crates/astrbot-provider/tests/xinference_stt.rs",
+    "crates/astrbot-provider/tests/minimax_tts.rs",
+    "crates/astrbot-provider/tests/audio_media.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/tests/support/media_fixture.rs",
+      "action": "create",
+      "target": "provider test media fixtures",
+      "change": "Centralize temp audio file, output directory, and cleanup helpers."
+    },
+    {
+      "path": "crates/astrbot-provider/tests/*.rs",
+      "action": "update",
+      "target": "voice and media integration tests",
+      "change": "Replace repeated unique_audio_path/unique_output_dir helpers with shared support imports."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Temp audio/output paths are created through support helpers.",
+      "Manual cleanup is minimized or centralized.",
+      "Assertions and provider behavior remain unchanged."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "low",
+  "completed_at": "2026-05-16T18:55:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/tests/support/mod.rs",
+    "crates/astrbot-provider/tests/support/media_fixture.rs",
+    "crates/astrbot-provider/tests/openai_tts.rs",
+    "crates/astrbot-provider/tests/openai_stt.rs",
+    "crates/astrbot-provider/tests/xinference_stt.rs",
+    "crates/astrbot-provider/tests/minimax_tts.rs",
+    "crates/astrbot-provider/tests/gemini_tts.rs",
+    "crates/astrbot-provider/tests/volcengine_tts.rs",
+    "crates/astrbot-provider/tests/gsvi_tts.rs",
+    "crates/astrbot-provider/tests/audio_media.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    "crates/astrbot-provider/tests/provider_registry/speech.rs",
+    "crates/astrbot-provider/tests/provider_registry/tts.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

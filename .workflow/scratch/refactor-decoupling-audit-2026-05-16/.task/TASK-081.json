@@ -1,0 +1,55 @@
+{
+  "id": "TASK-081",
+  "title": "Introduce media input normalization, data URL conversion, and provider attachment resolver boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "media-normalization-boundary",
+  "description": "Rust has audio loading and provider-specific data-URL requirements, while AstrBot provider sources download/encode images and normalize file/base64/HTTP inputs before provider serialization. Add a provider-neutral media normalization boundary before image, audio, attachment, and WebChat upload parity spreads conversion policy across provider protocol modules and web handlers.",
+  "read_first": [
+    "crates/astrbot-provider/src/audio.rs",
+    "crates/astrbot-provider/src/protocol/gemini_chat.rs",
+    "crates/astrbot-provider/src/protocol/anthropic_chat.rs",
+    "crates/astrbot-provider/src/protocol/openai_chat.rs",
+    "crates/astrbot-platform/src/adapters/common/media.rs",
+    "crates/astrbot-web/src/attachment.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/anthropic_source.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/io.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/chat.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-media/src/resolver.rs",
+      "action": "create",
+      "target": "media input resolver",
+      "change": "Resolve file, URL, attachment, and base64 references into typed media bytes or deferred descriptors."
+    },
+    {
+      "path": "crates/astrbot-media/src/data_url.rs",
+      "action": "create",
+      "target": "data URL conversion",
+      "change": "Centralize provider data URL encoding/decoding and MIME validation outside protocol modules."
+    },
+    {
+      "path": "crates/astrbot-media/src/download.rs",
+      "action": "create",
+      "target": "safe media download",
+      "change": "Share auth-isolated media download policy across image and audio paths."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol",
+      "action": "guard",
+      "target": "provider protocol serializers",
+      "change": "Keep protocol modules consuming normalized media references instead of owning download/encoding rules."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider protocol modules no longer duplicate image data URL parsing and remote-url rejection policy.",
+      "WebChat attachments and platform media uploads can resolve through the same media boundary.",
+      "Provider authorization headers are never reused for third-party media downloads."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-platform && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

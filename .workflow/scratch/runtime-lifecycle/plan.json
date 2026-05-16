@@ -1,0 +1,38 @@
+{
+  "task": "Add Rust runtime lifecycle assembly",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot lifecycle assembly",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py",
+        "E:/Playground/Astrbot/astrbot/core/config/astrbot_config.py",
+        "E:/Playground/Astrbot/astrbot/core/config/default.py"
+      ],
+      "convergence_criteria": "Runtime design follows AstrBot's lifecycle-as-composition boundary"
+    },
+    {
+      "id": "T2",
+      "title": "Add runtime crate and CLI entrypoint",
+      "status": "completed",
+      "files": [
+        "Cargo.toml",
+        "crates/astrbot-runtime",
+        "crates/astrbot-cli/src/main.rs",
+        "crates/astrbot-cli/Cargo.toml"
+      ],
+      "convergence_criteria": "CLI delegates provider, plugin, pipeline and event bus wiring to runtime"
+    },
+    {
+      "id": "T3",
+      "title": "Verify runtime lifecycle behavior",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "Runtime tests cover default config, provider fallback, command plugin precedence and plugin-only handling"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2e-embedding-provider-boundary",
+  "title": "Embedding provider boundary",
+  "status": "completed",
+  "objective": "Introduce the Rust EmbeddingProvider trait, request/response types, mock provider, registry factory, and manager routing before implementing concrete embedding HTTP providers.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot EmbeddingProvider, OpenAI embedding source, Gemini embedding source, and manager embedding provider bucket."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Add EmbeddingRequest, EmbeddingResponse, EmbeddingProvider, and MockEmbeddingProvider to astrbot-provider."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Add EmbeddingProviderConfig, mock embedding registration, registry build methods, and ProviderManager embedding routing."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add tests for embedding metadata, default selection, requested-provider routing, batch responses, dimensions, and termination."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    ".workflow/scratch/provider-embedding-boundary"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "id": "TASK-016",
+  "title": "Extract provider test HTTP fixtures and request capture helpers",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-test-boundary",
+  "description": "Provider integration tests repeat small HTTP servers, captured request assertions, response fixtures, and provider manager setup. Extract a shared test-support boundary so new AstrBot provider parity tests stay focused on behavior.",
+  "read_first": [
+    "crates/astrbot-provider/tests/openai_compatible.rs",
+    "crates/astrbot-provider/tests/openai_stt.rs",
+    "crates/astrbot-provider/tests/xinference_stt.rs",
+    "crates/astrbot-provider/tests/provider_registry/tts.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/tests/support/mod.rs",
+      "action": "create",
+      "target": "provider test support facade",
+      "change": "Expose shared HTTP server, request capture, and fixture helpers for provider tests."
+    },
+    {
+      "path": "crates/astrbot-provider/tests/support/http_server.rs",
+      "action": "create",
+      "target": "HTTP test server helpers",
+      "change": "Move repeated serve_once/serve_sequence style helpers into one support module."
+    },
+    {
+      "path": "crates/astrbot-provider/tests/support/captured_request.rs",
+      "action": "create",
+      "target": "request assertion helpers",
+      "change": "Provide typed helpers for method/path/header/body assertions."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing provider tests keep the same assertions and behavior.",
+      "Provider-specific tests import shared helpers instead of duplicating local HTTP harness code.",
+      "No production provider code changes are mixed into this test-support split."
+    ],
+    "verification_command": "cargo test -p astrbot-provider"
+  },
+  "risk": "low",
+  "completed_at": "2026-05-16T14:35:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/tests/support/mod.rs",
+    "crates/astrbot-provider/tests/support/http_server.rs",
+    "crates/astrbot-provider/tests/support/captured_request.rs",
+    "crates/astrbot-provider/tests/anthropic.rs",
+    "crates/astrbot-provider/tests/bailian_rerank.rs",
+    "crates/astrbot-provider/tests/gemini.rs",
+    "crates/astrbot-provider/tests/gemini_embedding.rs",
+    "crates/astrbot-provider/tests/gemini_tts.rs",
+    "crates/astrbot-provider/tests/gsvi_tts.rs",
+    "crates/astrbot-provider/tests/minimax_tts.rs",
+    "crates/astrbot-provider/tests/openai_compatible.rs",
+    "crates/astrbot-provider/tests/openai_embedding.rs",
+    "crates/astrbot-provider/tests/openai_stt.rs",
+    "crates/astrbot-provider/tests/openai_tts.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    "crates/astrbot-provider/tests/vllm_rerank.rs",
+    "crates/astrbot-provider/tests/volcengine_tts.rs",
+    "crates/astrbot-provider/tests/xinference_rerank.rs",
+    "crates/astrbot-provider/tests/xinference_stt.rs"
+  ],
+  "verification": [
+    "rg -n \"async fn serve_once|async fn serve_sequence|async fn read_http_request|TcpListener::bind|TcpStream|use tokio::io|use tokio::net\" crates/astrbot-provider/tests -g '*.rs'",
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "pipeline-streaming-response-boundary",
+  "task_id": "M4-T3-streaming-response-boundary",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-streaming-respond",
+      "status": "completed",
+      "summary": "Compared AstrBot streaming result, streaming finish marker, and platform send_streaming behavior."
+    },
+    {
+      "id": "core-message-stream",
+      "status": "completed",
+      "summary": "Added MessageStream, streaming result builders, event streaming-finished state, and MessageSink::send_streaming."
+    },
+    {
+      "id": "respond-stage-branching",
+      "status": "completed",
+      "summary": "RespondStage now routes streaming results to send_streaming, marks streaming finish, skips duplicates, and keeps regular send validators intact."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Added tests for streaming sink routing, stop control, finish markers, duplicate suppression, and recording sink stream history."
+    }
+  ]
+}

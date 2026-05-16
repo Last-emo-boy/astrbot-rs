@@ -1,0 +1,38 @@
+{
+  "task_id": "M7-T1-real-platform-adapters",
+  "title": "Minimal OneBot platform adapter",
+  "status": "completed",
+  "objective": "Add the first real platform adapter behind PlatformRegistry while keeping network transport deferred.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot aiocqhttp registry and private/group message conversion boundaries."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Register ONEBOT_PLATFORM_TYPE and expose OneBotPlatform through PlatformManager."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Normalize private and group text inputs into MessageEvent with typed session kind and recording sink."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add platform and runtime tests proving OneBot events enter the default pipeline."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-platform/src/lib.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    ".workflow/scratch/real-platform-onebot-adapter"
+  ]
+}

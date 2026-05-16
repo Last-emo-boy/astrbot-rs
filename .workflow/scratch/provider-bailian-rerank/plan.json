@@ -1,0 +1,34 @@
+{
+  "task_id": "M7-T2j-bailian-rerank-provider",
+  "title": "Add AstrBot-compatible Bailian rerank provider",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2j-1",
+      "title": "Study AstrBot Bailian rerank source",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/bailian_rerank_source.py"
+      ]
+    },
+    {
+      "id": "M7-T2j-2",
+      "title": "Implement provider and registry factory",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/bailian_rerank.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2j-3",
+      "title": "Add direct and registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/bailian_rerank.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    }
+  ]
+}

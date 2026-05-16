@@ -1,0 +1,9 @@
+{
+  "task": "Add WebChat-style platform entrypoint",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T20:48:27+08:00",
+  "status": "completed"
+}

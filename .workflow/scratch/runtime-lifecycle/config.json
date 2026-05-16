@@ -1,0 +1,9 @@
+{
+  "task": "Add Rust runtime lifecycle assembly",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T19:57:28+08:00",
+  "status": "completed"
+}

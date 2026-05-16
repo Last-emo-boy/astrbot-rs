@@ -1,0 +1,46 @@
+{
+  "id": "TASK-059",
+  "title": "Separate dashboard config mutation, validation, UMOP routing, and restart/reload boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "management-config-mutation-boundary",
+  "description": "AstrBot dashboard config APIs combine schema validation, file upload paths, provider/platform CRUD, multi-config routing, and lifecycle reload. Rust should add a management config service boundary before exposing mutable dashboard config APIs.",
+  "read_first": [
+    "crates/astrbot-web/src/management",
+    "crates/astrbot-runtime/src/config_io.rs",
+    "crates/astrbot-runtime/src/config/schema.rs",
+    "crates/astrbot-runtime/src/handle/restart.rs",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/config.py",
+    "E:/Playground/Astrbot/astrbot/core/umop_config_router.py",
+    "E:/Playground/Astrbot/astrbot/core/astrbot_config_mgr.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/management/config.rs",
+      "action": "create",
+      "target": "dashboard config route boundary",
+      "change": "Keep HTTP DTOs thin and delegate validation/mutation to runtime config services."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/config_service.rs",
+      "action": "create",
+      "target": "runtime config mutation service",
+      "change": "Centralize config read/validate/write/reload planning outside web handlers."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/config_route.rs",
+      "action": "create",
+      "target": "UMOP config routing boundary",
+      "change": "Model platform/message/session-to-config routing separately from conversation and pipeline stages."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Config mutation APIs do not write files directly from HTTP handlers.",
+      "Schema validation and default migration remain reusable from CLI/runtime.",
+      "UMOP routing is testable without running the dashboard."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

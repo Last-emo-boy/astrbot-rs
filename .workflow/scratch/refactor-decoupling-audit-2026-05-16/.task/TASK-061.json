@@ -1,0 +1,46 @@
+{
+  "id": "TASK-061",
+  "title": "Introduce session waiter, per-session lock, and active-event interruption boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "session-concurrency-boundary",
+  "description": "AstrBot has explicit session waiters, per-session locks, and active event interruption registries for multi-turn plugin commands and reset/stop behavior. Rust should isolate these controls before plugin SDK, agent runner, and pipeline scheduling grow more stateful.",
+  "read_first": [
+    "crates/astrbot-core/src/message/session.rs",
+    "crates/astrbot-pipeline/src/scheduler.rs",
+    "crates/astrbot-agent/src",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "E:/Playground/Astrbot/astrbot/core/utils/session_waiter.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/session_lock.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/active_event_registry.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-session/src/waiter.rs",
+      "action": "create",
+      "target": "session waiter boundary",
+      "change": "Model pending multi-turn waits and history capture outside plugin handlers."
+    },
+    {
+      "path": "crates/astrbot-session/src/lock.rs",
+      "action": "create",
+      "target": "per-session lock boundary",
+      "change": "Serialize per-session command/event handling through a reusable typed lock manager."
+    },
+    {
+      "path": "crates/astrbot-session/src/active_event.rs",
+      "action": "create",
+      "target": "active event interruption boundary",
+      "change": "Support reset/stop requests without coupling event state to pipeline stages."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Session waiting can be tested without real platforms.",
+      "Per-session locks do not live inside plugin SDK or scheduler internals.",
+      "Agent stop/event stop requests have a typed registry boundary."
+    ],
+    "verification_command": "cargo test -p astrbot-core && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

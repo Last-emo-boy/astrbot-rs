@@ -1,0 +1,52 @@
+{
+  "id": "TASK-080",
+  "title": "Define session rule, scoped preference, and batch session management boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "session-rule-preference-boundary",
+  "description": "Rust currently has provider preference and session status ports, but AstrBot's session management routes support scoped session rules, provider preferences by capability, KB/plugin/service config, group management, and batch updates by unified message origin. Define a session rule boundary before dashboard session management or per-session feature toggles expand storage, pipeline, and web handlers independently.",
+  "read_first": [
+    "crates/astrbot-storage/src/provider_preference.rs",
+    "crates/astrbot-pipeline/src/context/session.rs",
+    "crates/astrbot-runtime/src/policy_config.rs",
+    "crates/astrbot-web/src/management",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/session_management.py",
+    "E:/Playground/Astrbot/astrbot/core/config/session_config.py",
+    "E:/Playground/Astrbot/astrbot/core/platform_message_history_mgr.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-session/src/rule.rs",
+      "action": "create",
+      "target": "scoped session rule model",
+      "change": "Represent per-UMO service, plugin, KB, and provider capability preferences outside pipeline context."
+    },
+    {
+      "path": "crates/astrbot-session/src/group.rs",
+      "action": "create",
+      "target": "session group model",
+      "change": "Model dashboard-managed session groups and batch targets separately from conversation history."
+    },
+    {
+      "path": "crates/astrbot-storage/src/session_rule.rs",
+      "action": "create",
+      "target": "session rule repository",
+      "change": "Persist scoped rules and batch snapshots without overloading ProviderPreferenceRepository."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/session_rules.rs",
+      "action": "create",
+      "target": "session management route boundary",
+      "change": "Keep HTTP batch update/list handlers delegating to typed session services."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProviderPreferenceRepository remains focused or is replaced by a typed scoped-preference service.",
+      "Session service/plugin/KB/provider rules can be tested without web routes.",
+      "Batch session update logic does not live in pipeline stages or runtime policy DTOs."
+    ],
+    "verification_command": "cargo test -p astrbot-storage && cargo test -p astrbot-pipeline && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

@@ -1,0 +1,53 @@
+{
+  "id": "TASK-010",
+  "title": "Prepare platform adapter transport/message-conversion submodules before WeChat/QQ parity",
+  "status": "completed",
+  "type": "refactor",
+  "category": "platform-adapter-boundary",
+  "description": "Ensure real platform adapters grow under transport and message-conversion modules rather than widening manager or crate-root files.",
+  "read_first": [
+    "crates/astrbot-platform/src",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/aiocqhttp",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/weixin_official_account",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/adapters/onebot",
+      "action": "create",
+      "target": "OneBot adapter module tree",
+      "change": "Separate event normalization, message conversion, and future transport wiring."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/webchat",
+      "action": "create",
+      "target": "WebChat adapter module tree",
+      "change": "Separate WebChat message part conversion from platform manager/registry concerns."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "PlatformRegistry and PlatformManager remain the only runtime entry points.",
+      "Adapter modules own protocol-specific message conversion.",
+      "Future WeChat/QQ adapters can be added without touching manager internals."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T12:30:00+08:00",
+  "files_modified": [
+    "crates/astrbot-platform/src/adapters/onebot/mod.rs",
+    "crates/astrbot-platform/src/adapters/onebot/event.rs",
+    "crates/astrbot-platform/src/adapters/onebot/message.rs",
+    "crates/astrbot-platform/src/adapters/webchat/mod.rs",
+    "crates/astrbot-platform/src/adapters/webchat/event.rs",
+    "crates/astrbot-platform/src/adapters/webchat/message.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-platform",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

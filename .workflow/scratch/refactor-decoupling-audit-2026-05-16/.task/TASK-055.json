@@ -1,0 +1,37 @@
+{
+  "id": "TASK-055",
+  "title": "Split plugin integration tests by registry, filters, loader, manifest, SDK, sandbox, and tool behavior",
+  "status": "pending",
+  "type": "refactor",
+  "category": "plugin-test-boundary",
+  "description": "Plugin tests now cover registry ordering, filters, manifest/SDK, loader lifecycle, dependencies, hot reload, extensions, sandbox decisions, and tool execution in one file. Split them before Star parity adds dynamic loading and Python compatibility tests.",
+  "read_first": [
+    "crates/astrbot-plugin/src/tests.rs",
+    "crates/astrbot-plugin/src/loader",
+    "crates/astrbot-plugin/src/tool",
+    "E:/Playground/Astrbot/astrbot/core/star/star_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/tests/mod.rs",
+      "action": "create",
+      "target": "test facade",
+      "change": "Hold shared fixtures and import behavior-specific plugin test modules."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/tests/{registry,filters,manifest_sdk,loader,dependency,tool,sandbox}.rs",
+      "action": "create",
+      "target": "focused plugin tests",
+      "change": "Move existing tests by subsystem without behavior changes."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing plugin tests are behavior-preserving after the split.",
+      "Future loader/sandbox/tool tests have dedicated modules.",
+      "No plugin runtime behavior changes are included."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo clippy -p astrbot-plugin -- -D warnings"
+  },
+  "risk": "low"
+}

@@ -1,0 +1,33 @@
+{
+  "task_id": "M7-T2k-stt-tts-provider-boundary",
+  "title": "Add AstrBot-inspired STT/TTS provider boundaries",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2k-1",
+      "title": "Study AstrBot STT/TTS provider abstractions",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/provider.py",
+        "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+      ]
+    },
+    {
+      "id": "M7-T2k-2",
+      "title": "Implement STT/TTS traits, configs, registry factories, and manager buckets",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2k-3",
+      "title": "Add provider registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    }
+  ]
+}

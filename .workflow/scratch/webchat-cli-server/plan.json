@@ -1,0 +1,40 @@
+{
+  "task": "Start WebChat HTTP server from CLI run config",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add webchat server runtime config",
+      "description": "Extend RuntimeConfig with a disabled-by-default webchat_server block including platform_id, host, and port defaults.",
+      "scope": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "RuntimeConfig defaults and missing-key normalization include webchat_server settings.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Start WebChat server from CLI run",
+      "description": "Let astrbot-cli run prepare and start astrbot-web against the runtime-created WebChatPlatform when config enables the server.",
+      "scope": [
+        "crates/astrbot-cli/src/main.rs",
+        "crates/astrbot-cli/Cargo.toml"
+      ],
+      "convergence_criteria": "CLI run keeps lifecycle thin while starting/stopping the HTTP server with graceful shutdown.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record architecture decision and verify",
+      "description": "Update Maestro state/specs and run the standard Rust checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-cli-server"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "completed_at": "2026-05-15T21:10:04+08:00"
+}

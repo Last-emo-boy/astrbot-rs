@@ -1,12 +1,2 @@
-/target
+/target/
 **/*.rs.bk
-*.swp
-*.swo
-.DS_Store
-.idea/
-.vscode/
-*.log
-.env
-dashboard/node_modules/
-/data/
-*.db

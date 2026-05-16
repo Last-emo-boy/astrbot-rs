@@ -1,0 +1,34 @@
+{
+  "task_id": "M7-T2r-non-chat-provider-runtime-config",
+  "title": "Wire non-chat provider configs through runtime and ProviderManager",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2r-1",
+      "title": "Study AstrBot ProviderManager capability buckets",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+        "E:/Playground/Astrbot/astrbot/core/provider/provider.py"
+      ]
+    },
+    {
+      "id": "M7-T2r-2",
+      "title": "Add ProviderManager config-set construction",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/registry.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2r-3",
+      "title": "Add runtime non-chat provider config mapping",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ]
+    }
+  ]
+}

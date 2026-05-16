@@ -1,0 +1,40 @@
+{
+  "id": "TASK-077",
+  "title": "Define agent hook, run-context, response event, and tool-image-cache boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "agent-run-context-hook-boundary",
+  "description": "TASK-025 and TASK-028 created the runner, request decorator, persona, tool-loop policy, and context-window boundaries. AstrBot still separates run context, hooks, response/message event shapes, and tool-image cache behavior around the agent. Rust should define those boundaries before tool-loop, multimodal, live feedback, and plugin hooks expand the runner directly.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "E:/Playground/Astrbot/astrbot/core/agent/hooks.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/run_context.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/message.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/response.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/tool_image_cache.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_hooks.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src",
+      "action": "extend",
+      "target": "agent lifecycle side-channel boundaries",
+      "change": "Define hook dispatch, run-context state, response event DTOs, agent message wrappers, and tool-image cache ports."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src",
+      "action": "guard",
+      "target": "pipeline/agent integration",
+      "change": "Keep pipeline stages invoking agent hooks through typed ports rather than embedding agent side effects."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "AgentRunner does not own hook dispatch, response event streaming, or tool image cache internals.",
+      "Plugin hooks can observe agent lifecycle through typed events.",
+      "Multimodal/tool-loop/live-feedback work has destinations outside provider adapters and pipeline stages."
+    ],
+    "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

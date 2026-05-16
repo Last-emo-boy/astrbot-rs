@@ -2,6 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use astrbot_core::{AstrbotError, Result};
+use astrbot_observability::{
+    ComponentKind, ComponentStatus, NoopStatusEventSink, StatusEvent, StatusEventSink,
+    StatusSeverity,
+};
 use tokio::task::JoinHandle;
 
 use crate::{
@@ -14,6 +18,7 @@ pub struct PlatformManager {
     mock_platforms: HashMap<String, Arc<MockPlatform>>,
     webchat_platforms: HashMap<String, Arc<WebChatPlatform>>,
     onebot_platforms: HashMap<String, Arc<OneBotPlatform>>,
+    status_sink: Arc<dyn StatusEventSink>,
 }
 
 impl PlatformManager {
@@ -62,11 +67,39 @@ impl PlatformManager {
             mock_platforms,
             webchat_platforms,
             onebot_platforms,
+            status_sink: Arc::new(NoopStatusEventSink),
         })
+    }
+
+    pub fn with_status_sink(mut self, status_sink: Arc<dyn StatusEventSink>) -> Self {
+        self.status_sink = status_sink;
+        self
     }
 
     pub fn platform_count(&self) -> usize {
         self.adapters.len()
+    }
+
+    pub fn platform_ids(&self) -> Vec<String> {
+        let mut ids = self.adapters.keys().cloned().collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
+
+    pub fn recording_sink_count(&self) -> usize {
+        self.recording_sinks.len()
+    }
+
+    pub fn mock_platform_count(&self) -> usize {
+        self.mock_platforms.len()
+    }
+
+    pub fn webchat_platform_count(&self) -> usize {
+        self.webchat_platforms.len()
+    }
+
+    pub fn onebot_platform_count(&self) -> usize {
+        self.onebot_platforms.len()
     }
 
     pub fn adapter(&self, id: &str) -> Option<Arc<dyn PlatformAdapter>> {
@@ -91,10 +124,32 @@ impl PlatformManager {
 
     pub fn spawn_all(&self) -> Vec<JoinHandle<Result<()>>> {
         self.adapters
-            .values()
-            .map(|adapter| {
+            .iter()
+            .map(|(platform_id, adapter)| {
                 let adapter = Arc::clone(adapter);
-                tokio::spawn(async move { adapter.run().await })
+                let platform_id = platform_id.clone();
+                let status_sink = self.status_sink.clone();
+                tokio::spawn(async move {
+                    status_sink.emit(
+                        StatusEvent::new(ComponentKind::Platform, ComponentStatus::Starting)
+                            .with_component_id(platform_id.clone()),
+                    );
+                    let result = adapter.run().await;
+                    let status = if result.is_ok() {
+                        ComponentStatus::Stopped
+                    } else {
+                        ComponentStatus::Failed
+                    };
+                    let mut event = StatusEvent::new(ComponentKind::Platform, status)
+                        .with_component_id(platform_id);
+                    if let Err(err) = &result {
+                        event = event
+                            .with_severity(StatusSeverity::Error)
+                            .with_message(err.to_string());
+                    }
+                    status_sink.emit(event);
+                    result
+                })
             })
             .collect()
     }
@@ -115,9 +170,17 @@ impl PlatformManager {
 
     pub async fn terminate(&self) -> Result<()> {
         for (platform_id, adapter) in &self.adapters {
+            self.status_sink.emit(
+                StatusEvent::new(ComponentKind::Platform, ComponentStatus::Stopping)
+                    .with_component_id(platform_id.clone()),
+            );
             adapter.terminate().await.map_err(|err| {
                 AstrbotError::Platform(format!("terminate platform {platform_id}: {err}"))
             })?;
+            self.status_sink.emit(
+                StatusEvent::new(ComponentKind::Platform, ComponentStatus::Stopped)
+                    .with_component_id(platform_id.clone()),
+            );
         }
         Ok(())
     }

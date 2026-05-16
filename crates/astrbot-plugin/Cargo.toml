@@ -1,19 +1,13 @@
 [package]
 name = "astrbot-plugin"
-version = { workspace = true }
-edition = { workspace = true }
-rust-version = { workspace = true }
-authors = { workspace = true }
-license = { workspace = true }
-repository = { workspace = true }
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 astrbot-core = { path = "../astrbot-core" }
-tokio = { workspace = true }
-async-trait = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-libloading = "0.8"
-reqwest = { workspace = true }
-tracing = { workspace = true }
-dashmap = { workspace = true }
+async-trait.workspace = true
+regex.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

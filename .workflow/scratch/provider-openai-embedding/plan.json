@@ -1,0 +1,31 @@
+{
+  "task_id": "M7-T2f-openai-embedding-provider",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "context",
+      "status": "completed",
+      "description": "Compare AstrBot openai_embedding source with current Rust embedding boundary."
+    },
+    {
+      "id": "provider",
+      "status": "completed",
+      "description": "Add OpenAI embedding HTTP provider implementing EmbeddingProvider."
+    },
+    {
+      "id": "registry",
+      "status": "completed",
+      "description": "Register openai_embedding through ProviderRegistry and typed EmbeddingProviderConfig."
+    },
+    {
+      "id": "tests",
+      "status": "completed",
+      "description": "Cover request serialization, response parsing, error mapping, provider type, and registry manager construction."
+    },
+    {
+      "id": "verification",
+      "status": "completed",
+      "description": "Run workspace fmt, tests, clippy, CLI smoke, and workflow JSON parse."
+    }
+  ]
+}

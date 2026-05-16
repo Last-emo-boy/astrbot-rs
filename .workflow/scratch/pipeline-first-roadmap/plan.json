@@ -1,0 +1,30 @@
+{
+  "task": "Create pipeline-first migration roadmap",
+  "status": "completed",
+  "completed_at": "2026-05-15T23:07:19+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Audit current progress",
+      "description": "Map current Rust artifacts to AstrBot pipeline concepts and identify missing bottom-up foundations.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Write pipeline-first roadmap",
+      "description": "Create .workflow/roadmap.md with milestone order, success criteria, and next task.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Update Maestro state",
+      "description": "Set current milestone/task and record roadmap artifact in state.json.",
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "Read AstrBot pipeline scheduler/stage/stage_order/process/respond references",
+    "Read current Rust pipeline scheduler/stage/context/respond files",
+    "ConvertFrom-Json state and scratch files"
+  ]
+}

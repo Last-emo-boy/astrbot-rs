@@ -1,0 +1,67 @@
+{
+  "id": "TASK-020",
+  "title": "Split config defaults, schema metadata, env/secret resolution, and migration policy",
+  "status": "completed",
+  "type": "refactor",
+  "category": "config-schema-boundary",
+  "description": "AstrBot's default config file is broad and also feeds WebUI metadata and compatibility behavior. Rust runtime config should separate defaults, schema metadata, version/migration policy, environment variable resolution, and secret redaction before dashboard config editing expands.",
+  "read_first": [
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-runtime/src/config_io.rs",
+    "crates/astrbot-runtime/src/defaults.rs",
+    "crates/astrbot-runtime/src/provider_config",
+    "E:/Playground/Astrbot/astrbot/core/config/default.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/config/schema.rs",
+      "action": "create",
+      "target": "runtime config schema",
+      "change": "Move schema/version policy away from plain runtime DTO definitions."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/config/env.rs",
+      "action": "create",
+      "target": "environment resolution",
+      "change": "Centralize provider key/env placeholder resolution with testable redaction behavior."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/config/ui_metadata.rs",
+      "action": "create",
+      "target": "dashboard config metadata",
+      "change": "Prepare typed metadata that dashboard APIs can consume without hardcoding runtime internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing config files and defaults remain compatible.",
+      "Provider-specific runtime option schemas stay typed but can expose UI metadata.",
+      "Secret/env handling is testable and does not leak sensitive values in errors."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T16:35:00+08:00",
+  "files_modified": [
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-runtime/src/config/defaults.rs",
+    "crates/astrbot-runtime/src/config/env.rs",
+    "crates/astrbot-runtime/src/config/migration.rs",
+    "crates/astrbot-runtime/src/config/schema.rs",
+    "crates/astrbot-runtime/src/config/secrets.rs",
+    "crates/astrbot-runtime/src/config/ui_metadata.rs",
+    "crates/astrbot-runtime/src/config_io.rs",
+    "crates/astrbot-runtime/src/defaults.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/tests.rs",
+    "crates/astrbot-runtime/src/tests/config_schema.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy -p astrbot-runtime -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

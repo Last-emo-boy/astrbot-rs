@@ -1,0 +1,15 @@
+{
+  "id": "runtime-default-pipeline-assembly",
+  "task_id": "M6-T1-runtime-default-pipeline-assembly",
+  "milestone": "M6-runtime-reload",
+  "status": "completed",
+  "source_refs": [
+    "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/bootstrap.py"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-runtime runtime_default_pipeline_applies_session_provider_preference"
+  ]
+}

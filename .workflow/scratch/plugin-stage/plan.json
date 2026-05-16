@@ -1,0 +1,27 @@
+{
+  "task": "Implement minimal Star/plugin handler stage",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Add astrbot-plugin crate",
+      "status": "completed",
+      "files": ["Cargo.toml", "crates/astrbot-plugin"],
+      "convergence_criteria": "Plugin crate exposes handler metadata, filters and registry"
+    },
+    {
+      "id": "T2",
+      "title": "Add PluginStage to pipeline",
+      "status": "completed",
+      "files": ["crates/astrbot-pipeline/src"],
+      "convergence_criteria": "Pipeline can run plugin handlers before provider fallback"
+    },
+    {
+      "id": "T3",
+      "title": "Add plugin integration test",
+      "status": "completed",
+      "files": ["crates/astrbot-pipeline/tests/plugin_stage.rs"],
+      "convergence_criteria": "Command plugin response is sent and provider is skipped"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "task": "Add WebChat reply message parts",
+  "status": "completed",
+  "completed_at": "2026-05-15T22:59:56+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add core Reply component",
+      "description": "Represent reply references in MessageComponent without letting reply-only chains count as content.",
+      "scope": [
+        "crates/astrbot-core/src/message.rs"
+      ],
+      "convergence_criteria": "Core tests prove reply-only chains are empty while reply plus content remains valid.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Support WebChat reply parts",
+      "description": "Accept and read back reply parts in WebChat HTTP while preserving legacy behavior.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs",
+        "crates/astrbot-pipeline/tests/mock_message_loop.rs"
+      ],
+      "convergence_criteria": "WebChat tests prove reply-only requests are rejected and reply plus content survives submit/readback.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run standard checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-reply-message-parts"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-core",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-pipeline",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

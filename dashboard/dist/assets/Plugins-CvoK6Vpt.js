@@ -1,2 +1,0 @@
-import{d as _,a as c,c as d,b as t,w as o,e as n,f as s,g as p,_ as m}from"./index-C2OUI5sj.js";const u={class:"card-header"},i=_({__name:"Plugins",setup(f){return(x,e)=>{const a=n("el-button"),l=n("el-empty"),r=n("el-card");return c(),d("div",null,[t(r,null,{header:o(()=>[s("div",u,[e[1]||(e[1]=s("span",null,"插件管理",-1)),t(a,{type:"primary"},{default:o(()=>[...e[0]||(e[0]=[p("安装插件",-1)])]),_:1})])]),default:o(()=>[t(l,{description:"插件列表加载中..."})]),_:1})])}}}),y=m(i,[["__scopeId","data-v-3f334347"]]);export{y as default};
-//# sourceMappingURL=Plugins-CvoK6Vpt.js.map

@@ -1,0 +1,39 @@
+{
+  "task": "Add WebChat message history endpoint",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Expose WebChat conversation messages on platform boundary",
+      "description": "Add a WebChatPlatform method that returns sent messages filtered by conversation_id.",
+      "scope": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "Platform tests prove messages for unrelated WebChat conversations are not returned.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Add WebChat HTTP history endpoint",
+      "description": "Add GET /api/webchat/{conversation_id}/messages that returns serialized bot replies from the WebChat platform boundary.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "convergence_criteria": "Router and TCP server tests can read WebChat replies after submission and runtime processing.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run the standard workspace checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-message-history"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "completed_at": "2026-05-15T21:18:00+08:00"
+}

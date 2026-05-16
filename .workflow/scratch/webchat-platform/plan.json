@@ -1,0 +1,33 @@
+{
+  "task": "Add WebChat-style platform entrypoint",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot WebChat adapter",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/webchat_adapter.py"
+      ],
+      "convergence_criteria": "Rust WebChat entrypoint mirrors external input to MessageEvent conversion"
+    },
+    {
+      "id": "T2",
+      "title": "Implement WebChatPlatform",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "WebChat platform can submit text into the event queue and expose recorded replies"
+    },
+    {
+      "id": "T3",
+      "title": "Wire runtime config and test e2e",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "Runtime can construct WebChat platform and process submitted input through pipeline"
+    }
+  ]
+}

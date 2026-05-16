@@ -1,6 +1,7 @@
 use astrbot_core::{
     AstrbotError, MessageChain, MessageEvent, MessageSession, MessageSink, MessageStream, Result,
 };
+use astrbot_storage::{ConversationHistoryRepository, ConversationMessageRecord};
 use async_trait::async_trait;
 use tokio::sync::{Mutex, mpsc};
 pub const CONSOLE_PLATFORM_TYPE: &str = "console";
@@ -135,6 +136,26 @@ impl MessageRecorder for RecordingSink {
 
     async fn streaming_messages(&self) -> Vec<StreamedMessage> {
         self.streamed.lock().await.clone()
+    }
+}
+
+#[async_trait]
+impl ConversationHistoryRepository for RecordingSink {
+    async fn append_message(&self, record: ConversationMessageRecord) -> Result<()> {
+        self.send(&record.session, record.chain).await
+    }
+
+    async fn messages_for_conversation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<ConversationMessageRecord>> {
+        Ok(self
+            .messages()
+            .await
+            .into_iter()
+            .filter(|sent| sent.session.conversation_id == conversation_id)
+            .map(|sent| ConversationMessageRecord::new(sent.session, sent.chain))
+            .collect())
     }
 }
 

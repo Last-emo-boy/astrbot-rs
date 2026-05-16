@@ -353,6 +353,27 @@ async fn manager_run_all_executes_mock_adapters() {
 }
 
 #[tokio::test]
+async fn manager_run_all_and_terminate_executes_onebot_transport() {
+    let registry = PlatformRegistry::with_builtin_platforms();
+    let (event_tx, _event_rx) = mpsc::channel(1);
+    let manager = PlatformManager::from_configs(
+        &registry,
+        vec![PlatformConfig::onebot("onebot")],
+        PlatformBuildContext::new(event_tx),
+    )
+    .expect("platform manager should build");
+
+    manager
+        .run_all()
+        .await
+        .expect("onebot transport run should finish");
+    manager
+        .terminate()
+        .await
+        .expect("onebot transport terminate should finish");
+}
+
+#[tokio::test]
 async fn manager_terminates_configured_platforms() {
     let terminate_count = Arc::new(AtomicU64::new(0));
     let adapter_count = terminate_count.clone();

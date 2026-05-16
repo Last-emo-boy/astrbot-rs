@@ -1,0 +1,22 @@
+{
+  "id": "pipeline-provider-preference-storage",
+  "milestone": "M5-context-session-memory",
+  "task_id": "M5-T2-provider-preference-storage",
+  "status": "completed",
+  "created_at": "2026-05-16T02:14:41+08:00",
+  "completed_at": "2026-05-16T02:14:41+08:00",
+  "references": [
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/session_management.py"
+  ],
+  "scope": [
+    "Introduce ProviderPreferencePort in PipelineContext.",
+    "Keep explicit plugin ProviderRequest.provider_id higher priority than session preference.",
+    "Provide an in-memory preference port for tests and future runtime wiring.",
+    "Make ProviderManager implement ChatProvider and route ChatRequest.provider_id."
+  ],
+  "verification": [
+    "cargo test -p astrbot-provider -p astrbot-pipeline --tests"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "task": "Implement ProviderRegistry and ProviderManager",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Add provider config and registry",
+      "status": "completed",
+      "files": ["crates/astrbot-provider/src/registry.rs"],
+      "convergence_criteria": "Built-in mock and OpenAI-compatible provider types can be registered and instantiated"
+    },
+    {
+      "id": "T2",
+      "title": "Add provider manager default selection",
+      "status": "completed",
+      "files": ["crates/astrbot-provider/src/registry.rs"],
+      "convergence_criteria": "Manager maps configured IDs to instances and falls back to first provider when default is missing"
+    },
+    {
+      "id": "T3",
+      "title": "Wire CLI through manager",
+      "status": "completed",
+      "files": ["crates/astrbot-cli/src/main.rs"],
+      "convergence_criteria": "CLI no longer manually constructs concrete providers"
+    },
+    {
+      "id": "T4",
+      "title": "Verify registry behavior",
+      "status": "completed",
+      "files": ["crates/astrbot-provider/tests/provider_registry.rs"],
+      "convergence_criteria": "Registry and manager tests pass without external services"
+    }
+  ]
+}

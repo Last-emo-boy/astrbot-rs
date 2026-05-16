@@ -1,0 +1,86 @@
+{
+  "id": "TASK-024",
+  "title": "Introduce storage/repository ports for conversation history, attachments, provider preference, and config snapshots",
+  "status": "completed",
+  "type": "refactor",
+  "category": "storage-boundary",
+  "description": "Current Rust code intentionally uses in-memory WebChat history and provider preferences. AstrBot has a broad db/backup/knowledge-base layer, so Rust should introduce storage ports before dashboard history, persistent preferences, attachments, or config backups couple directly to platform/runtime modules.",
+  "read_first": [
+    "crates/astrbot-platform/src/adapters/webchat/mod.rs",
+    "crates/astrbot-web/src/history.rs",
+    "crates/astrbot-pipeline/src/context/provider_preference.rs",
+    "crates/astrbot-runtime/src/config_io.rs",
+    "E:/Playground/Astrbot/astrbot/core/db/sqlite.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/exporter.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/importer.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-storage/src/conversation.rs",
+      "action": "create",
+      "target": "conversation history repository port",
+      "change": "Abstract WebChat conversation history persistence behind traits."
+    },
+    {
+      "path": "crates/astrbot-storage/src/attachment.rs",
+      "action": "create",
+      "target": "attachment repository port",
+      "change": "Separate attachment metadata/storage from HTTP routes and platform adapters."
+    },
+    {
+      "path": "crates/astrbot-storage/src/provider_preference.rs",
+      "action": "create",
+      "target": "provider preference repository port",
+      "change": "Allow provider preference to persist without binding PipelineContext to a concrete database."
+    },
+    {
+      "path": "crates/astrbot-storage/src/config_snapshot.rs",
+      "action": "create",
+      "target": "config snapshot and backup boundary",
+      "change": "Prepare runtime config backup/restore without mixing it into config IO."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Pipeline, platform, and web layers depend on storage traits, not a concrete database.",
+      "In-memory implementations remain available for tests and early runtime.",
+      "Persistent backend implementation can be deferred after port definitions."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T14:17:25+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-storage/Cargo.toml",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/conversation.rs",
+    "crates/astrbot-storage/src/attachment.rs",
+    "crates/astrbot-storage/src/provider_preference.rs",
+    "crates/astrbot-storage/src/config_snapshot.rs",
+    "crates/astrbot-platform/Cargo.toml",
+    "crates/astrbot-platform/src/core.rs",
+    "crates/astrbot-platform/src/adapters/webchat/mod.rs",
+    "crates/astrbot-pipeline/Cargo.toml",
+    "crates/astrbot-pipeline/src/context/provider_preference.rs",
+    "crates/astrbot-pipeline/tests/process_stage.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/error.rs",
+    "crates/astrbot-web/src/history.rs",
+    "crates/astrbot-web/src/routes.rs",
+    "crates/astrbot-runtime/src/handle/restart.rs",
+    "crates/astrbot-runtime/src/tests/lifecycle.rs",
+    "crates/astrbot-runtime/src/tests/message_loop.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-storage",
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "task": "Create pipeline-first migration roadmap",
+  "skill": "maestro-roadmap",
+  "flags": {
+    "mode": "light",
+    "discuss": false
+  },
+  "created_at": "2026-05-15T23:07:19+08:00",
+  "status": "completed",
+  "completed_at": "2026-05-15T23:07:19+08:00",
+  "verification": [
+    "Read AstrBot pipeline scheduler/stage/stage_order/process/respond references",
+    "Read current Rust pipeline scheduler/stage/context/respond files",
+    "ConvertFrom-Json state and scratch files"
+  ]
+}

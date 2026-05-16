@@ -1,0 +1,49 @@
+{
+  "task": "Allow WebChat submit to include image URLs",
+  "status": "completed",
+  "completed_at": "2026-05-15T22:23:33+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add WebChatPlatform submit_message",
+      "description": "Build MessageChain from optional text plus image URLs while preserving submit_text compatibility.",
+      "scope": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "Platform tests prove image-only messages become MessageComponent::Image events.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Accept image_urls in WebChat HTTP submit",
+      "description": "Extend SubmitTextRequest with defaulted image_urls and map it to WebChatPlatform::submit_message.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs",
+        "crates/astrbot-cli/src/main.rs"
+      ],
+      "convergence_criteria": "HTTP tests prove image URLs reach the submitted MessageEvent and old callers still compile.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run the standard workspace checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-image-url-submit"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-cli",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

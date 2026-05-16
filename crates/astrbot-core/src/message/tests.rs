@@ -1,90 +1,146 @@
-//! Tests for astrbot-core message types
+use std::sync::Arc;
 
-#[cfg(test)]
-mod tests {
-    use astrbot_core::message::*;
-    use astrbot_core::platform::{MessageSource, PlatformType};
+use async_trait::async_trait;
 
-    #[test]
-    fn test_message_chain_builder() {
-        let chain = MessageChain::new()
-            .text("Hello ")
-            .at("123456")
-            .text("!");
+use crate::Result;
 
-        assert_eq!(chain.0.len(), 3);
-        assert!(matches!(&chain.0[0], MessageComponent::Plain { text } if text == "Hello "));
-        assert!(matches!(&chain.0[1], MessageComponent::At { target, .. } if target == "123456"));
+use super::{
+    MessageChain, MessageComponent, MessageEvent, MessageEventResult, MessageSender,
+    MessageSession, MessageSink, MessageStream, ProviderContentPart, ProviderContextMessage,
+    ProviderRequest, ProviderToolPlaceholder, ResultContentType,
+};
+
+struct NoopSink;
+
+#[async_trait]
+impl MessageSink for NoopSink {
+    async fn send(&self, _session: &MessageSession, _chain: MessageChain) -> Result<()> {
+        Ok(())
     }
+}
 
-    #[test]
-    fn test_plain_text_extraction() {
-        let chain = MessageChain::new()
-            .text("Hello ")
-            .at("123")
-            .text(" world");
+#[test]
+fn message_chain_extracts_text_and_image_urls() {
+    let mut chain = MessageChain::new(vec![
+        MessageComponent::reply("message-1", "quoted text"),
+        MessageComponent::plain("describe"),
+        MessageComponent::mention("bot-1"),
+        MessageComponent::mention_all(),
+        MessageComponent::image(" https://example.test/image.png "),
+        MessageComponent::image(" "),
+        MessageComponent::record("https://example.test/audio.ogg"),
+        MessageComponent::video("https://example.test/video.mp4"),
+        MessageComponent::file("report.pdf", "https://example.test/report.pdf"),
+        MessageComponent::reply_to_sender("message-2", "bot reply", "bot-1"),
+    ]);
 
-        assert_eq!(chain.plain_text(), "Hello  world");
-    }
+    assert_eq!(chain.plain_text(), "describe");
+    assert!(chain.prefix_first_plain("[bot] "));
+    assert_eq!(chain.plain_text(), "[bot] describe");
+    assert_eq!(
+        chain.image_urls(),
+        vec!["https://example.test/image.png".to_string()]
+    );
+    assert_eq!(
+        chain.components()[6],
+        MessageComponent::record("https://example.test/audio.ogg")
+    );
+    assert!(chain.mentions_user("bot-1"));
+    assert!(chain.mentions_all());
+    assert!(chain.replies_to_user("bot-1"));
+    assert!(!MessageComponent::file("report.pdf", "https://example.test/report.pdf").is_empty());
+    assert!(MessageComponent::video(" ").is_empty());
+    assert!(
+        MessageChain::new(vec![MessageComponent::reply("message-1", "quoted text")]).is_empty()
+    );
 
-    #[test]
-    fn test_is_command() {
-        let chain = MessageChain::new().text("/help");
-        assert!(chain.is_command(&['/']));
+    assert!(MessageComponent::image("https://example.test/image.png").has_sendable_content());
+    assert!(!MessageComponent::mention("user-1").has_sendable_content());
+    assert!(MessageComponent::mention("user-1").is_valid_send_component());
+    assert!(!MessageComponent::mention(" ").is_valid_send_component());
 
-        let chain_no_cmd = MessageChain::new().text("hello");
-        assert!(!chain_no_cmd.is_command(&['/']));
-    }
+    let mut outbound = MessageChain::new(vec![
+        MessageComponent::reply("message-1", "quoted text"),
+        MessageComponent::mention("user-1"),
+        MessageComponent::plain(" "),
+        MessageComponent::image("https://example.test/image.png"),
+        MessageComponent::file("empty.pdf", " "),
+    ]);
+    assert!(outbound.has_sendable_content());
+    outbound.retain_valid_send_components();
+    assert_eq!(
+        outbound.components(),
+        &[
+            MessageComponent::reply("message-1", "quoted text"),
+            MessageComponent::mention("user-1"),
+            MessageComponent::image("https://example.test/image.png"),
+        ]
+    );
+    assert!(outbound.into_sendable().is_some());
+    assert!(
+        MessageChain::new(vec![MessageComponent::mention_all()])
+            .into_sendable()
+            .is_none()
+    );
+}
 
-    #[test]
-    fn test_parse_command() {
-        let chain = MessageChain::new().text("/echo hello world");
-        let result = chain.parse_command(&['/']);
-        assert!(result.is_some());
+#[test]
+fn provider_request_builds_from_event_and_accepts_placeholders() {
+    let event = MessageEvent::new(
+        "event-1",
+        "mock",
+        "Mock Platform",
+        MessageSession::new("mock", "conversation-1"),
+        MessageSender::new("user-1", None),
+        MessageChain::new(vec![
+            MessageComponent::plain("describe"),
+            MessageComponent::image("https://example.test/image.png"),
+        ]),
+        Arc::new(NoopSink),
+    );
 
-        let (cmd, args) = result.unwrap();
-        assert_eq!(cmd, "echo");
-        assert_eq!(args, vec!["hello", "world"]);
-    }
+    let request = ProviderRequest::from_event(&event)
+        .with_provider_id("openai")
+        .with_system_prompt("be concise")
+        .with_model("vision")
+        .with_wake_prefix("llm")
+        .with_context(ProviderContextMessage::text("assistant", "previous"))
+        .with_extra_user_content_part(ProviderContentPart::text("extra"))
+        .with_tool_placeholder(ProviderToolPlaceholder::new("search"));
 
-    #[test]
-    fn test_parse_command_no_args() {
-        let chain = MessageChain::new().text("/help");
-        let result = chain.parse_command(&['/']);
-        assert!(result.is_some());
+    assert_eq!(request.prompt.as_deref(), Some("describe"));
+    assert_eq!(request.session_id.as_deref(), Some("conversation-1"));
+    assert_eq!(
+        request.image_urls,
+        vec!["https://example.test/image.png".to_string()]
+    );
+    assert!(request.has_user_content());
+    assert_eq!(request.provider_id.as_deref(), Some("openai"));
+    assert_eq!(request.contexts.len(), 1);
+    assert_eq!(request.extra_user_content_parts.len(), 1);
+    assert_eq!(request.tool_placeholders.len(), 1);
+}
 
-        let (cmd, args) = result.unwrap();
-        assert_eq!(cmd, "help");
-        assert!(args.is_empty());
-    }
+#[test]
+fn message_stream_builds_streaming_results() {
+    let mut stream = MessageStream::from_chunk("first");
+    stream.push(MessageChain::plain("second"));
 
-    #[test]
-    fn test_parse_command_empty_after_prefix() {
-        let chain = MessageChain::new().text("/");
-        let result = chain.parse_command(&['/']);
-        assert!(result.is_none());
-    }
+    assert_eq!(stream.chunks().len(), 2);
+    assert!(!stream.is_empty());
+    assert_eq!(stream.clone().into_chunks()[0].plain_text(), "first");
 
-    #[test]
-    fn test_contains_component() {
-        let chain = MessageChain::new()
-            .text("Hello")
-            .image_url("https://example.com/img.png");
+    let result = MessageEventResult::streaming(stream.clone());
+    assert!(result.is_streaming());
+    assert_eq!(result.content_type, ResultContentType::Streaming);
+    assert_eq!(result.stream.as_ref(), Some(&stream));
 
-        assert!(chain.contains("plain"));
-        assert!(chain.contains("image"));
-        assert!(!chain.contains("voice"));
-    }
+    let replaced = MessageEventResult::general("fallback").with_stream(stream.clone());
+    assert_eq!(replaced.stream.as_ref(), Some(&stream));
 
-    #[test]
-    fn test_message_event_result_reply() {
-        let result = MessageEventResult::reply_text("Hello");
-        assert!(matches!(result, MessageEventResult::Reply { .. }));
-    }
+    let finish = MessageEventResult::streaming_finish("final");
+    assert!(finish.is_streaming_finish());
+    assert_eq!(finish.chain.plain_text(), "final");
 
-    #[test]
-    fn test_message_event_result_nothing() {
-        let result = MessageEventResult::nothing();
-        assert_eq!(result, MessageEventResult::Nothing);
-    }
+    assert!(MessageStream::new(vec![MessageChain::plain(" ")]).is_empty());
 }

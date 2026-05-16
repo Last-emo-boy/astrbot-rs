@@ -1,0 +1,32 @@
+{
+  "task_id": "M7-T2s-volcengine-tts-provider",
+  "milestone": "M7-platform-provider-dashboard-breadth",
+  "status": "completed",
+  "created_at": "2026-05-16T07:50:00+08:00",
+  "reference": "E:/Playground/Astrbot/astrbot/core/provider/sources/volcengine_tts.py",
+  "provider_type": "volcengine_tts",
+  "capability": "text_to_speech",
+  "implementation": {
+    "provider": "crates/astrbot-provider/src/volcengine_tts.rs",
+    "registry": "crates/astrbot-provider/src/registry.rs",
+    "runtime_config": "crates/astrbot-runtime/src/lib.rs",
+    "tests": [
+      "crates/astrbot-provider/tests/volcengine_tts.rs",
+      "crates/astrbot-provider/tests/provider_registry.rs"
+    ]
+  },
+  "astrbot_compatibility": {
+    "config_keys": [
+      "api_key",
+      "appid",
+      "volcengine_cluster",
+      "volcengine_voice_type",
+      "volcengine_speed_ratio",
+      "api_base",
+      "timeout"
+    ],
+    "request_encoding": "mp3",
+    "response_audio_field": "data",
+    "response_audio_format": "base64-mp3"
+  }
+}

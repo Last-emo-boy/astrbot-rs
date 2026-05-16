@@ -1,0 +1,52 @@
+{
+  "id": "TASK-047",
+  "title": "Define computer-use booter, component, tool, and skill-sync boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "computer-use-boundary",
+  "description": "AstrBot's computer-use surface combines local/remote sandbox booters, shell/python/filesystem/browser components, sandbox skill synchronization, tool discovery, capabilities, and prompt fragments. Rust should isolate those as a separate computer-use boundary before tool execution or agent runner code grows this surface directly.",
+  "read_first": [
+    "crates/astrbot-plugin/src/tool",
+    "crates/astrbot-agent/src",
+    "crates/astrbot-computer/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/computer/computer_client.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/computer_tool_provider.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/booters/base.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/booters/local.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/booters/shipyard_neo.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/tools/browser.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/tools/python.py",
+    "E:/Playground/Astrbot/astrbot/core/computer/tools/fs.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-computer/src/booter.rs",
+      "action": "create",
+      "target": "sandbox booter lifecycle",
+      "change": "Keep local, hosted, and remote sandbox lifecycle behind typed booter traits."
+    },
+    {
+      "path": "crates/astrbot-computer/src/components.rs",
+      "action": "create",
+      "target": "sandbox capability components",
+      "change": "Model shell, Python, filesystem, and browser components independently from tool declarations."
+    },
+    {
+      "path": "crates/astrbot-computer/src/skill_sync.rs",
+      "action": "create",
+      "target": "sandbox skill synchronization",
+      "change": "Separate skill bundle upload, apply, scan, and cache refresh from agent/tool execution."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Computer-use tools enter the generic tool catalog through typed declarations.",
+      "Sandbox lifecycle and component capabilities do not live in the plugin SDK or ProcessStage.",
+      "Skill synchronization is testable without booting a real remote sandbox."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

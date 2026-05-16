@@ -1,0 +1,52 @@
+{
+  "id": "TASK-083",
+  "title": "Separate concrete T2I network, local raster, markdown, font, and endpoint strategy boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "t2i-render-implementation-boundary",
+  "description": "TASK-039 created the renderer trait and template catalog boundary. AstrBot's real T2I implementation still has separate network endpoint discovery, endpoint fallback, local markdown parsing, font loading, text measuring, image loading, raster output, and temp image saving concerns. Keep those concrete render strategies behind astrbot-render instead of letting RespondStage, WebChat routes, or shared IO helpers own rendering details.",
+  "read_first": [
+    "crates/astrbot-render/src/t2i.rs",
+    "crates/astrbot-render/src/template.rs",
+    "crates/astrbot-storage/src/temp_artifact.rs",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/renderer.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/network_strategy.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/local_strategy.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/template_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-render/src/network.rs",
+      "action": "create",
+      "target": "network T2I renderer",
+      "change": "Model endpoint discovery, endpoint fallback, remote generate requests, return-url/file modes, and network-only errors behind the T2iRenderer trait."
+    },
+    {
+      "path": "crates/astrbot-render/src/local.rs",
+      "action": "create",
+      "target": "local T2I renderer",
+      "change": "Keep local markdown-to-image rasterization and temp artifact writing out of generic render DTOs and web routes."
+    },
+    {
+      "path": "crates/astrbot-render/src/markdown.rs",
+      "action": "create",
+      "target": "markdown render model",
+      "change": "Represent headings, quotes, lists, code blocks, inline styling, and image elements before local raster code grows."
+    },
+    {
+      "path": "crates/astrbot-render/src/font.rs",
+      "action": "create",
+      "target": "font selection and text measurement",
+      "change": "Isolate custom font lookup, fallback font list, font cache, and text wrapping from local raster strategy."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "T2I network endpoint discovery/fallback is not embedded in WebChat routes or RespondStage.",
+      "Local markdown parsing and font/text layout are not mixed into the render trait facade.",
+      "Generated render artifacts use the existing temp/path artifact boundary."
+    ],
+    "verification_command": "cargo test -p astrbot-render && cargo clippy -p astrbot-render -- -D warnings && cargo test --workspace"
+  },
+  "risk": "medium"
+}

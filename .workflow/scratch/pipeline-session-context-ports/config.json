@@ -1,0 +1,22 @@
+{
+  "id": "pipeline-session-context-ports",
+  "milestone": "M5-context-session-memory",
+  "task_id": "M5-T1-session-context-ports",
+  "status": "completed",
+  "created_at": "2026-05-16T02:03:35+08:00",
+  "completed_at": "2026-05-16T02:03:35+08:00",
+  "references": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_sub_stages/internal.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/entities.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/provider.py"
+  ],
+  "scope": [
+    "Introduce SessionContextPort in PipelineContext.",
+    "Keep pipeline independent from concrete conversation storage.",
+    "Inject ProviderContextMessage values into ProviderRequest before ChatRequest conversion.",
+    "Defer provider preference storage and quote context policy."
+  ],
+  "verification": [
+    "cargo test -p astrbot-pipeline process_stage --tests"
+  ]
+}

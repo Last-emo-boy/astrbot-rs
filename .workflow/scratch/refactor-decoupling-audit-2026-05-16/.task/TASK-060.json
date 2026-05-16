@@ -1,0 +1,46 @@
+{
+  "id": "TASK-060",
+  "title": "Define plugin marketplace, update, package cache, and install source boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "plugin-market-update-boundary",
+  "description": "AstrBot plugin routes and updater separate market sources, MD5/cache validation, package download/unzip, compatibility checks, install/update/uninstall, and readme/changelog serving. Rust has loader and dependency boundaries, but not marketplace/update source boundaries yet.",
+  "read_first": [
+    "crates/astrbot-plugin/src/loader",
+    "crates/astrbot-plugin/src/extension",
+    "crates/astrbot-web/src/management/plugins.rs",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/plugin.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/update.py",
+    "E:/Playground/Astrbot/astrbot/core/star/updator.py",
+    "E:/Playground/Astrbot/astrbot/core/star/star_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/market/mod.rs",
+      "action": "create",
+      "target": "plugin marketplace boundary",
+      "change": "Separate remote registry source/cache/package metadata from plugin loader lifecycle."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/market/update.rs",
+      "action": "create",
+      "target": "plugin update planning",
+      "change": "Model install/update/uninstall plans without performing side effects in web routes."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/plugin_market.rs",
+      "action": "create",
+      "target": "dashboard plugin market API",
+      "change": "Keep dashboard plugin market DTOs separate from loader internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Plugin market source/cache logic is not embedded in dashboard routes.",
+      "Install/update planning is independent from dynamic plugin loading.",
+      "Compatibility/readme/changelog data has typed DTOs."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

@@ -1,0 +1,33 @@
+{
+  "task": "Add runtime restart semantics",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot restart behavior",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py"
+      ],
+      "convergence_criteria": "Runtime restart should match AstrBot's terminate-and-rebuild lifecycle shape"
+    },
+    {
+      "id": "T2",
+      "title": "Implement RuntimeHandle::restart",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "A stopped runtime handle can rebuild a fresh runtime from a new config"
+    },
+    {
+      "id": "T3",
+      "title": "Test restart with a changed provider response",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "Restarted runtime processes events with the new configuration"
+    }
+  ]
+}

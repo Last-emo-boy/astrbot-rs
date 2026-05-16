@@ -1,0 +1,34 @@
+{
+  "task": "Add WebChat HTTP server boundary",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Extend WebChat router into a server boundary",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "convergence_criteria": "HTTP server can serve WebChat routes through axum with graceful shutdown"
+    },
+    {
+      "id": "T2",
+      "title": "Verify with a real HTTP round trip",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "convergence_criteria": "A real TCP listener accepts POST and emits a platform event"
+    },
+    {
+      "id": "T3",
+      "title": "Keep workspace green",
+      "status": "completed",
+      "files": [
+        "Cargo.toml",
+        "Cargo.lock"
+      ],
+      "convergence_criteria": "Workspace tests, clippy and CLI smoke remain passing"
+    }
+  ]
+}

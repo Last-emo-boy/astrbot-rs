@@ -1,0 +1,40 @@
+{
+  "id": "TASK-066",
+  "title": "Implement MCP transport runtime and bridge registration boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "mcp-transport-bridge-boundary",
+  "description": "TASK-029 created typed MCP models, but real MCP parity still needs stdio/SSE/streamable HTTP transport runtime, process supervision, noisy-stdout tolerant JSON-RPC parsing, reconnect, and registration of resource/prompt/tools into the tool catalog.",
+  "read_first": [
+    "crates/astrbot-mcp/src",
+    "crates/astrbot-tool/src",
+    "crates/astrbot-plugin/src/tool",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_client.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_stdio_client.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_subcapability_bridge.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/func_tool_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-mcp/src/transport",
+      "action": "create",
+      "target": "MCP transport runtime",
+      "change": "Define stdio and HTTP transport ports, process lifecycle, JSON-RPC framing, reconnect policy, and tolerant stdout filtering."
+    },
+    {
+      "path": "crates/astrbot-mcp/src/bridge",
+      "action": "create",
+      "target": "MCP bridge registration",
+      "change": "Convert MCP tools/resources/prompts into astrbot-tool catalog entries without plugin/provider ownership."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "MCP process supervision is owned by astrbot-mcp, not runtime handle or plugin sandbox internals.",
+      "Synthetic resource/prompt tools register through astrbot-tool catalog descriptors.",
+      "Transport parsing and reconnect behavior can be tested with fake stdio/HTTP streams."
+    ],
+    "verification_command": "cargo test -p astrbot-mcp && cargo test -p astrbot-tool && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

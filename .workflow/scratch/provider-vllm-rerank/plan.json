@@ -1,0 +1,31 @@
+{
+  "task_id": "M7-T2i-vllm-rerank-provider",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "context",
+      "status": "completed",
+      "description": "Compare AstrBot vllm_rerank_source payload, endpoint, auth, defaults, and response mapping."
+    },
+    {
+      "id": "provider",
+      "status": "completed",
+      "description": "Add VllmRerankProvider implementing RerankProvider over HTTP /v1/rerank."
+    },
+    {
+      "id": "registry",
+      "status": "completed",
+      "description": "Register vllm_rerank through ProviderRegistry and typed RerankProviderConfig."
+    },
+    {
+      "id": "tests",
+      "status": "completed",
+      "description": "Cover request serialization, authorization, response parsing, error mapping, provider type, and registry manager construction."
+    },
+    {
+      "id": "verification",
+      "status": "completed",
+      "description": "Run workspace fmt, tests, clippy, CLI smoke, and workflow JSON parse."
+    }
+  ]
+}

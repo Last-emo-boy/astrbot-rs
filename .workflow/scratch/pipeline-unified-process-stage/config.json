@@ -1,0 +1,17 @@
+{
+  "task_id": "M3-T1-unified-process-stage",
+  "milestone": "M3-process-stage",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/star_request.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_request.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py"
+  ],
+  "scope": [
+    "Add a Rust ProcessStage facade that coordinates existing plugin handling and provider fallback.",
+    "Switch the default built-in pipeline from plugin -> provider to process.",
+    "Keep PluginStage and ProviderStage exported for custom schedulers and focused compatibility tests."
+  ]
+}

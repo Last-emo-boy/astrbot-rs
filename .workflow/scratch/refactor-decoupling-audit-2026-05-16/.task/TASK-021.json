@@ -1,0 +1,71 @@
+{
+  "id": "TASK-021",
+  "title": "Split WebChat HTTP tests by route, message-part, history, and server behavior",
+  "status": "completed",
+  "type": "refactor",
+  "category": "web-test-boundary",
+  "description": "The WebChat HTTP implementation is split, but its 500+ line test module still mixes submit routes, message-part normalization, reply/media validation, history readback, and live server behavior. Split tests before WebChat auth, SSE/WebSocket, and attachment storage expand the same file.",
+  "read_first": [
+    "crates/astrbot-web/src/tests.rs",
+    "crates/astrbot-web/src/routes.rs",
+    "crates/astrbot-web/src/message_parts.rs",
+    "crates/astrbot-web/src/history.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/tests.rs",
+      "action": "convert",
+      "target": "test facade",
+      "change": "Keep shared imports/helpers and declare focused test submodules."
+    },
+    {
+      "path": "crates/astrbot-web/src/tests/submit.rs",
+      "action": "create",
+      "target": "submit route tests",
+      "change": "Move text/image/message-part submit route coverage here."
+    },
+    {
+      "path": "crates/astrbot-web/src/tests/message_parts.rs",
+      "action": "create",
+      "target": "message part validation tests",
+      "change": "Group reply-only, non-image media, and empty payload behavior."
+    },
+    {
+      "path": "crates/astrbot-web/src/tests/history.rs",
+      "action": "create",
+      "target": "history readback tests",
+      "change": "Move recorded history serialization and filtering coverage here."
+    },
+    {
+      "path": "crates/astrbot-web/src/tests/server.rs",
+      "action": "create",
+      "target": "live server tests",
+      "change": "Keep bound TCP server and reqwest smoke coverage separate from route-unit tests."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "No WebChat HTTP behavior changes.",
+      "Shared helper setup is in one support module, not copied across tests.",
+      "Future auth/streaming/storage tests have clear destination modules."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test --workspace"
+  },
+  "risk": "low",
+  "completed_at": "2026-05-16T17:00:00+08:00",
+  "files_modified": [
+    "crates/astrbot-web/src/tests.rs",
+    "crates/astrbot-web/src/tests/support.rs",
+    "crates/astrbot-web/src/tests/submit.rs",
+    "crates/astrbot-web/src/tests/message_parts.rs",
+    "crates/astrbot-web/src/tests/history.rs",
+    "crates/astrbot-web/src/tests/server.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-web",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

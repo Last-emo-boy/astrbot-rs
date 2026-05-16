@@ -1,0 +1,46 @@
+{
+  "id": "TASK-041",
+  "title": "Split event bus dispatch, pipeline routing, and event logging boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "event-bus-routing-boundary",
+  "description": "Rust EventBus is small today, but AstrBot routes events by config-specific PipelineScheduler and logs platform/session outlines inside the bus. Split dispatch, scheduler routing, event logging, and future backpressure policy before multiple pipeline configs and lifecycle events grow inside one core event module.",
+  "read_first": [
+    "crates/astrbot-core/src/event.rs",
+    "crates/astrbot-pipeline/src/scheduler.rs",
+    "crates/astrbot-runtime/src/handle.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/event_bus.py",
+    "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-core/src/event/mod.rs",
+      "action": "create",
+      "target": "event facade",
+      "change": "Keep EventBus/EventExecutor public exports stable while moving internals into focused modules."
+    },
+    {
+      "path": "crates/astrbot-core/src/event/router.rs",
+      "action": "create",
+      "target": "pipeline routing",
+      "change": "Prepare a routing boundary for config/session-aware scheduler selection instead of hardwiring one executor."
+    },
+    {
+      "path": "crates/astrbot-core/src/event/logging.rs",
+      "action": "create",
+      "target": "event outline logging",
+      "change": "Keep platform/session event logging outside scheduler and runtime handle code."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Current single-executor EventBus behavior remains unchanged.",
+      "Routing and logging can be tested independently from pipeline execution.",
+      "RuntimeHandle still supervises EventBus as a background task without knowing routing internals."
+    ],
+    "verification_command": "cargo test -p astrbot-core && cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "medium"
+}

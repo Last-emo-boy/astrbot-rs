@@ -1,0 +1,40 @@
+{
+  "id": "TASK-067",
+  "title": "Separate backup upload, task progress, manifest, import, and export service boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "backup-job-service-boundary",
+  "description": "AstrBot backup routes combine chunked upload sessions, background task progress, JWT-gated downloads, manifest inspection, import/export orchestration, version compatibility, database restore, KB restore, and directory restore. Rust should split backup job services from web route handlers and persistence repositories.",
+  "read_first": [
+    "crates/astrbot-web/src/management",
+    "crates/astrbot-storage/src",
+    "crates/astrbot-runtime/src",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/backup.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/exporter.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/importer.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/constants.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-backup/src",
+      "action": "create",
+      "target": "backup domain crate",
+      "change": "Define manifest, version compatibility, import/export jobs, upload sessions, progress snapshots, and backup file inventory."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/backup.rs",
+      "action": "create",
+      "target": "backup route boundary",
+      "change": "Keep HTTP handlers as DTO/auth adapters over the backup job service."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Chunked upload state and cleanup are tested outside HTTP handlers.",
+      "Import/export orchestration depends on repository ports instead of concrete DB modules.",
+      "Routes expose task progress snapshots without owning background job maps."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

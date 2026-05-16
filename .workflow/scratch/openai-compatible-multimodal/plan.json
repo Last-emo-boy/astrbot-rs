@@ -1,0 +1,40 @@
+{
+  "task": "Add OpenAI-compatible multimodal image URL payload support",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Extend ChatRequest with image URL inputs",
+      "description": "Add image_urls plus builder methods while keeping existing ChatRequest::new behavior unchanged.",
+      "scope": [
+        "crates/astrbot-provider/src/lib.rs"
+      ],
+      "convergence_criteria": "Existing callers compile and text-only requests remain unchanged.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Serialize OpenAI content parts for multimodal requests",
+      "description": "Emit plain string content for text-only messages and OpenAI content-part arrays when image URLs are attached.",
+      "scope": [
+        "crates/astrbot-provider/src/openai_compatible.rs",
+        "crates/astrbot-provider/tests/openai_compatible.rs"
+      ],
+      "convergence_criteria": "Tests cover plain text payload and multimodal payload shape.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run the standard workspace checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/openai-compatible-multimodal"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "completed_at": "2026-05-15T21:40:00+08:00"
+}

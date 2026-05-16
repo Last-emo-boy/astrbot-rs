@@ -1,0 +1,62 @@
+{
+  "id": "TASK-030",
+  "title": "Separate tool schema catalog, provider-format serializers, activation policy, and command management",
+  "status": "completed",
+  "type": "refactor",
+  "category": "tool-schema-command-boundary",
+  "description": "AstrBot's FunctionToolManager and command management mix tool catalog, provider-specific schema serialization, MCP activation, command toggles, renames, permissions, and conflict detection. Rust should keep these as separate typed boundaries before tool-call parity.",
+  "read_first": [
+    "crates/astrbot-core/src/message/provider_request.rs",
+    "crates/astrbot-plugin/src/filter",
+    "crates/astrbot-plugin/src/registry.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/func_tool_manager.py",
+    "E:/Playground/Astrbot/astrbot/core/star/command_management.py",
+    "E:/Playground/Astrbot/astrbot/core/star/register/star_handler.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-tool/src",
+      "action": "create",
+      "target": "tool catalog and schema module tree",
+      "change": "Define tool descriptors, command descriptors, provider schema serializers, activation policy, conflict detection, and permission views."
+    },
+    {
+      "path": "crates/astrbot-provider/src",
+      "action": "guard",
+      "target": "provider adapters",
+      "change": "Keep provider adapters consuming already-shaped tool schemas instead of owning command/catalog policy."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "OpenAI/Anthropic/Gemini tool schema serialization is separated from tool execution.",
+      "Command management can persist toggles/renames without mutating plugin registry internals directly.",
+      "ProviderRequest keeps lightweight tool references rather than full command state."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-provider && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T16:39:30+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "crates/astrbot-tool/Cargo.toml",
+    "crates/astrbot-tool/src/lib.rs",
+    "crates/astrbot-tool/src/catalog.rs",
+    "crates/astrbot-tool/src/activation.rs",
+    "crates/astrbot-tool/src/commands.rs",
+    "crates/astrbot-tool/src/conflicts.rs",
+    "crates/astrbot-tool/src/schema/mod.rs",
+    "crates/astrbot-tool/src/schema/openai.rs",
+    "crates/astrbot-tool/src/schema/anthropic.rs",
+    "crates/astrbot-tool/src/schema/gemini.rs",
+    "crates/astrbot-tool/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-tool",
+    "cargo test -p astrbot-plugin",
+    "cargo test -p astrbot-provider",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

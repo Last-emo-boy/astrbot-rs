@@ -1,0 +1,37 @@
+{
+  "id": "TASK-007",
+  "title": "Split runtime provider config mappings and runtime tests by capability/lifecycle",
+  "status": "completed",
+  "type": "refactor",
+  "category": "second-pass-runtime",
+  "description": "After web/core/pipeline first-pass splits, split runtime provider config DTO/mapping logic and runtime tests into focused capability and lifecycle modules.",
+  "read_first": [
+    "crates/astrbot-runtime/src/provider_config.rs",
+    "crates/astrbot-runtime/src/tests.rs",
+    "E:/Playground/Astrbot/astrbot/core/config/default.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/provider_config",
+      "action": "create",
+      "target": "runtime provider config module tree",
+      "change": "Split chat, STT, TTS, embedding, and rerank runtime config mapping into capability modules."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/tests",
+      "action": "create",
+      "target": "runtime test module tree",
+      "change": "Group runtime tests by config IO, lifecycle/restart, provider config, platform webchat, and policy behavior."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider config re-exports remain compatible from astrbot_runtime.",
+      "Runtime tests are grouped by behavior area and still cover current cases.",
+      "No provider/platform parity behavior is added."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "risk": "medium"
+}

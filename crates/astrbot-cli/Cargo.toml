@@ -1,32 +1,14 @@
 [package]
 name = "astrbot-cli"
-version = { workspace = true }
-edition = { workspace = true }
-rust-version = { workspace = true }
-authors = { workspace = true }
-license = { workspace = true }
-repository = { workspace = true }
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-astrbot-core = { path = "../astrbot-core" }
-astrbot-dashboard = { path = "../astrbot-dashboard" }
-astrbot-provider = { path = "../astrbot-provider" }
 astrbot-platform = { path = "../astrbot-platform" }
-astrbot-plugin = { path = "../astrbot-plugin" }
-astrbot-security = { path = "../astrbot-security" }
-astrbot-persona = { path = "../astrbot-persona" }
-astrbot-ux = { path = "../astrbot-ux" }
-tokio = { workspace = true }
-clap = { version = "4.5", features = ["derive"] }
-tracing = { workspace = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-anyhow = { workspace = true }
-serde_json = { workspace = true }
-chrono = { workspace = true }
+astrbot-runtime = { path = "../astrbot-runtime" }
+astrbot-web = { path = "../astrbot-web" }
+tokio.workspace = true
 
 [dev-dependencies]
-tempfile = "3"
-
-[[bin]]
-name = "astrbot"
-path = "src/main.rs"
+reqwest.workspace = true

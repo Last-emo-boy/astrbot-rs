@@ -1,0 +1,47 @@
+{
+  "task": "Expose WebChat message history as typed parts",
+  "status": "completed",
+  "completed_at": "2026-05-15T22:40:11+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Serialize MessageChain into WebChat response parts",
+      "description": "Add image_urls and typed plain/image message_parts to WebChatMessageResponse.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "convergence_criteria": "History tests prove text and image components survive readback.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Preserve compatibility for existing history callers",
+      "description": "Keep the text field and update tests/struct literals to include new response fields.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "convergence_criteria": "Existing history and runtime WebChat tests still pass.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run standard checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-message-parts-readback"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-cli",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "TASK-046",
+  "title": "Define subagent orchestration and handoff registry boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "subagent-handoff-boundary",
+  "description": "AstrBot keeps subagent config loading lightweight and registers HandoffTool entries into the tool manager without executing subagents itself. Rust should keep subagent config, handoff registration, provider override, and tool bridge logic separate from generic tool execution and plugin sandbox code.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "crates/astrbot-plugin/src/sandbox.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "crates/astrbot-tool/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/subagent_orchestrator.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/handoff.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_tool_exec.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/subagent/config.rs",
+      "action": "create",
+      "target": "subagent config",
+      "change": "Resolve enabled subagents, persona references, provider override, and declared tools."
+    },
+    {
+      "path": "crates/astrbot-agent/src/subagent/orchestrator.rs",
+      "action": "create",
+      "target": "handoff registration",
+      "change": "Register handoff tools without owning agent execution."
+    },
+    {
+      "path": "crates/astrbot-agent/src/subagent/tool_bridge.rs",
+      "action": "create",
+      "target": "tool manager bridge",
+      "change": "Keep subagent handoff tools separate from generic local/MCP/background tool execution."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Subagent orchestration does not execute agent loops directly.",
+      "Handoff tools remain a typed tool-catalog input to the agent runner.",
+      "Provider override and persona resolution are explicit, testable inputs."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

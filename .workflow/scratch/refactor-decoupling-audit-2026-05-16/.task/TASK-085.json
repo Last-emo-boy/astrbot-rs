@@ -1,0 +1,53 @@
+{
+  "id": "TASK-085",
+  "title": "Separate knowledge-base management API, provider preflight, upload task, and progress boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "kb-management-api-boundary",
+  "description": "TASK-031 covers KB parser/chunking/retrieval ports and TASK-076 covers ingestion/index jobs. AstrBot's dashboard KB route adds a separate management surface: KB CRUD, embedding/rerank provider preflight, document upload/import/from-URL tasks, upload progress maps, chunk CRUD, stats, and debug retrieval. Rust should define this service boundary before dashboard management routes call KB/provider/storage internals directly.",
+  "read_first": [
+    "crates/astrbot-kb/src/lib.rs",
+    "crates/astrbot-kb/src/retrieval.rs",
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-web/src/management",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/knowledge_base.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_helper.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_db_sqlite.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-kb/src/management.rs",
+      "action": "create",
+      "target": "KB management service",
+      "change": "Model KB CRUD, document/chunk commands, stats snapshots, and dashboard-facing result DTOs outside HTTP handlers."
+    },
+    {
+      "path": "crates/astrbot-kb/src/preflight.rs",
+      "action": "create",
+      "target": "embedding and rerank preflight",
+      "change": "Keep provider availability, embedding dimension checks, and rerank smoke tests out of dashboard routes."
+    },
+    {
+      "path": "crates/astrbot-kb/src/upload_task.rs",
+      "action": "create",
+      "target": "document upload/import task lifecycle",
+      "change": "Represent background task status, per-file stage progress, success/failure summaries, and retry settings."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/knowledge_base.rs",
+      "action": "create",
+      "target": "KB management route adapter",
+      "change": "Keep HTTP parameter parsing and response mapping thin by delegating to typed KB management services."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Dashboard KB routes do not directly manage provider preflight or background upload progress maps.",
+      "KB retrieval remains separate from KB CRUD/upload management.",
+      "Ingestion/indexing jobs from TASK-076 can plug into the management task lifecycle without route-level orchestration."
+    ],
+    "verification_command": "cargo test -p astrbot-kb && cargo test -p astrbot-web && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

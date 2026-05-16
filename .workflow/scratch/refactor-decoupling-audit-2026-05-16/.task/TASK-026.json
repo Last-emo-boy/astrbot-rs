@@ -1,0 +1,77 @@
+{
+  "id": "TASK-026",
+  "title": "Separate dashboard/management API surface from WebChat chat transport routes",
+  "status": "completed",
+  "type": "refactor",
+  "category": "management-api-boundary",
+  "description": "astrbot-web currently serves WebChat chat transport. Before dashboard work resumes, management APIs for providers, platforms, plugins, config, status, and logs should be a separate route/service surface so WebChat transport remains thin.",
+  "read_first": [
+    "crates/astrbot-web/src/routes.rs",
+    "crates/astrbot-web/src/server.rs",
+    "crates/astrbot-runtime/src/handle.rs",
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-platform/src/manager.rs",
+    "E:/Playground/Astrbot/dashboard",
+    "E:/Playground/Astrbot/astrbot/core/star/star_manager.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/management/mod.rs",
+      "action": "create",
+      "target": "management API route namespace",
+      "change": "Separate dashboard-facing routes from chat transport routes."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/providers.rs",
+      "action": "create",
+      "target": "provider management API",
+      "change": "Expose provider status/config through runtime handles without reaching into provider internals."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/platforms.rs",
+      "action": "create",
+      "target": "platform management API",
+      "change": "Expose platform status through PlatformManager-facing DTOs."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/plugins.rs",
+      "action": "create",
+      "target": "plugin management API",
+      "change": "Prepare dashboard plugin APIs that depend on plugin loader boundaries instead of current registry internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "WebChat submit/history routes remain transport-specific.",
+      "Dashboard APIs enter through runtime/manager facades only.",
+      "Management DTOs do not expose internal pipeline/EventBus types."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T14:50:40+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-platform/src/manager.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/server.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/providers.rs",
+    "crates/astrbot-web/src/management/platforms.rs",
+    "crates/astrbot-web/src/management/plugins.rs",
+    "crates/astrbot-web/src/management/status.rs",
+    "crates/astrbot-web/src/tests.rs",
+    "crates/astrbot-web/src/tests/management.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

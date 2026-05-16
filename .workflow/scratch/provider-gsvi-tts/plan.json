@@ -1,0 +1,36 @@
+{
+  "task_id": "M7-T2u-gsvi-tts-provider",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "study-astrbot-gsvi-tts",
+      "status": "completed",
+      "description": "Read AstrBot gsvi_tts_api provider behavior, config keys, GET query shape, and WAV response handling."
+    },
+    {
+      "id": "implement-provider",
+      "status": "completed",
+      "description": "Add GsviTextToSpeechProvider behind the TextToSpeechProvider trait with AstrBot-compatible GET query and local WAV output."
+    },
+    {
+      "id": "register-provider",
+      "status": "completed",
+      "description": "Register gsvi_tts_api as a text_to_speech capability and map character/emotion through TextToSpeechProviderConfig."
+    },
+    {
+      "id": "wire-runtime-config",
+      "status": "completed",
+      "description": "Map RuntimeTextToSpeechProviderConfig::gsvi into the provider manager TTS bucket without changing chat pipeline wiring."
+    },
+    {
+      "id": "test-provider-and-registry",
+      "status": "completed",
+      "description": "Cover query encoding, WAV output, error mapping, empty audio, empty input, type constant, registry construction, and runtime config mapping."
+    },
+    {
+      "id": "verify",
+      "status": "completed",
+      "description": "Run full workspace format, JSON, tests, clippy, and CLI smoke gates after Maestro records are updated."
+    }
+  ]
+}

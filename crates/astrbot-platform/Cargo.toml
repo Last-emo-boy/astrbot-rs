@@ -1,30 +1,13 @@
 [package]
 name = "astrbot-platform"
-version = { workspace = true }
-edition = { workspace = true }
-rust-version = { workspace = true }
-authors = { workspace = true }
-license = { workspace = true }
-repository = { workspace = true }
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 astrbot-core = { path = "../astrbot-core" }
-tokio = { workspace = true }
-async-trait = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-hmac = { workspace = true }
-sha2 = { workspace = true }
-hex = { workspace = true }
-ring = { workspace = true }
-reqwest = { workspace = true }
-base64 = "0.22"
-aes = "0.8"
-cbc = { version = "0.1", features = ["block-padding", "alloc"] }
-sha1 = "0.10"
-axum = { workspace = true }
-chrono = { workspace = true }
-tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"] }
-futures-util = "0.3"
+astrbot-observability = { path = "../astrbot-observability" }
+astrbot-storage = { path = "../astrbot-storage" }
+async-trait.workspace = true
+sha1.workspace = true
+tokio.workspace = true

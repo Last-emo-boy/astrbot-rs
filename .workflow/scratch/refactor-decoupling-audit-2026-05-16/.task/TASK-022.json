@@ -1,0 +1,72 @@
+{
+  "id": "TASK-022",
+  "title": "Extract provider protocol DTO and response parser modules from concrete adapters",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-protocol-boundary",
+  "description": "Concrete provider adapters now combine config, HTTP calls, payload DTOs, content-part conversion, SSE parsing, error parsing, and response mapping. TASK-014 covers shared HTTP helpers; this task keeps protocol-specific DTO/parsing logic local but out of the adapter orchestration files.",
+  "read_first": [
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/minimax_tts_api_source.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/protocol/openai_chat.rs",
+      "action": "create",
+      "target": "OpenAI chat payload/parser DTOs",
+      "change": "Move chat completion request/response content normalization and SSE event parsing out of the adapter."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol/gemini_chat.rs",
+      "action": "create",
+      "target": "Gemini chat payload/parser DTOs",
+      "change": "Move generateContent DTOs, data URL image conversion, finish-reason mapping, and content extraction."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol/minimax_tts.rs",
+      "action": "create",
+      "target": "MiniMax TTS payload/parser DTOs",
+      "change": "Move request DTOs, SSE audio collection, and hex decoding helpers."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider-specific payload decisions stay in provider/protocol modules, not in generic HTTP helpers.",
+      "Concrete adapter files mostly orchestrate config, request send, and trait implementation.",
+      "Existing provider tests and inline parser tests still pass."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T17:30:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    "crates/astrbot-provider/src/protocol/mod.rs",
+    "crates/astrbot-provider/src/protocol/sse.rs",
+    "crates/astrbot-provider/src/protocol/openai_chat.rs",
+    "crates/astrbot-provider/src/protocol/gemini_chat.rs",
+    "crates/astrbot-provider/src/protocol/anthropic_chat.rs",
+    "crates/astrbot-provider/src/protocol/minimax_tts.rs",
+    "crates/astrbot-provider/src/protocol/xinference.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

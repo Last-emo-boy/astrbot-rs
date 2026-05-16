@@ -1,0 +1,49 @@
+{
+  "id": "TASK-051",
+  "title": "Separate live agent streaming, tool-status, stop-signal, and TTS feedback boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "live-agent-feedback-boundary",
+  "description": "AstrBot's agent run utility coordinates streaming chunks, tool-call status messages, stop signals, final chain extraction, and optional TTS/live-agent feedback. Rust should keep this feedback orchestration separate from the agent runner core, RespondStage, and provider streaming parsers.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "crates/astrbot-pipeline/src/stages/respond.rs",
+    "crates/astrbot-core/src/message/result.rs",
+    "crates/astrbot-provider/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_run_util.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent_resources.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/tool_loop_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/feedback/status.rs",
+      "action": "create",
+      "target": "tool and agent status messages",
+      "change": "Build status events outside provider streaming and pipeline response delivery."
+    },
+    {
+      "path": "crates/astrbot-agent/src/feedback/stop_signal.rs",
+      "action": "create",
+      "target": "agent stop signal policy",
+      "change": "Keep user stop/cancel checks out of the provider adapter and RespondStage."
+    },
+    {
+      "path": "crates/astrbot-agent/src/feedback/voice.rs",
+      "action": "create",
+      "target": "TTS/live feedback bridge",
+      "change": "Route optional TTS streaming through a feedback boundary instead of embedding it in the agent runner loop."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider streaming parsers emit chunks but do not build user-facing status messages.",
+      "RespondStage remains final delivery and does not own live-agent orchestration.",
+      "TTS feedback can be enabled or disabled without changing core agent execution."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

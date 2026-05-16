@@ -1,0 +1,57 @@
+{
+  "id": "TASK-013",
+  "title": "Split pipeline stage registry order, builtins, entries, and registry tests",
+  "status": "completed",
+  "type": "refactor",
+  "category": "pipeline-registry-boundary",
+  "description": "Split the pipeline registry so stage order constants, built-in registration, registered entry storage, and registry tests do not remain in one growth point.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/registry.rs",
+    "crates/astrbot-pipeline/src/builder.rs",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/bootstrap.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/scheduler.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-pipeline/src/registry",
+      "action": "create",
+      "target": "pipeline registry module tree",
+      "change": "Move order constants, built-in stage registration, registry entries, and registry facade into focused modules."
+    },
+    {
+      "path": "crates/astrbot-pipeline/tests/registry",
+      "action": "create",
+      "target": "pipeline registry behavior tests",
+      "change": "Group stage order, duplicate/invalid registration, initialization, and scheduler construction tests by behavior."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Public stage type/order constants remain import-compatible.",
+      "DefaultPipelineBuilder still constructs the same built-in stage chain.",
+      "Registry tests are grouped by behavior without changing scheduler semantics."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "low",
+  "completed_at": "2026-05-16T13:00:00+08:00",
+  "files_modified": [
+    "crates/astrbot-pipeline/src/registry.rs",
+    "crates/astrbot-pipeline/src/registry/order.rs",
+    "crates/astrbot-pipeline/src/registry/entry.rs",
+    "crates/astrbot-pipeline/src/registry/builtins.rs",
+    "crates/astrbot-pipeline/src/registry/tests/mod.rs",
+    "crates/astrbot-pipeline/src/registry/tests/support.rs",
+    "crates/astrbot-pipeline/src/registry/tests/registration.rs",
+    "crates/astrbot-pipeline/src/registry/tests/order.rs",
+    "crates/astrbot-pipeline/src/registry/tests/builtins.rs",
+    "crates/astrbot-pipeline/src/registry/tests/scheduler.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-pipeline",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

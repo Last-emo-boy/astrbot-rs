@@ -1,0 +1,53 @@
+{
+  "id": "TASK-084",
+  "title": "Define shared network download, TLS, proxy, progress, and cache boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "network-download-boundary",
+  "description": "AstrBot centralizes HTTP download, cert fallback, proxy/trust-env behavior, public IP lookup, dashboard zip download/cache, and temp image saving in utils/io.py and http_ssl.py. Rust currently has provider HTTP helpers and media normalization plans, but no shared network-file boundary for platform media downloads, provider attachments, dashboard updates, T2I network artifacts, or future plugin/package downloads.",
+  "read_first": [
+    "crates/astrbot-provider/src/audio.rs",
+    "crates/astrbot-provider/src/http",
+    "crates/astrbot-web/src/attachment.rs",
+    "crates/astrbot-render/src/t2i.rs",
+    "crates/astrbot-runtime/src/path_config.rs",
+    "E:/Playground/Astrbot/astrbot/core/utils/io.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/http_ssl.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/t2i/network_strategy.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-net/src/lib.rs",
+      "action": "create",
+      "target": "network utility crate facade",
+      "change": "Expose typed download, TLS, proxy, progress, and cache policies without coupling callers to reqwest/aio-like implementation details."
+    },
+    {
+      "path": "crates/astrbot-net/src/download.rs",
+      "action": "create",
+      "target": "file and image download service",
+      "change": "Represent GET/POST downloads, destination path policy, content type expectations, size limits, and temporary artifact output."
+    },
+    {
+      "path": "crates/astrbot-net/src/tls.rs",
+      "action": "create",
+      "target": "TLS and proxy policy",
+      "change": "Keep certificate fallback, proxy/trust-env, and insecure fallback decisions explicit and testable."
+    },
+    {
+      "path": "crates/astrbot-net/src/progress.rs",
+      "action": "create",
+      "target": "download progress events",
+      "change": "Model progress snapshots for dashboard update/plugin/KB upload flows without printing from download helpers."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider, platform, render, and maintenance code can share download/TLS policy through traits or DTOs.",
+      "Progress and cache behavior are not embedded in dashboard route handlers.",
+      "Media normalization remains separate from generic network transfer."
+    ],
+    "verification_command": "cargo test -p astrbot-net && cargo test -p astrbot-provider && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

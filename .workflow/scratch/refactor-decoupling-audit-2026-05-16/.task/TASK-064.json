@@ -1,0 +1,45 @@
+{
+  "id": "TASK-064",
+  "title": "Introduce long-term memory and active-reply request decoration boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "long-term-memory-boundary",
+  "description": "AstrBot long-term memory keeps per-session chat transcripts, optional image captioning, active-reply policy, and LLM request mutation in one builtin star. Rust should isolate memory storage, active-reply decisions, image-caption provider calls, and agent request decoration before main-agent parity grows.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "crates/astrbot-storage/src",
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "E:/Playground/Astrbot/astrbot/builtin_stars/astrbot/long_term_memory.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent_resources.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-memory/src",
+      "action": "create",
+      "target": "memory domain crate",
+      "change": "Define session transcript records, retention policy, active-reply policy, and image-caption request ports."
+    },
+    {
+      "path": "crates/astrbot-agent/src/memory",
+      "action": "create",
+      "target": "agent memory request decorator",
+      "change": "Inject memory context through AgentRunner request decoration instead of ProcessStage or provider adapters."
+    },
+    {
+      "path": "crates/astrbot-storage/src",
+      "action": "extend",
+      "target": "memory repository port",
+      "change": "Persist or mock per-session memory records behind storage traits."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Active-reply probability and whitelist policy can be tested without a platform adapter.",
+      "Image captioning depends on a provider port, not a concrete provider manager.",
+      "Memory prompt injection is an agent decorator and does not mutate provider adapters directly."
+    ],
+    "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

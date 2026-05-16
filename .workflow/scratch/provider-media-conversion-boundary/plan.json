@@ -1,0 +1,49 @@
+{
+  "task_id": "M7-T2p-media-conversion-boundary",
+  "title": "Add shared audio media conversion boundary for STT providers",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2p-1",
+      "title": "Study AstrBot Tencent/SILK/AMR conversion helper",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/utils/tencent_record_helper.py",
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/whisper_api_source.py",
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py"
+      ]
+    },
+    {
+      "id": "M7-T2p-2",
+      "title": "Create provider-crate audio input and media converter boundary",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/audio.rs",
+        "crates/astrbot-provider/src/lib.rs"
+      ]
+    },
+    {
+      "id": "M7-T2p-3",
+      "title": "Refactor concrete STT providers onto shared audio loader",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/openai_stt.rs",
+        "crates/astrbot-provider/src/xinference_stt.rs"
+      ]
+    },
+    {
+      "id": "M7-T2p-4",
+      "title": "Add focused tests and update Maestro documentation",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/audio_media.rs",
+        "crates/astrbot-provider/tests/openai_stt.rs",
+        "crates/astrbot-provider/tests/xinference_stt.rs",
+        ".workflow/scratch/provider-media-conversion-boundary/context.md",
+        ".workflow/roadmap.md",
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md"
+      ]
+    }
+  ]
+}

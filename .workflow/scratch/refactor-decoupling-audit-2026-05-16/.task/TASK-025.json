@@ -1,0 +1,74 @@
+{
+  "id": "TASK-025",
+  "title": "Introduce agent runner and request decoration boundary before main-agent parity",
+  "status": "completed",
+  "type": "refactor",
+  "category": "agent-runner-boundary",
+  "description": "Rust ProcessStage currently converts events directly into provider requests. AstrBot's main agent layer owns persona, context decoration, quote/media enrichment, provider fallback, tool loop, and webchat-specific response policy. Rust should add a typed agent boundary before these concepts accumulate inside pipeline stages.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "crates/astrbot-pipeline/src/stages/provider.rs",
+    "crates/astrbot-core/src/message/provider_request.rs",
+    "crates/astrbot-provider/src/chat.rs",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/tool_loop_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_tool_exec.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/runner.rs",
+      "action": "create",
+      "target": "agent runner trait",
+      "change": "Define the typed boundary between pipeline process stage and provider/tool orchestration."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request_decorator.rs",
+      "action": "create",
+      "target": "provider request decoration",
+      "change": "Separate persona, quote, multimodal, and context decoration from stage control flow."
+    },
+    {
+      "path": "crates/astrbot-agent/src/tool_loop.rs",
+      "action": "create",
+      "target": "tool loop orchestration placeholder",
+      "change": "Prepare a destination for LLM tool calls without coupling them to provider adapters."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/stages/process.rs",
+      "action": "adapt",
+      "target": "pipeline process facade",
+      "change": "Keep stage policy thin and delegate provider/tool orchestration through the agent boundary."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProcessStage remains responsible for pipeline control, not agent orchestration internals.",
+      "ProviderRequest decoration is testable without running the whole pipeline.",
+      "Tool execution boundary from TASK-019 can plug into the agent runner later."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T14:33:43+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-agent/Cargo.toml",
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/fallback.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-agent/src/request_decorator.rs",
+    "crates/astrbot-agent/src/persona.rs",
+    "crates/astrbot-agent/src/tool_loop.rs",
+    "crates/astrbot-agent/src/tests.rs",
+    "crates/astrbot-pipeline/Cargo.toml",
+    "crates/astrbot-pipeline/src/stages/provider.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-pipeline",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

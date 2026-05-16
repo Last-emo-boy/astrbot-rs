@@ -1,0 +1,40 @@
+{
+  "task": "Pass platform image components into provider ChatRequest",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Expose image URL extraction on MessageChain",
+      "description": "Add a small helper to collect non-empty image URLs from message components.",
+      "scope": [
+        "crates/astrbot-core/src/message.rs"
+      ],
+      "convergence_criteria": "Core tests prove plain text and image URLs can be extracted independently.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Pass image URLs through ProviderStage",
+      "description": "ProviderStage should build ChatRequest with image_urls and not skip image-only messages.",
+      "scope": [
+        "crates/astrbot-pipeline/src/stages/provider.rs",
+        "crates/astrbot-pipeline/tests/mock_message_loop.rs"
+      ],
+      "convergence_criteria": "Pipeline test captures ChatRequest.image_urls from a MessageEvent containing an Image component.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run the standard workspace checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/pipeline-multimodal-request"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "completed_at": "2026-05-15T21:52:00+08:00"
+}

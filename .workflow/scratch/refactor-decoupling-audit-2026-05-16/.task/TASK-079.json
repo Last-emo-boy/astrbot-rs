@@ -1,0 +1,47 @@
+{
+  "id": "TASK-079",
+  "title": "Introduce platform identity, member profile, group metadata, and permission resolution boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "platform-identity-membership-boundary",
+  "description": "Rust currently models MessageSender as id plus display_name and keeps plugin permissions as static owner/admin ID lists. AstrBot separates sender/member profile, group metadata, role/admin checks, and adapter-specific group/member lookup. Add a platform identity boundary before WeChat/QQ/Lark/DingTalk parity or plugin permissions grow inside adapters and filters.",
+  "read_first": [
+    "crates/astrbot-core/src/message/session.rs",
+    "crates/astrbot-platform/src/adapters",
+    "crates/astrbot-plugin/src/filter/permission.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/astrbot_message.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/astr_message_event.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/message_session.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/aiocqhttp/aiocqhttp_platform_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/satori/satori_adapter.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-core/src/message/identity.rs",
+      "action": "create",
+      "target": "platform identity model",
+      "change": "Define member profile, group metadata, sender role, and privacy-safe display fields apart from MessageSession."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/identity.rs",
+      "action": "create",
+      "target": "adapter identity normalization",
+      "change": "Normalize adapter-specific sender/member/group metadata before events enter the pipeline."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/permission.rs",
+      "action": "create",
+      "target": "permission resolver port",
+      "change": "Resolve owner/admin/member permissions through platform identity data rather than static plugin filter lists only."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Adapters expose normalized identity/group metadata without leaking platform-specific DTOs into plugin filters.",
+      "Permission checks can use event identity and group role data through a typed resolver.",
+      "Core message session IDs remain routing identifiers, not a catch-all for membership state."
+    ],
+    "verification_command": "cargo test -p astrbot-core && cargo test -p astrbot-platform && cargo test -p astrbot-plugin && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

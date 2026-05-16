@@ -1,0 +1,43 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2b-anthropic-chat-provider",
+  "title": "Anthropic native chat provider",
+  "status": "completed",
+  "objective": "Add a non-OpenAI native chat provider path while preserving ProviderRegistry and RuntimeConfig boundaries.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot ProviderAnthropic payload mapping, system prompt handling, and response parsing."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Implement AnthropicConfig and AnthropicProvider behind the ChatProvider trait."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Register anthropic_chat_completion in ProviderRegistry and expose runtime config construction."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add integration tests for text/system/context, data URL image content, error mapping, and runtime config mapping."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/tests/anthropic.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    ".workflow/scratch/provider-anthropic-chat"
+  ]
+}

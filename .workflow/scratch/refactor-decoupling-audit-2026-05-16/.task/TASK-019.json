@@ -1,0 +1,63 @@
+{
+  "id": "TASK-019",
+  "title": "Extract tool execution, handoff, background task, and sandbox capability boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "tool-execution-boundary",
+  "description": "AstrBot's FunctionToolExecutor combines local tool calls, MCP tools, handoff agents, background tasks, result wake-up, and sandbox capability checks. Rust plugin/tool work should define these as typed tool execution boundaries instead of growing plugin SDK or pipeline stages directly.",
+  "read_first": [
+    "crates/astrbot-plugin/src/sandbox.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_tool_exec.py",
+    "E:/Playground/Astrbot/astrbot/core/star/context.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/tool/mod.rs",
+      "action": "create",
+      "target": "tool API facade",
+      "change": "Expose typed tool declarations without binding to one executor implementation."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/tool/executor.rs",
+      "action": "create",
+      "target": "tool executor boundary",
+      "change": "Separate local tool execution from pipeline and handler registry concerns."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/tool/capability.rs",
+      "action": "create",
+      "target": "tool capability checks",
+      "change": "Connect tool execution to SandboxProfile/ToolCapability decisions before running a tool."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Tool capability checks are reusable by plugin execution and future agent/tool-call orchestration.",
+      "Pipeline stages depend on traits, not concrete tool execution internals.",
+      "Background and handoff task semantics are planned separately from immediate plugin handler dispatch."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T16:05:00+08:00",
+  "files_modified": [
+    "crates/astrbot-plugin/src/tool/mod.rs",
+    "crates/astrbot-plugin/src/tool/background.rs",
+    "crates/astrbot-plugin/src/tool/handoff.rs",
+    "crates/astrbot-plugin/src/tool/declaration.rs",
+    "crates/astrbot-plugin/src/tool/capability.rs",
+    "crates/astrbot-plugin/src/tool/executor.rs",
+    "crates/astrbot-plugin/src/lib.rs",
+    "crates/astrbot-plugin/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-plugin",
+    "cargo test -p astrbot-pipeline",
+    "cargo clippy -p astrbot-plugin -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

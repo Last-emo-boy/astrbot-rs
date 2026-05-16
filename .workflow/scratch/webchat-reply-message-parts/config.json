@@ -1,0 +1,20 @@
+{
+  "task": "Add WebChat reply message parts",
+  "skill": "maestro-quick",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T22:54:03+08:00",
+  "completed_at": "2026-05-15T22:59:56+08:00",
+  "status": "completed",
+  "verification": [
+    "cargo test -p astrbot-core",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-pipeline",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

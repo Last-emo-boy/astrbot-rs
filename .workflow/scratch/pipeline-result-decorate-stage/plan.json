@@ -1,0 +1,35 @@
+{
+  "task_id": "M4-T1-result-decorate-stage",
+  "steps": [
+    {
+      "id": "config",
+      "title": "Add ResultDecorateConfig to PipelineContext",
+      "status": "completed"
+    },
+    {
+      "id": "stage",
+      "title": "Implement ResultDecorateStage reply-prefix transform",
+      "status": "completed"
+    },
+    {
+      "id": "registry-runtime",
+      "title": "Insert result_decorate into default registry and runtime config",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover prefix decoration and default stage order",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    },
+    {
+      "id": "verification",
+      "title": "Run formatting, tests, clippy, CLI smoke, and workflow JSON checks",
+      "status": "completed"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "task_id": "M7-T2o-xinference-stt-provider",
+  "title": "Add AstrBot-compatible Xinference speech-to-text provider",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2o-1",
+      "title": "Study AstrBot Xinference STT source",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py"
+      ]
+    },
+    {
+      "id": "M7-T2o-2",
+      "title": "Implement provider and registry factory",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/xinference_stt.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2o-3",
+      "title": "Add direct and registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/xinference_stt.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2o-4",
+      "title": "Document deferred media conversion boundary",
+      "status": "completed",
+      "files": [
+        ".workflow/scratch/provider-xinference-stt/context.md",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/roadmap.md",
+        ".workflow/state.json"
+      ]
+    }
+  ]
+}

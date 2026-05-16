@@ -1,0 +1,16 @@
+{
+  "task_id": "M2-T2-whitelist-session-rate-limit-ports",
+  "milestone": "M2-policy-stages",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/whitelist_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/session_status_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/rate_limit_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py"
+  ],
+  "scope": [
+    "Add whitelist, session status, and rate limit policy stages after wake and before plugin/provider/respond.",
+    "Expose typed policy config/ports through PipelineContext.",
+    "Keep concrete storage and dashboard management out of the pipeline crate."
+  ]
+}

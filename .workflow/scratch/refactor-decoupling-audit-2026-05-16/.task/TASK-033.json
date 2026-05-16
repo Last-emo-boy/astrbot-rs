@@ -1,0 +1,59 @@
+{
+  "id": "TASK-033",
+  "title": "Define platform webhook verification, encryption, callback server, and long-connection boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "platform-webhook-security-boundary",
+  "description": "WeChat/QQ/WeCom-style platform parity needs signature verification, encrypted callback payloads, webhook servers, callback validation, long connections, and queueing separated from adapter event/message conversion.",
+  "read_first": [
+    "crates/astrbot-platform/src/adapters/onebot",
+    "crates/astrbot-platform/src/adapters/webchat",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial_webhook/qo_webhook_server.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/wecom_ai_bot/wecomai_server.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/wecom_ai_bot/WXBizJsonMsgCrypt.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/wecom_ai_bot/wecomai_long_connection.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/adapters/common",
+      "action": "create",
+      "target": "shared platform transport/security helpers",
+      "change": "Define callback verification, encrypted payload codec, webhook server hooks, long-connection lifecycle, and queue boundaries."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/wechat",
+      "action": "future",
+      "target": "WeChat adapter family",
+      "change": "Keep WeChat-specific crypto and callback validation out of generic PlatformManager and event conversion modules."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Adapter event/message conversion remains separate from webhook server lifecycle.",
+      "Signature verification and encrypted payload decoding are isolated and testable.",
+      "Long-connection reconnect/queue behavior does not leak into PlatformManager."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T18:39:00+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "crates/astrbot-platform/Cargo.toml",
+    "crates/astrbot-platform/src/adapters/common/mod.rs",
+    "crates/astrbot-platform/src/adapters/common/security.rs",
+    "crates/astrbot-platform/src/adapters/common/webhook.rs",
+    "crates/astrbot-platform/src/adapters/common/long_connection.rs",
+    "crates/astrbot-platform/src/adapters/common/queue.rs",
+    "crates/astrbot-platform/src/adapters/common/transport.rs",
+    "crates/astrbot-platform/src/adapters/mod.rs",
+    "crates/astrbot-platform/src/adapters/onebot/transport.rs",
+    "crates/astrbot-platform/src/lib.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-platform",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "id": "TASK-031",
+  "title": "Introduce knowledge-base document, parser, chunking, retrieval, rerank, and vector-store boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "knowledge-base-boundary",
+  "description": "AstrBot KB work spans document metadata, media, parsers, chunkers, sparse/dense retrieval, rank fusion, embedding, rerank, and vector storage. Rust should define these ports before reintroducing RAG parity into core/runtime.",
+  "read_first": [
+    "crates/astrbot-provider/src/embedding.rs",
+    "crates/astrbot-provider/src/rerank.rs",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/retrieval/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/db/vec_db",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-kb/src",
+      "action": "create",
+      "target": "knowledge-base module tree",
+      "change": "Define parser, chunker, document store, vector store, retrieval, rerank, and formatting ports."
+    },
+    {
+      "path": "crates/astrbot-agent/src",
+      "action": "integrate-later",
+      "target": "main-agent request decoration",
+      "change": "Inject KB context through a request decoration boundary rather than direct provider/pipeline coupling."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Embedding/rerank providers remain provider capabilities, not KB storage implementations.",
+      "Document parsing and vector storage can be tested without runtime assembly.",
+      "Agent request decoration receives formatted KB context through a port."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T17:45:00+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "crates/astrbot-kb/Cargo.toml",
+    "crates/astrbot-kb/src/lib.rs",
+    "crates/astrbot-kb/src/types.rs",
+    "crates/astrbot-kb/src/document.rs",
+    "crates/astrbot-kb/src/parser.rs",
+    "crates/astrbot-kb/src/chunking.rs",
+    "crates/astrbot-kb/src/embedding.rs",
+    "crates/astrbot-kb/src/vector_store.rs",
+    "crates/astrbot-kb/src/rank_fusion.rs",
+    "crates/astrbot-kb/src/retrieval.rs",
+    "crates/astrbot-kb/src/formatter.rs",
+    "crates/astrbot-kb/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-kb",
+    "cargo test -p astrbot-provider",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

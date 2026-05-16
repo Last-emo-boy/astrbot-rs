@@ -7,7 +7,20 @@ mod registry;
 #[cfg(test)]
 mod tests;
 
-pub use adapters::{ConsolePlatform, ConsoleSink, MockPlatform, OneBotPlatform, WebChatPlatform};
+pub use adapters::{
+    ConsolePlatform, ConsoleSink, DecodedWebhookPayload, EncryptedWebhookEnvelope,
+    InMemoryPlatformQueueStore, LongConnectionClient, LongConnectionCommand,
+    LongConnectionEndpoint, LongConnectionFrame, LongConnectionReconnectPolicy,
+    LongConnectionState, LongConnectionWaiters, MockPlatform, NoopTransport, OneBotPlatform,
+    OneBotSession, OneBotSessionKind, OneBotTransport, OneBotTransportMode, PendingWebhookResponse,
+    PlainWebhookPayloadCodec, PlatformCallbackQueue, PlatformMediaKind, PlatformMediaReference,
+    PlatformMediaSource, PlatformMediaUpload, PlatformMediaUploadClient, PlatformQueueDirection,
+    PlatformQueueItem, PlatformQueueStats, PlatformTransport, PlatformTransportKind,
+    PlatformTransportState, Sha1SortedFieldsVerifier, WebChatPlatform, WebhookCallbackHandler,
+    WebhookDuplicateStatus, WebhookEndpoint, WebhookEventDeduplicator, WebhookHttpMethod,
+    WebhookPayloadCodec, WebhookRequest, WebhookResponse, WebhookRoute, WebhookServer,
+    WebhookServerState, WebhookSignatureInput, WebhookSignatureVerdict, WebhookSignatureVerifier,
+};
 pub use built::BuiltPlatform;
 pub use core::{
     CONSOLE_PLATFORM_TYPE, MOCK_PLATFORM_TYPE, MessageRecorder, ONEBOT_PLATFORM_TYPE,

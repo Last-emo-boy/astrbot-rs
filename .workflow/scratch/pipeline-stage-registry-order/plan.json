@@ -1,0 +1,39 @@
+{
+  "task": "M1-T1 stage registry and order",
+  "status": "completed",
+  "completed_at": "2026-05-15T23:19:04+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add PipelineStageRegistry",
+      "description": "Create registry/factory/order abstraction in astrbot-pipeline.",
+      "scope": [
+        "crates/astrbot-pipeline/src"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Build runtime default pipeline from registry",
+      "description": "Replace runtime manual stage wiring with built-in registry construction.",
+      "scope": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Verify order and compatibility",
+      "description": "Add tests for deterministic built-in order and duplicate stage rejection; run workspace checks.",
+      "scope": [
+        "crates/astrbot-pipeline/src",
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-runtime"
+  ]
+}

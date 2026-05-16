@@ -1,0 +1,61 @@
+{
+  "id": "TASK-052",
+  "title": "Extract remaining non-chat provider protocol DTO and response parser modules",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-non-chat-protocol-boundary",
+  "description": "TASK-022 extracted chat, MiniMax TTS SSE, and Xinference parser DTOs, but other non-chat provider adapters still combine payload DTOs, response parsing, error parsing, and adapter orchestration. Record a follow-up boundary so embedding, STT, TTS, and rerank protocol shapes do not keep growing inside concrete adapter files.",
+  "read_first": [
+    "crates/astrbot-provider/src/openai_embedding.rs",
+    "crates/astrbot-provider/src/gemini_embedding.rs",
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/gemini_tts.rs",
+    "crates/astrbot-provider/src/volcengine_tts.rs",
+    "crates/astrbot-provider/src/openai_stt.rs",
+    "crates/astrbot-provider/src/bailian_rerank.rs",
+    "crates/astrbot-provider/src/vllm_rerank.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_embedding_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_embedding_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_tts_api_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_tts_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/volcengine_tts.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/whisper_api_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/bailian_rerank_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/vllm_rerank_source.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/protocol/openai_embedding.rs",
+      "action": "create",
+      "target": "OpenAI embedding protocol DTO/parser",
+      "change": "Move embedding request and response vector parsing out of the adapter."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol/gemini_embedding.rs",
+      "action": "create",
+      "target": "Gemini embedding protocol DTO/parser",
+      "change": "Move embedContent and batchEmbedContents request/response parsing plus Gemini error extraction."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol/tts.rs",
+      "action": "create",
+      "target": "TTS request/response protocol DTOs",
+      "change": "Move OpenAI, Gemini, Volcengine, and other TTS protocol payload and response extraction helpers out of concrete adapters without moving artifact writing."
+    },
+    {
+      "path": "crates/astrbot-provider/src/protocol/rerank.rs",
+      "action": "create",
+      "target": "rerank request/response protocol DTOs",
+      "change": "Move Bailian and VLLM rerank payload/response parsing out of adapters."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Non-chat adapters mostly orchestrate config, HTTP calls, media loading/artifact writing, and trait implementation.",
+      "Provider-specific payload and response mapping lives under protocol modules.",
+      "Existing embedding, STT, TTS, and rerank tests still assert the same wire shapes."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium"
+}

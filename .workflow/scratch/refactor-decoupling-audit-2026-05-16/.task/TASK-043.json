@@ -1,0 +1,48 @@
+{
+  "id": "TASK-043",
+  "title": "Introduce conversation and platform message history domain boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "conversation-history-boundary",
+  "description": "AstrBot separates conversation management and platform message history from raw database helpers. Rust currently has session context ports, WebChat in-memory history, and planned storage ports, but no conversation-domain manager for current conversation, message pairs, persona links, and platform history readback. Define this before persistent memory parity grows inside WebChat or pipeline context.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/context/session.rs",
+    "crates/astrbot-web/src/history.rs",
+    "crates/astrbot-platform/src/adapters/webchat/mod.rs",
+    "crates/astrbot-storage/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/conversation_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/platform_message_history_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/history_saver.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-conversation/src/conversation.rs",
+      "action": "create",
+      "target": "conversation domain service",
+      "change": "Own current conversation, switch/delete/update flows separately from storage implementation."
+    },
+    {
+      "path": "crates/astrbot-conversation/src/message_history.rs",
+      "action": "create",
+      "target": "platform history service",
+      "change": "Expose platform message history read/write policy outside WebChat transport."
+    },
+    {
+      "path": "crates/astrbot-conversation/src/persona_link.rs",
+      "action": "create",
+      "target": "persona-conversation link",
+      "change": "Keep persona selection metadata out of generic storage repositories."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Pipeline continues to depend on session context traits, not concrete conversation storage.",
+      "WebChat history routes delegate to a history service boundary.",
+      "Storage repositories remain implementation details behind conversation-domain ports."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

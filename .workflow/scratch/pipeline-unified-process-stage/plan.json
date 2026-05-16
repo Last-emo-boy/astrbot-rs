@@ -1,0 +1,30 @@
+{
+  "task_id": "M3-T1-unified-process-stage",
+  "steps": [
+    {
+      "id": "process-stage",
+      "title": "Add ProcessStage facade using existing plugin and provider behavior",
+      "status": "completed"
+    },
+    {
+      "id": "stage-registry",
+      "title": "Register process as the default stage between content_safety and respond",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover process behavior and default stage names",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    },
+    {
+      "id": "verification",
+      "title": "Run formatting, tests, clippy, CLI smoke, and workflow JSON checks",
+      "status": "completed"
+    }
+  ]
+}

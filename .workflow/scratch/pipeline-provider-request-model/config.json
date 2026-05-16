@@ -1,0 +1,16 @@
+{
+  "task_id": "M3-T2-provider-request-model",
+  "milestone": "M3-process-stage",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/entities.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_request.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_sub_stages/internal.py"
+  ],
+  "scope": [
+    "Introduce a typed event-level ProviderRequest model for plugin-generated LLM requests.",
+    "Convert ProviderRequest into provider ChatRequest without coupling plugins to pipeline internals.",
+    "Keep full agent runner, context memory, and tool execution deferred."
+  ]
+}

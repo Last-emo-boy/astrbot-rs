@@ -1,0 +1,46 @@
+{
+  "id": "TASK-042",
+  "title": "Define provider selection state and change notification boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-selection-boundary",
+  "description": "AstrBot ProviderManager owns selected/default provider state and change callbacks per capability. Rust currently has session provider preference and provider manager routing, but no explicit provider-selection state or change-event boundary for dashboard/runtime updates. Define it before provider management APIs mutate manager internals directly.",
+  "read_first": [
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-pipeline/src/context/provider_preference.rs",
+    "crates/astrbot-runtime/src/assembly.rs",
+    "crates/astrbot-web/src/routes.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/selection.rs",
+      "action": "create",
+      "target": "provider selection model",
+      "change": "Define typed selected-provider state by capability and optional session override."
+    },
+    {
+      "path": "crates/astrbot-provider/src/manager/hooks.rs",
+      "action": "create",
+      "target": "provider change hooks",
+      "change": "Expose provider selection change notifications without binding manager logic to dashboard or runtime code."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/provider_selection.rs",
+      "action": "create",
+      "target": "runtime selection wiring",
+      "change": "Keep runtime persistence/restore policy separate from provider manager capability routing."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing ProviderManager request routing remains compatible.",
+      "Provider selection changes can be observed through a trait or typed event.",
+      "Dashboard/provider management APIs can update selection without reaching into manager maps."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "risk": "medium"
+}

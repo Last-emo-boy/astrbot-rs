@@ -1,0 +1,9 @@
+{
+  "task": "Add config-driven CLI entrypoint",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T20:28:41+08:00",
+  "status": "completed"
+}

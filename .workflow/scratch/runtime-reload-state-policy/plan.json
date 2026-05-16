@@ -1,0 +1,27 @@
+{
+  "id": "runtime-reload-state-policy",
+  "task_id": "M6-T2-reload-state-policy",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-reload-behavior",
+      "status": "completed",
+      "summary": "Compared AstrBot restart/reload and provider preference storage behavior."
+    },
+    {
+      "id": "state-policy-config",
+      "status": "completed",
+      "summary": "Added RuntimeStatePolicyConfig with explicit provider preference preservation policy."
+    },
+    {
+      "id": "restart-state-transfer",
+      "status": "completed",
+      "summary": "RuntimeHandle::restart now snapshots and restores provider preference when policy allows it."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Added tests for preserving and discarding provider preference across restart."
+    }
+  ]
+}

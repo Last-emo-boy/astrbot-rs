@@ -1,0 +1,48 @@
+{
+  "id": "TASK-049",
+  "title": "Define platform API client, retry, rate-limit, and rich-event normalization boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "platform-api-client-boundary",
+  "description": "TASK-023 covers transport/session/media lifecycle, but AstrBot's richer platform adapters also carry API clients, retry wrappers, rate-limit handling, WebSocket client errors, and platform-specific rich event normalization. Rust should keep those concerns separate from adapter transport and unified MessageEvent conversion.",
+  "read_first": [
+    "crates/astrbot-platform/src/adapters",
+    "crates/astrbot-platform/src/manager.rs",
+    "crates/astrbot-platform/src/registry.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/misskey/misskey_api.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/dingtalk/dingtalk_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/lark/lark_event.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/telegram/tg_event.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/api_client.rs",
+      "action": "create",
+      "target": "platform API client port",
+      "change": "Keep platform REST/WebSocket client details out of adapter event conversion."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/retry.rs",
+      "action": "create",
+      "target": "retry and backoff policy",
+      "change": "Share retry/backoff semantics without coupling adapters to one transport implementation."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/rich_event.rs",
+      "action": "create",
+      "target": "rich event normalization",
+      "change": "Normalize platform-specific media/reaction/thread fields before mapping into core message events."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Adapter transport, API clients, and event normalization are independently testable.",
+      "Platform-specific retry/rate-limit errors do not leak into core MessageEvent types.",
+      "Future Telegram/Lark/DingTalk/Misskey adapters can reuse common policies without sharing payload DTOs."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

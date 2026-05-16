@@ -1,0 +1,16 @@
+{
+  "id": "pipeline-quote-context-policy",
+  "task_id": "M5-T3-quote-context-policy",
+  "milestone": "M5-context-session-memory",
+  "status": "completed",
+  "source_refs": [
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/quoted_message/extractor.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

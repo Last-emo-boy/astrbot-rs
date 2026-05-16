@@ -1,0 +1,40 @@
+{
+  "task": "Add OpenAI-compatible streaming response collection",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Add opt-in streaming flag to ChatRequest",
+      "description": "Extend ChatRequest with a default-false stream flag and builder method without changing existing call sites.",
+      "scope": [
+        "crates/astrbot-provider/src/lib.rs"
+      ],
+      "convergence_criteria": "Existing provider and pipeline callers compile without modification and continue to send non-streaming requests by default.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Parse OpenAI SSE streaming responses",
+      "description": "When ChatRequest.stream is true, send stream:true and collect OpenAI-style data events into the final ChatResponse.",
+      "scope": [
+        "crates/astrbot-provider/src/openai_compatible.rs",
+        "crates/astrbot-provider/tests/openai_compatible.rs"
+      ],
+      "convergence_criteria": "A mock HTTP server test proves streaming chunks are accumulated into one final message.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run the standard workspace checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/openai-compatible-streaming"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "completed_at": "2026-05-15T21:28:00+08:00"
+}

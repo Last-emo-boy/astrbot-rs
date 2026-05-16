@@ -1,0 +1,43 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2c-gemini-chat-provider",
+  "title": "Gemini native chat provider",
+  "status": "completed",
+  "objective": "Add AstrBot-compatible Google GenAI chat provider support while keeping provider construction behind ProviderRegistry and runtime typed config.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot ProviderGoogleGenAI registration, request mapping, image handling, and response finish reason behavior."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Implement GeminiConfig and GeminiProvider behind the ChatProvider trait."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Register googlegenai_chat_completion in ProviderRegistry and expose runtime config construction."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add integration tests for text/system/context, data URL image content, safety and policy finish reasons, HTTP error mapping, registry registration, and runtime config mapping."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/tests/gemini.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    ".workflow/scratch/provider-gemini-chat"
+  ]
+}

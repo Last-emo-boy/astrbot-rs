@@ -1,0 +1,59 @@
+{
+  "id": "TASK-017",
+  "title": "Split runtime handle task supervision and restart state helpers",
+  "status": "completed",
+  "type": "refactor",
+  "category": "runtime-lifecycle-boundary",
+  "description": "Runtime handle currently owns the runtime object, start/stop handles, platform task joins, mock test helpers, and restart state transfer. Split task supervision and restart state handling before adding richer platform reload/status behavior.",
+  "read_first": [
+    "crates/astrbot-runtime/src/handle.rs",
+    "crates/astrbot-runtime/src/assembly.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/handle/mod.rs",
+      "action": "create",
+      "target": "runtime handle facade",
+      "change": "Keep public RuntimeHandle/AstrbotRuntime exports stable while delegating internals."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/handle/supervisor.rs",
+      "action": "create",
+      "target": "background task lifecycle",
+      "change": "Move JoinHandle abort/join handling and platform/event-bus task supervision out of the handle facade."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/handle/restart.rs",
+      "action": "create",
+      "target": "restart state transfer",
+      "change": "Isolate provider preference snapshot/restore policy from stop/start mechanics."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Runtime start, stop, restart, and sent-message helper behavior remains unchanged.",
+      "Task abort/join error mapping is tested independently.",
+      "Future platform reload/status work can reuse the supervisor boundary."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T15:20:00+08:00",
+  "files_modified": [
+    "crates/astrbot-runtime/src/handle/mod.rs",
+    "crates/astrbot-runtime/src/handle/runtime.rs",
+    "crates/astrbot-runtime/src/handle/supervisor.rs",
+    "crates/astrbot-runtime/src/handle/restart.rs",
+    "crates/astrbot-runtime/src/handle/testing.rs",
+    "crates/astrbot-runtime/src/handle.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy -p astrbot-runtime -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

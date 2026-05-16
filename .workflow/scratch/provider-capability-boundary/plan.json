@@ -1,0 +1,40 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2d-provider-capability-boundary",
+  "title": "Provider capability boundary",
+  "status": "completed",
+  "objective": "Introduce an AstrBot-inspired provider capability metadata boundary before implementing STT/TTS/Embedding/Rerank providers.",
+  "steps": [
+    {
+      "id": "T1",
+      "status": "completed",
+      "description": "Study AstrBot ProviderType, provider adapter metadata registration, abstract provider classes, and manager capability buckets."
+    },
+    {
+      "id": "T2",
+      "status": "completed",
+      "description": "Add ProviderCapability and ProviderAdapterMetadata to the Rust provider registry."
+    },
+    {
+      "id": "T3",
+      "status": "completed",
+      "description": "Make chat provider registration automatically publish chat_completion metadata while allowing future non-chat metadata registration."
+    },
+    {
+      "id": "T4",
+      "status": "completed",
+      "description": "Add tests proving built-in chat providers expose metadata and non-chat metadata cannot be built as chat providers."
+    },
+    {
+      "id": "T5",
+      "status": "completed",
+      "description": "Run formatting, workspace tests, clippy, and CLI smoke verification."
+    }
+  ],
+  "artifacts": [
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs",
+    ".workflow/scratch/provider-capability-boundary"
+  ]
+}

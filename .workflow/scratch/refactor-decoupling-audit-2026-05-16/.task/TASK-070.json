@@ -1,0 +1,44 @@
+{
+  "id": "TASK-070",
+  "title": "Define pipeline preprocess stage for pre-ack reactions, path mapping, and STT normalization",
+  "status": "pending",
+  "type": "refactor",
+  "category": "pipeline-preprocess-boundary",
+  "description": "AstrBot has a PreProcessStage before wake/process handling that sends optional platform pre-ack reactions, rewrites media paths, and converts Record components to Plain text through the selected STT provider. Rust currently has policy stages and STT providers, but no dedicated preprocessing boundary.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/stages",
+    "crates/astrbot-pipeline/src/registry/order.rs",
+    "crates/astrbot-runtime/src/policy_config.rs",
+    "crates/astrbot-provider/src/speech.rs",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/preprocess_stage/stage.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-pipeline/src/stages/preprocess.rs",
+      "action": "create",
+      "target": "preprocess stage",
+      "change": "Define a stage boundary for pre-ack reactions, media path mapping, and STT text normalization before process/provider stages."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/context/preprocess.rs",
+      "action": "create",
+      "target": "preprocess ports/config",
+      "change": "Expose typed ports for pre-ack reaction sink, path mapping, and STT provider lookup without reaching into runtime globals."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/path_mapping.rs",
+      "action": "create",
+      "target": "platform media path mapping",
+      "change": "Keep local/remote media path rewrite rules outside provider adapters and message component types."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Preprocessing can be tested independently from wake, process, and respond stages.",
+      "Record-to-Plain STT conversion uses provider capability ports and does not couple pipeline code to concrete STT providers.",
+      "Platform pre-ack reactions and path mapping remain optional policy/config behavior."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

@@ -1,583 +1,370 @@
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::registry::{FilePluginLoader, PluginLoader, PluginManager, PluginRegistry};
-    use astrbot_core::errors::Result;
-    use astrbot_core::event::{Event, MessageEvent, EventResult};
-    use astrbot_core::message::{AstrBotMessage, MessageChain, MessageMember, MessageType, MessageEventResult};
-    use astrbot_core::platform::{MessageSource, PlatformType};
-    use astrbot_core::plugin::{Plugin, PluginConfig, PluginContext, PluginMetadata, Star};
-    use async_trait::async_trait;
-    use std::collections::HashMap;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-    /// A test plugin that counts message events
-    struct CountingPlugin {
-        metadata: PluginMetadata,
-        message_count: AtomicUsize,
+use astrbot_core::{
+    MessageChain, MessageEvent, MessageSender, MessageSession, MessageSessionKind, MessageSink,
+    Result,
+};
+use async_trait::async_trait;
+
+use super::*;
+
+struct NoopSink;
+
+#[async_trait]
+impl MessageSink for NoopSink {
+    async fn send(&self, _session: &MessageSession, _chain: MessageChain) -> Result<()> {
+        Ok(())
+    }
+}
+
+fn event(message: impl Into<String>) -> MessageEvent {
+    MessageEvent::new(
+        "event",
+        "console",
+        "console",
+        MessageSession::new("console", "user"),
+        MessageSender::new("user", None),
+        MessageChain::plain(message),
+        Arc::new(NoopSink),
+    )
+}
+
+struct CountingHandler {
+    calls: Arc<AtomicUsize>,
+    control: PluginControl,
+}
+
+#[async_trait]
+impl PluginHandler for CountingHandler {
+    async fn handle(&self, _event: &mut MessageEvent) -> Result<PluginControl> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Ok(self.control)
+    }
+}
+
+struct TerminatingHandler {
+    terminate_count: Arc<AtomicUsize>,
+}
+
+#[async_trait]
+impl PluginHandler for TerminatingHandler {
+    async fn handle(&self, _event: &mut MessageEvent) -> Result<PluginControl> {
+        Ok(PluginControl::Continue)
     }
 
-    impl CountingPlugin {
-        fn new() -> Self {
-            Self {
-                metadata: PluginMetadata {
-                    name: "counting".to_string(),
-                    author: "test".to_string(),
-                    description: "Counts messages".to_string(),
-                    version: "1.0.0".to_string(),
-                    repository: None,
-                    min_astrbot_version: None,
-                    platforms: vec!["*".to_string()],
-                    reserved: false,
-                    logo: None,
-                },
-                message_count: AtomicUsize::new(0),
-            }
-        }
+    async fn terminate(&self) -> Result<()> {
+        self.terminate_count.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+}
 
-        fn count(&self) -> usize {
-            self.message_count.load(Ordering::Relaxed)
+#[test]
+fn command_filter_matches_alias_and_prefix() {
+    let filter = CommandFilter::new("/ping").with_alias("p").with_prefix("!");
+
+    assert!(filter.matches(&event("!ping now")));
+    assert!(filter.matches(&event("!p now")));
+    assert!(!filter.matches(&event("/ping now")));
+}
+
+#[test]
+fn typed_filters_match_platform_session_permission_and_regex() {
+    let mut group = event("hello 123");
+    group.session = group.session.with_kind(MessageSessionKind::Group);
+
+    assert!(PlatformFilter::new("console").matches(&group));
+    assert!(MessageSessionKindFilter::group().matches(&group));
+
+    let scope = PermissionScope::new().with_admin_user_id("user");
+    assert!(PermissionFilter::admin(scope).matches(&group));
+
+    let regex = RegexFilter::new(r"\d+").expect("regex should compile");
+    assert!(regex.matches(&group));
+}
+
+#[tokio::test]
+async fn registry_orders_handlers_and_stops_on_stop_control() {
+    let low_calls = Arc::new(AtomicUsize::new(0));
+    let high_calls = Arc::new(AtomicUsize::new(0));
+    let mut registry = PluginRegistry::new();
+    registry.register_handler(RegisteredHandler::new(
+        HandlerMetadata::new("plugin", "low", PluginEventType::AdapterMessage).with_priority(0),
+        Arc::new(CountingHandler {
+            calls: low_calls.clone(),
+            control: PluginControl::Continue,
+        }),
+    ));
+    registry.register_handler(RegisteredHandler::new(
+        HandlerMetadata::new("plugin", "high", PluginEventType::AdapterMessage).with_priority(10),
+        Arc::new(CountingHandler {
+            calls: high_calls.clone(),
+            control: PluginControl::Stop,
+        }),
+    ));
+
+    let mut event = event("/ping");
+    let control = registry
+        .handle_event(PluginEventType::AdapterMessage, &mut event)
+        .await
+        .expect("registry should handle event");
+
+    assert_eq!(control, PluginControl::Stop);
+    assert_eq!(high_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(low_calls.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn registry_terminates_registered_handlers() {
+    let terminate_count = Arc::new(AtomicUsize::new(0));
+    let mut registry = PluginRegistry::new();
+    registry.register_handler(RegisteredHandler::new(
+        HandlerMetadata::new("plugin", "handler", PluginEventType::AdapterMessage),
+        Arc::new(TerminatingHandler {
+            terminate_count: terminate_count.clone(),
+        }),
+    ));
+
+    registry
+        .terminate()
+        .await
+        .expect("registry should terminate handlers");
+
+    assert_eq!(terminate_count.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn manifest_drives_plugin_context_sandbox_permissions() {
+    let manifest = PluginManifest::new("tools", "0.1.0")
+        .with_capability(PluginCapability::SandboxTool)
+        .with_permission(PluginPermission::SendMessage)
+        .with_tool_capability(ToolCapability::Browser);
+
+    let harness = PluginTestHarness::from_manifest(&manifest);
+    let ctx = harness.context();
+
+    assert_eq!(ctx.plugin_name(), "tools");
+    assert!(ctx.allows_permission(PluginPermission::SendMessage));
+    assert!(ctx.allows_tool_capability(ToolCapability::Browser));
+    assert!(!ctx.allows_tool_capability(ToolCapability::Shell));
+}
+
+#[test]
+fn plugin_loader_discovers_and_activates_manifest_metadata() {
+    let manifest = PluginManifest::new("My Fancy Plugin", "0.1.0")
+        .with_permission(PluginPermission::RegisterWebApi)
+        .with_capability(PluginCapability::WebApi);
+    let mut loader = PluginLoader::new();
+
+    let metadata = loader
+        .discover_manifest(PluginLoadSource::native_rust("My Fancy Plugin"), manifest)
+        .expect("manifest should be discovered")
+        .with_supported_platform("webchat")
+        .with_runtime_version(PLUGIN_SDK_VERSION);
+
+    assert_eq!(metadata.plugin_id(), "my_fancy_plugin");
+    assert_eq!(metadata.supported_platforms(), &["webchat".to_string()]);
+    assert_eq!(metadata.runtime_version(), Some(PLUGIN_SDK_VERSION));
+
+    let loaded = loader
+        .mark_loaded("my_fancy_plugin")
+        .expect("plugin should transition to loaded");
+    assert_eq!(loaded.previous, PluginLifecycleState::Discovered);
+    assert_eq!(loaded.next, PluginLifecycleState::Loaded);
+
+    let activated = loader
+        .activate("my_fancy_plugin")
+        .expect("plugin should transition to active");
+    assert_eq!(activated.action, PluginLifecycleAction::Activate);
+    assert_eq!(activated.next, PluginLifecycleState::Active);
+
+    let context = loader
+        .context_for("my_fancy_plugin")
+        .expect("plugin context should be available");
+    assert!(context.allows_permission(PluginPermission::RegisterWebApi));
+}
+
+#[test]
+fn plugin_loader_disables_and_unloads_without_dynamic_imports() {
+    let manifest = PluginManifest::new("stateful", "0.1.0");
+    let mut loader = PluginLoader::new();
+    loader
+        .discover_manifest(PluginLoadSource::python_compat("stateful"), manifest)
+        .expect("manifest should be discovered");
+    loader
+        .mark_loaded("stateful")
+        .expect("plugin should transition to loaded");
+    loader
+        .activate("stateful")
+        .expect("plugin should transition to active");
+
+    let disabled = loader
+        .disable("stateful")
+        .expect("plugin should transition to disabled");
+    assert_eq!(disabled.previous, PluginLifecycleState::Active);
+    assert_eq!(disabled.next, PluginLifecycleState::Disabled);
+
+    let unloaded = loader
+        .unload("stateful")
+        .expect("plugin should transition to unloaded");
+    assert_eq!(unloaded.next, PluginLifecycleState::Unloaded);
+}
+
+#[tokio::test]
+async fn plugin_dependency_plan_is_installer_boundary() {
+    let plan = PluginDependencyPlan::new("tools").with_dependency(
+        PluginDependency::new(PluginDependencyKind::PythonPackage, "watchfiles")
+            .with_version_req(">=0.21")
+            .optional(),
+    );
+
+    assert_eq!(plan.dependencies().len(), 1);
+    assert!(plan.dependencies()[0].optional);
+
+    NoopDependencyInstaller
+        .ensure_dependencies(&plan)
+        .await
+        .expect("noop installer should accept dependency plan");
+}
+
+#[test]
+fn hot_reload_plans_source_changes() {
+    let source_change = PluginFileChange::new(
+        "plugin",
+        "plugins/plugin/src/lib.rs",
+        PluginFileChangeKind::Modified,
+    );
+    let asset_change = PluginFileChange::new(
+        "plugin",
+        "plugins/plugin/logo.png",
+        PluginFileChangeKind::Modified,
+    );
+    let removal = PluginFileChange::new("plugin", "plugins/plugin", PluginFileChangeKind::Removed);
+
+    assert_eq!(plan_hot_reload(&source_change), HotReloadDecision::Reload);
+    assert_eq!(plan_hot_reload(&asset_change), HotReloadDecision::Ignore);
+    assert_eq!(plan_hot_reload(&removal), HotReloadDecision::Unload);
+}
+
+#[test]
+fn plugin_extension_descriptors_are_typed() {
+    let platform_extension = PluginPlatformExtension::new(
+        "plugin",
+        "webchat-extra",
+        PluginPlatformExtensionKind::MessageBridge,
+        "webchat",
+    )
+    .with_description("extra webchat bridge");
+    assert_eq!(platform_extension.platform_type, "webchat");
+    assert_eq!(
+        platform_extension.kind,
+        PluginPlatformExtensionKind::MessageBridge
+    );
+
+    let route = PluginWebApiRoute::new("plugin", "api/plugins/plugin")
+        .with_method(PluginWebApiMethod::Post)
+        .with_description("plugin management route");
+    assert_eq!(route.route, "/api/plugins/plugin");
+    assert!(route.methods.contains(&PluginWebApiMethod::Get));
+    assert!(route.methods.contains(&PluginWebApiMethod::Post));
+}
+
+struct EchoToolExecutor;
+
+#[async_trait]
+impl ToolExecutor for EchoToolExecutor {
+    async fn execute(&self, request: ToolExecutionRequest) -> Result<ToolExecutionResult> {
+        Ok(ToolExecutionResult::completed(
+            request.argument("text").unwrap_or(""),
+        ))
+    }
+}
+
+#[test]
+fn tool_capability_decision_reports_missing_sandbox_requirements() {
+    let declaration = PluginToolDeclaration::local("browser")
+        .requires_permission(PluginPermission::UseNetwork)
+        .requires_capability(ToolCapability::Browser);
+    let decision = ToolCapabilityDecision::check(&declaration, &SandboxProfile::restricted());
+
+    assert!(!decision.allowed);
+    assert_eq!(
+        decision.missing_permissions,
+        vec![PluginPermission::UseNetwork]
+    );
+    assert_eq!(decision.missing_capabilities, vec![ToolCapability::Browser]);
+    assert!(
+        decision
+            .rejection_message("browser")
+            .expect("rejection should explain missing requirements")
+            .contains("missing tool capabilities")
+    );
+}
+
+#[tokio::test]
+async fn sandboxed_tool_executor_runs_allowed_tools() {
+    let declaration =
+        PluginToolDeclaration::local("browser").requires_capability(ToolCapability::Browser);
+    let context = PluginContext::new("tools").with_sandbox_profile(
+        SandboxProfile::restricted().with_tool_capability(ToolCapability::Browser),
+    );
+    let request = ToolExecutionRequest::new(declaration, context).with_argument("text", "ok");
+
+    let result = SandboxedToolExecutor::new(EchoToolExecutor)
+        .execute(request)
+        .await
+        .expect("allowed tool should execute");
+
+    assert_eq!(result.status, ToolExecutionStatus::Completed);
+    assert_eq!(result.content.as_deref(), Some("ok"));
+}
+
+#[tokio::test]
+async fn sandboxed_tool_executor_rejects_missing_capability() {
+    let declaration =
+        PluginToolDeclaration::local("browser").requires_capability(ToolCapability::Browser);
+    let context = PluginContext::new("tools");
+    let request = ToolExecutionRequest::new(declaration, context);
+
+    let err = SandboxedToolExecutor::new(EchoToolExecutor)
+        .execute(request)
+        .await
+        .expect_err("missing browser capability should reject execution");
+
+    assert!(err.to_string().contains("rejected by sandbox"));
+}
+
+#[test]
+fn tool_declarations_model_handoff_and_background_boundaries() {
+    let handoff = PluginToolDeclaration::handoff(
+        "delegate",
+        HandoffToolTarget::new("researcher")
+            .with_provider_id("provider-a")
+            .allow_background(),
+    );
+    let background = PluginToolDeclaration::background(
+        "long-job",
+        BackgroundTaskPolicy::new()
+            .with_max_seconds(300)
+            .with_note("summarize later"),
+    )
+    .requires_permission(PluginPermission::SpawnBackgroundTask);
+
+    match handoff.kind {
+        PluginToolKind::Handoff(target) => {
+            assert_eq!(target.agent_name, "researcher");
+            assert_eq!(target.provider_id.as_deref(), Some("provider-a"));
+            assert!(target.background_allowed);
         }
+        _ => panic!("expected handoff tool kind"),
     }
 
-    #[async_trait]
-    impl Plugin for CountingPlugin {
-        fn metadata(&self) -> &PluginMetadata {
-            &self.metadata
+    match background.kind {
+        PluginToolKind::Background(policy) => {
+            assert!(policy.wake_on_complete);
+            assert_eq!(policy.max_seconds, Some(300));
+            assert_eq!(policy.note.as_deref(), Some("summarize later"));
         }
-
-        async fn initialize(&mut self, _config: PluginConfig, _ctx: PluginContext) -> Result<()> {
-            Ok(())
-        }
-
-        async fn start(&mut self) -> Result<()> {
-            Ok(())
-        }
-
-        async fn stop(&mut self) -> Result<()> {
-            Ok(())
-        }
-
-        async fn on_event(&self, event: &dyn Event) -> Result<EventResult> {
-            if event.event_type() == "message" {
-                self.message_count.fetch_add(1, Ordering::Relaxed);
-            }
-            Ok(EventResult::nothing())
-        }
-
-        fn can_handle(&self, event: &dyn Event) -> bool {
-            event.event_type() == "message"
-        }
-    }
-
-    /// A command plugin that only handles commands
-    struct CommandPlugin {
-        metadata: PluginMetadata,
-    }
-
-    impl CommandPlugin {
-        fn new() -> Self {
-            Self {
-                metadata: PluginMetadata {
-                    name: "command_handler".to_string(),
-                    author: "test".to_string(),
-                    description: "Handles commands".to_string(),
-                    version: "1.0.0".to_string(),
-                    repository: None,
-                    min_astrbot_version: None,
-                    platforms: vec!["*".to_string()],
-                    reserved: false,
-                    logo: None,
-                },
-            }
-        }
-    }
-
-    #[async_trait]
-    impl Plugin for CommandPlugin {
-        fn metadata(&self) -> &PluginMetadata {
-            &self.metadata
-        }
-
-        async fn initialize(&mut self, _config: PluginConfig, _ctx: PluginContext) -> Result<()> {
-            Ok(())
-        }
-
-        async fn start(&mut self) -> Result<()> {
-            Ok(())
-        }
-
-        async fn stop(&mut self) -> Result<()> {
-            Ok(())
-        }
-
-        async fn on_event(&self, _event: &dyn Event) -> Result<EventResult> {
-            Ok(EventResult::nothing())
-        }
-
-        fn can_handle(&self, event: &dyn Event) -> bool {
-            event.event_type() == "command"
-        }
-    }
-
-    fn make_test_message_event() -> MessageEvent {
-        MessageEvent {
-            source: MessageSource {
-                platform: PlatformType::Aiocqhttp,
-                session_id: "123".to_string(),
-                message_id: "1".to_string(),
-                user_id: "user1".to_string(),
-            },
-            message: AstrBotMessage {
-                message_id: "1".to_string(),
-                timestamp: chrono::Utc::now(),
-                platform: PlatformType::Aiocqhttp,
-                session_id: "123".to_string(),
-                sender: MessageMember {
-                    user_id: "user1".to_string(),
-                    nickname: None,
-                    card: None,
-                    role: None,
-                    is_self: false,
-                },
-                message_type: MessageType::Private,
-                chain: MessageChain::new(),
-                raw_payload: None,
-            },
-        }
-    }
-
-    #[tokio::test]
-    async fn test_plugin_lifecycle() {
-        let mut plugin = CountingPlugin::new();
-        let ctx = PluginContext::new("bot1".to_string(), "qq".to_string());
-
-        plugin.initialize(HashMap::new(), ctx).await.unwrap();
-        plugin.start().await.unwrap();
-        plugin.stop().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_plugin_handles_message_event() {
-        let plugin = CountingPlugin::new();
-        let event = make_test_message_event();
-
-        assert!(plugin.can_handle(&event));
-        plugin.on_event(&event).await.unwrap();
-        assert_eq!(plugin.count(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_plugin_registry() {
-        let mut registry = PluginRegistry::new();
-
-        let star = Star::new(PluginMetadata {
-            name: "test_plugin".to_string(),
-            author: "test".to_string(),
-            description: "test".to_string(),
-            version: "1.0.0".to_string(),
-            repository: None,
-            min_astrbot_version: None,
-            platforms: vec![],
-            reserved: false,
-            logo: None,
-        });
-
-        registry.register(star);
-        assert_eq!(registry.list().len(), 1);
-        assert!(registry.get("test_plugin").is_some());
-        assert!(registry.get("nonexistent").is_none());
-    }
-
-    #[tokio::test]
-    async fn test_plugin_registry_activate_deactivate() {
-        let mut registry = PluginRegistry::new();
-        let ctx = PluginContext::new("bot1".to_string(), "qq".to_string());
-
-        let mut star = Star::new(PluginMetadata {
-            name: "counting".to_string(),
-            author: "test".to_string(),
-            description: "Counts messages".to_string(),
-            version: "1.0.0".to_string(),
-            repository: None,
-            min_astrbot_version: None,
-            platforms: vec!["*".to_string()],
-            reserved: false,
-            logo: None,
-        });
-
-        star.plugin = Some(Box::new(CountingPlugin::new()));
-        registry.register(star);
-
-        assert!(!registry.get("counting").unwrap().activated);
-        registry.activate("counting", ctx).await.unwrap();
-        assert!(registry.get("counting").unwrap().activated);
-        registry.deactivate("counting").await.unwrap();
-        assert!(!registry.get("counting").unwrap().activated);
-    }
-
-    #[tokio::test]
-    async fn test_plugin_registry_event_dispatch() {
-        let mut registry = PluginRegistry::new();
-        let ctx = PluginContext::new("bot1".to_string(), "qq".to_string());
-
-        // Register counting plugin
-        let mut counting_star = Star::new(PluginMetadata {
-            name: "counting".to_string(),
-            author: "test".to_string(),
-            description: "Counts messages".to_string(),
-            version: "1.0.0".to_string(),
-            repository: None,
-            min_astrbot_version: None,
-            platforms: vec!["*".to_string()],
-            reserved: false,
-            logo: None,
-        });
-        counting_star.plugin = Some(Box::new(CountingPlugin::new()));
-        registry.register(counting_star);
-
-        // Register command plugin
-        let mut command_star = Star::new(PluginMetadata {
-            name: "command_handler".to_string(),
-            author: "test".to_string(),
-            description: "Handles commands".to_string(),
-            version: "1.0.0".to_string(),
-            repository: None,
-            min_astrbot_version: None,
-            platforms: vec!["*".to_string()],
-            reserved: false,
-            logo: None,
-        });
-        command_star.plugin = Some(Box::new(CommandPlugin::new()));
-        registry.register(command_star);
-
-        // Activate all
-        registry.activate("counting", ctx.clone()).await.unwrap();
-        registry.activate("command_handler", ctx).await.unwrap();
-
-        // Dispatch a message event
-        let event = make_test_message_event();
-        let results = registry.dispatch_event(&event).await;
-
-        // Counting plugin should handle it, command plugin should not
-        assert_eq!(results.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_plugin_manifest_loading() {
-        use std::path::Path;
-        use tokio::fs;
-
-        let temp_dir = tempfile::tempdir().unwrap();
-        let plugin_dir = temp_dir.path().join("test_plugin");
-        fs::create_dir(&plugin_dir).await.unwrap();
-
-        let manifest = serde_json::json!({
-            "name": "test_plugin",
-            "author": "test_author",
-            "description": "A test plugin",
-            "version": "0.1.0",
-            "repository": "https://github.com/test/test_plugin",
-            "min_astrbot_version": "3.0.0",
-            "platforms": ["qq", "telegram"],
-            "reserved": false,
-            "logo": "logo.png",
-            "main": "main.py"
-        });
-
-        fs::write(plugin_dir.join("plugin.json"), manifest.to_string())
-            .await
-            .unwrap();
-
-        let loader = FilePluginLoader::new();
-        let stars = loader.load_from_directory(temp_dir.path()).await.unwrap();
-
-        assert_eq!(stars.len(), 1);
-        let star = &stars[0];
-        assert_eq!(star.metadata.name, "test_plugin");
-        assert_eq!(star.metadata.author, "test_author");
-        assert_eq!(star.metadata.version, "0.1.0");
-        assert_eq!(star.metadata.platforms, vec!["qq", "telegram"]);
-    }
-
-    #[tokio::test]
-    async fn test_plugin_manager() {
-        let mut manager = PluginManager::new();
-        manager.register_loader(Box::new(FilePluginLoader::new()));
-
-        let ctx = PluginContext::new("bot1".to_string(), "qq".to_string());
-
-        // Create temp plugin dir
-        let temp_dir = tempfile::tempdir().unwrap();
-        let plugin_dir = temp_dir.path().join("my_plugin");
-        tokio::fs::create_dir(&plugin_dir).await.unwrap();
-
-        let manifest = serde_json::json!({
-            "name": "my_plugin",
-            "author": "me",
-            "description": "My plugin",
-            "version": "1.0.0",
-            "platforms": ["*"],
-            "main": "main.py"
-        });
-        tokio::fs::write(plugin_dir.join("plugin.json"), manifest.to_string())
-            .await
-            .unwrap();
-
-        // Load plugins
-        manager.load_all(&[temp_dir.path()]).await.unwrap();
-        assert_eq!(manager.registry().list().len(), 1);
-
-        // Activate all (will fail because no implementation, but should not panic)
-        manager.activate_all(ctx).await.unwrap();
-    }
-
-    // ==== CommandRegistry tests ====
-
-    #[tokio::test]
-    async fn test_command_registry_register_and_handle() {
-        use crate::registry::{CommandRegistry, CommandHandler};
-
-        struct TestHandler;
-        #[async_trait]
-        impl CommandHandler for TestHandler {
-            async fn handle(&self, args: &[String], _source: &MessageSource, _user_id: &str) -> Result<MessageEventResult> {
-                Ok(MessageEventResult::reply_text(args.join(" ")))
-            }
-            fn description(&self) -> String { "test cmd".to_string() }
-        }
-
-        let mut reg = CommandRegistry::new();
-        reg.register("echo", "test_plugin", "echo back", false, std::sync::Arc::new(TestHandler));
-
-        assert!(reg.has("echo"));
-        let source = MessageSource { platform: PlatformType::Aiocqhttp, session_id: "s".to_string(), message_id: "m".to_string(), user_id: "u".to_string() };
-        let result = reg.handle("echo", &["hello".to_string(), "world".to_string()], &source, "u", false).await;
-        assert!(result.is_some());
-        // PluginCommandHandler stub returns error, so we only test registry metadata here
-    }
-
-    #[tokio::test]
-    async fn test_command_registry_admin_only() {
-        use crate::registry::{CommandRegistry, CommandHandler};
-
-        struct AdminHandler;
-        #[async_trait]
-        impl CommandHandler for AdminHandler {
-            async fn handle(&self, _args: &[String], _source: &MessageSource, _user_id: &str) -> Result<MessageEventResult> {
-                Ok(MessageEventResult::reply_text("admin ok"))
-            }
-            fn description(&self) -> String { "admin cmd".to_string() }
-            fn admin_only(&self) -> bool { true }
-        }
-
-        let mut reg = CommandRegistry::new();
-        reg.register("admin", "test", "admin only", true, std::sync::Arc::new(AdminHandler));
-
-        let source = MessageSource { platform: PlatformType::Aiocqhttp, session_id: "s".to_string(), message_id: "m".to_string(), user_id: "u".to_string() };
-        let result = reg.handle("admin", &[], &source, "u", false).await;
-        assert!(result.is_some());
-        // Should return admin-only block message
-    }
-
-    #[tokio::test]
-    async fn test_command_registry_unregister() {
-        use crate::registry::{CommandRegistry, CommandHandler};
-
-        struct Dummy;
-        #[async_trait]
-        impl CommandHandler for Dummy {
-            async fn handle(&self, _args: &[String], _source: &MessageSource, _user_id: &str) -> Result<MessageEventResult> {
-                Ok(MessageEventResult::nothing())
-            }
-            fn description(&self) -> String { "d".to_string() }
-        }
-
-        let mut reg = CommandRegistry::new();
-        reg.register("a", "p1", "cmd a", false, std::sync::Arc::new(Dummy));
-        reg.register("b", "p1", "cmd b", false, std::sync::Arc::new(Dummy));
-        reg.register("c", "p2", "cmd c", false, std::sync::Arc::new(Dummy));
-
-        assert_eq!(reg.list().len(), 3);
-        reg.unregister_by_plugin("p1");
-        assert_eq!(reg.list().len(), 1);
-        assert!(!reg.has("a"));
-        assert!(!reg.has("b"));
-        assert!(reg.has("c"));
-    }
-
-    // ==== FunctionalPluginBuilder tests ====
-
-    #[tokio::test]
-    async fn test_functional_plugin_command() {
-        use crate::functional::FunctionalPluginBuilder;
-
-        let plugin = FunctionalPluginBuilder::new("echo", "test", "echo plugin")
-            .version("1.0.0")
-            .on_command("echo", "echo back", false, |args, _source, _user_id| {
-                let text = args.join(" ");
-                Box::pin(async move {
-                    Ok(MessageEventResult::reply_text(text))
-                })
-            })
-            .build();
-
-        let meta = plugin.metadata();
-        assert_eq!(meta.name, "echo");
-        assert_eq!(meta.version, "1.0.0");
-
-        let source = MessageSource { platform: PlatformType::Aiocqhttp, session_id: "s".to_string(), message_id: "m".to_string(), user_id: "u".to_string() };
-        let result = plugin.on_command("echo", &["hello".to_string(), "world".to_string()], &source, "u").await.unwrap();
-        match result {
-            MessageEventResult::Reply { chain } => {
-                let text = chain.plain_text();
-                assert_eq!(text, "hello world");
-            }
-            _ => panic!("Expected reply"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_functional_plugin_event() {
-        use crate::functional::FunctionalPluginBuilder;
-        use astrbot_core::event::{Event, EventResult};
-
-        #[derive(Debug)]
-        struct TestEvent;
-        impl Event for TestEvent {
-            fn event_type(&self) -> &'static str { "test_event" }
-            fn source(&self) -> &MessageSource {
-                static SRC: std::sync::OnceLock<MessageSource> = std::sync::OnceLock::new();
-                SRC.get_or_init(|| MessageSource {
-                    platform: PlatformType::Aiocqhttp,
-                    session_id: "s".to_string(),
-                    message_id: "m".to_string(),
-                    user_id: "u".to_string(),
-                })
-            }
-            fn clone_box(&self) -> Box<dyn Event> { Box::new(TestEvent) }
-        }
-
-        let plugin = FunctionalPluginBuilder::new("event_test", "test", "event test")
-            .on_event("test_event", |_event| {
-                Box::pin(async move {
-                    Ok(EventResult::nothing())
-                })
-            })
-            .build();
-
-        let event = TestEvent;
-        assert!(plugin.can_handle(&event));
-        let result = plugin.on_event(&event).await.unwrap();
-        assert_eq!(result, EventResult::nothing());
-    }
-
-    #[tokio::test]
-    async fn test_functional_plugin_lifecycle_hooks() {
-        use crate::functional::FunctionalPluginBuilder;
-        use std::sync::atomic::{AtomicBool, Ordering};
-
-        let started = std::sync::Arc::new(AtomicBool::new(false));
-        let stopped = std::sync::Arc::new(AtomicBool::new(false));
-
-        let started_clone = started.clone();
-        let stopped_clone = stopped.clone();
-
-        let mut plugin = FunctionalPluginBuilder::new("lifecycle", "test", "lifecycle test")
-            .on_start(move || {
-                let flag = started_clone.clone();
-                Box::pin(async move {
-                    flag.store(true, Ordering::Relaxed);
-                    Ok(())
-                })
-            })
-            .on_stop(move || {
-                let flag = stopped_clone.clone();
-                Box::pin(async move {
-                    flag.store(true, Ordering::Relaxed);
-                    Ok(())
-                })
-            })
-            .build();
-
-        plugin.start().await.unwrap();
-        assert!(started.load(Ordering::Relaxed));
-
-        plugin.stop().await.unwrap();
-        assert!(stopped.load(Ordering::Relaxed));
-    }
-
-    // ==== PluginRegistry.dispatch_command test ====
-
-    struct EchoCommandPlugin {
-        metadata: PluginMetadata,
-    }
-
-    impl EchoCommandPlugin {
-        fn new() -> Self {
-            Self {
-                metadata: PluginMetadata {
-                    name: "echo_cmd".to_string(),
-                    author: "test".to_string(),
-                    description: "echo cmd".to_string(),
-                    version: "1.0.0".to_string(),
-                    repository: None,
-                    min_astrbot_version: None,
-                    platforms: vec!["*".to_string()],
-                    reserved: false,
-                    logo: None,
-                },
-            }
-        }
-    }
-
-    #[async_trait]
-    impl Plugin for EchoCommandPlugin {
-        fn metadata(&self) -> &PluginMetadata { &self.metadata }
-        fn commands(&self) -> Vec<(String, String, bool)> {
-            vec![("echo".to_string(), "echo back".to_string(), false)]
-        }
-        async fn initialize(&mut self, _config: PluginConfig, _ctx: PluginContext) -> Result<()> { Ok(()) }
-        async fn start(&mut self) -> Result<()> { Ok(()) }
-        async fn stop(&mut self) -> Result<()> { Ok(()) }
-        async fn on_event(&self, _event: &dyn Event) -> Result<EventResult> { Ok(EventResult::nothing()) }
-        fn can_handle(&self, _event: &dyn Event) -> bool { false }
-        async fn on_command(&self, _cmd: &str, args: &[String], _source: &MessageSource, _user_id: &str) -> Result<MessageEventResult> {
-            Ok(MessageEventResult::reply_text(args.join(" ")))
-        }
-    }
-
-    #[tokio::test]
-    async fn test_plugin_registry_dispatch_command() {
-        let mut registry = PluginRegistry::new();
-        let ctx = PluginContext::new("bot1".to_string(), "qq".to_string());
-
-        let mut star = Star::new(PluginMetadata {
-            name: "echo_cmd".to_string(),
-            author: "test".to_string(),
-            description: "echo cmd".to_string(),
-            version: "1.0.0".to_string(),
-            repository: None,
-            min_astrbot_version: None,
-            platforms: vec!["*".to_string()],
-            reserved: false,
-            logo: None,
-        });
-        let plugin = Box::new(EchoCommandPlugin::new());
-        registry.register_plugin(star, plugin);
-
-        registry.activate("echo_cmd", ctx).await.unwrap();
-
-        let source = MessageSource { platform: PlatformType::Aiocqhttp, session_id: "s".to_string(), message_id: "m".to_string(), user_id: "u".to_string() };
-        let result = registry.dispatch_command("echo", &["hello".to_string(), "world".to_string()], &source, "u", false).await;
-
-        assert!(result.is_some());
-        let reply = result.unwrap().unwrap();
-        match reply {
-            MessageEventResult::Reply { chain } => {
-                assert_eq!(chain.plain_text(), "hello world");
-            }
-            _ => panic!("Expected reply"),
-        }
+        _ => panic!("expected background tool kind"),
     }
 }

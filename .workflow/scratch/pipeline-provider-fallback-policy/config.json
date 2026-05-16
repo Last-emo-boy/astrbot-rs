@@ -1,0 +1,16 @@
+{
+  "task_id": "M3-T3-provider-fallback-policy",
+  "milestone": "M3-process-stage",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_request.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_sub_stages/internal.py",
+    "E:/Playground/Astrbot/astrbot/core/star/session_llm_manager.py"
+  ],
+  "scope": [
+    "Add explicit provider fallback policy to PipelineContext and runtime config.",
+    "Allow provider fallback to be disabled without removing provider configuration.",
+    "Handle provider errors with a generic user-facing response when configured."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "runtime-default-pipeline-assembly",
+  "task_id": "M6-T1-runtime-default-pipeline-assembly",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "assembly-audit",
+      "status": "completed",
+      "summary": "Audited runtime initialize path against M1-M5 pipeline contracts and existing runtime tests."
+    },
+    {
+      "id": "provider-preference-runtime-port",
+      "status": "completed",
+      "summary": "Runtime now owns an InMemoryProviderPreferencePort and injects it into PipelineContext during default pipeline assembly."
+    },
+    {
+      "id": "focused-test",
+      "status": "completed",
+      "summary": "Added a runtime test proving session provider preference selects the preferred provider through the default pipeline."
+    }
+  ]
+}

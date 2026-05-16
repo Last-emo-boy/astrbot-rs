@@ -1,46 +1,11 @@
 [package]
 name = "astrbot-core"
-version = { workspace = true }
-edition = { workspace = true }
-rust-version = { workspace = true }
-authors = { workspace = true }
-license = { workspace = true }
-repository = { workspace = true }
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-tokio = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-serde_yaml = { workspace = true }
-toml = { workspace = true }
-async-trait = { workspace = true }
-chrono = { workspace = true }
-anyhow = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-reqwest = { workspace = true, features = ["multipart", "stream"] }
-axum = { workspace = true }
-tower = { workspace = true }
-uuid = { workspace = true }
-dashmap = { workspace = true }
-futures = { workspace = true }
-futures-util = { workspace = true }
-sqlx = { workspace = true }
-notify = { workspace = true }
-regex = { workspace = true }
-bytes = { workspace = true }
-walkdir = { workspace = true }
-tar = { workspace = true }
-zip = { workspace = true }
-once_cell = { workspace = true }
-hmac = { workspace = true }
-sha2 = { workspace = true }
-ring = { workspace = true }
-tokio-tungstenite = { workspace = true }
-wasmi = { workspace = true }
-hex = { workspace = true }
-base64 = { workspace = true }
-astrbot-security = { path = "../astrbot-security" }
-
-[dev-dependencies]
-tokio-test = "0.4"
+async-trait.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true

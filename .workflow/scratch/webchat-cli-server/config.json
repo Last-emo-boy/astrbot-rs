@@ -1,0 +1,10 @@
+{
+  "task": "Start WebChat HTTP server from CLI run config",
+  "skill": "maestro-quick",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T21:10:04+08:00",
+  "status": "completed"
+}

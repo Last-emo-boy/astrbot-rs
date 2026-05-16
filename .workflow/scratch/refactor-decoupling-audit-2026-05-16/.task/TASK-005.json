@@ -1,0 +1,75 @@
+{
+  "id": "TASK-005",
+  "title": "Split core message domain modules",
+  "status": "completed",
+  "type": "refactor",
+  "category": "domain-model",
+  "description": "Break message.rs into component, chain, session, sink/result, provider request, and event modules while preserving the unified message API.",
+  "read_first": [
+    "crates/astrbot-core/src/message.rs",
+    "E:/Playground/Astrbot/astrbot/core/message/components.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/message_parts_helper.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-core/src/message/component.rs",
+      "action": "create",
+      "target": "MessageComponent",
+      "change": "Move component enum and component helpers."
+    },
+    {
+      "path": "crates/astrbot-core/src/message/chain.rs",
+      "action": "create",
+      "target": "MessageChain",
+      "change": "Move chain construction, text/media extraction, and validation helpers."
+    },
+    {
+      "path": "crates/astrbot-core/src/message/session.rs",
+      "action": "create",
+      "target": "session and sender metadata",
+      "change": "Move MessageSessionKind, MessageSession, and MessageSender."
+    },
+    {
+      "path": "crates/astrbot-core/src/message/event.rs",
+      "action": "create",
+      "target": "MessageEvent",
+      "change": "Move event state and event-level provider request/result accessors."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "message.rs or message/mod.rs becomes a facade.",
+      "MessageChain and MessageEvent public API remains compatible.",
+      "Workspace tests pass after downstream imports are updated."
+    ],
+    "verification_command": "cargo test -p astrbot-core && cargo test --workspace"
+  },
+  "implementation_steps": [
+    "Create message/ submodules and move types in dependency order.",
+    "Preserve public re-exports from the message facade.",
+    "Update internal imports in pipeline/platform/web/provider tests.",
+    "Run core and workspace tests."
+  ],
+  "risk": "medium",
+  "completed_at": "2026-05-16T10:25:00+08:00",
+  "result": {
+    "summary": "astrbot-core message.rs became a facade module tree; components, chains, session/sender metadata, sink, result/stream, provider request/tool DTOs, event state, and tests now live in focused modules.",
+    "files_modified": [
+      "crates/astrbot-core/src/message/mod.rs",
+      "crates/astrbot-core/src/message/component.rs",
+      "crates/astrbot-core/src/message/chain.rs",
+      "crates/astrbot-core/src/message/session.rs",
+      "crates/astrbot-core/src/message/sink.rs",
+      "crates/astrbot-core/src/message/result.rs",
+      "crates/astrbot-core/src/message/provider_request.rs",
+      "crates/astrbot-core/src/message/event.rs",
+      "crates/astrbot-core/src/message/tests.rs"
+    ],
+    "verification": [
+      "cargo fmt --all --check",
+      "cargo test -p astrbot-core",
+      "cargo test --workspace",
+      "cargo clippy --workspace -- -D warnings"
+    ]
+  }
+}

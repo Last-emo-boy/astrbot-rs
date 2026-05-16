@@ -1,0 +1,36 @@
+{
+  "task_id": "M7-T2t-minimax-tts-provider",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "study-astrbot-minimax-tts",
+      "status": "completed",
+      "description": "Read AstrBot minimax_tts_api provider behavior, SSE transport, config keys, request payload, and hex MP3 stream handling."
+    },
+    {
+      "id": "implement-provider",
+      "status": "completed",
+      "description": "Add MiniMaxTextToSpeechProvider behind the TextToSpeechProvider trait with AstrBot-compatible streaming request and local MP3 output."
+    },
+    {
+      "id": "register-provider",
+      "status": "completed",
+      "description": "Register minimax_tts_api as a text_to_speech capability and map MiniMax-specific options through TextToSpeechProviderConfig.provider_options."
+    },
+    {
+      "id": "wire-runtime-config",
+      "status": "completed",
+      "description": "Map RuntimeTextToSpeechProviderConfig::minimax into the provider manager TTS bucket without changing chat pipeline wiring."
+    },
+    {
+      "id": "test-provider-and-registry",
+      "status": "completed",
+      "description": "Cover request serialization, bearer auth, SSE hex audio collection, timber_weights mode, error mapping, empty audio, empty input, type constant, registry construction, and runtime config mapping."
+    },
+    {
+      "id": "verify",
+      "status": "completed",
+      "description": "Run full workspace format, JSON, tests, clippy, and CLI smoke gates after Maestro records are updated."
+    }
+  ]
+}

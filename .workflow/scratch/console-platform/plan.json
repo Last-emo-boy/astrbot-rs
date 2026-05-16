@@ -1,0 +1,36 @@
+{
+  "task": "Add console platform adapter",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot WebChat/platform adapter shape",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
+        "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/webchat_adapter.py"
+      ],
+      "convergence_criteria": "Console adapter follows the same adapter responsibility boundary: receive external input, create message event, hand replies to a sink"
+    },
+    {
+      "id": "T2",
+      "title": "Implement console platform",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "Console platform reads lines, emits MessageEvent and records/prints outbound messages"
+    },
+    {
+      "id": "T3",
+      "title": "Register console platform in runtime config",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs",
+        "Cargo.toml",
+        "Cargo.lock"
+      ],
+      "convergence_criteria": "Runtime can construct console platform from typed config and tests cover the path"
+    }
+  ]
+}

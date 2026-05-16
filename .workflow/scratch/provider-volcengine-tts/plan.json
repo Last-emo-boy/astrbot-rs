@@ -1,0 +1,36 @@
+{
+  "task_id": "M7-T2s-volcengine-tts-provider",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "study-astrbot-volcengine-tts",
+      "status": "completed",
+      "description": "Read AstrBot volcengine_tts provider behavior, config keys, request payload, auth header, and base64 MP3 response handling."
+    },
+    {
+      "id": "implement-provider",
+      "status": "completed",
+      "description": "Add VolcengineTextToSpeechProvider behind the TextToSpeechProvider trait with AstrBot-compatible payload and MP3 output."
+    },
+    {
+      "id": "register-provider",
+      "status": "completed",
+      "description": "Register volcengine_tts as a text_to_speech capability and map provider-specific options through TextToSpeechProviderConfig."
+    },
+    {
+      "id": "wire-runtime-config",
+      "status": "completed",
+      "description": "Map RuntimeTextToSpeechProviderConfig::volcengine into the provider manager TTS bucket without changing chat pipeline wiring."
+    },
+    {
+      "id": "test-provider-and-registry",
+      "status": "completed",
+      "description": "Cover HTTP request serialization, auth header, base64 audio output, error mapping, missing audio data, type constant, registry construction, and runtime config mapping."
+    },
+    {
+      "id": "verify",
+      "status": "completed",
+      "description": "Run full workspace format, JSON, tests, clippy, and CLI smoke gates after Maestro records are updated."
+    }
+  ]
+}

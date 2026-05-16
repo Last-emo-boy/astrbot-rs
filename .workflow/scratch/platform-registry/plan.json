@@ -1,0 +1,34 @@
+{
+  "task": "Add platform registry and manager wiring",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot platform registration",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/platform/register.py",
+        "E:/Playground/Astrbot/astrbot/core/platform/manager.py"
+      ],
+      "convergence_criteria": "Rust platform model follows type registry plus configured instance manager"
+    },
+    {
+      "id": "T2",
+      "title": "Add platform registry and manager",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "Platform crate can register platform factories and instantiate enabled configs by ID"
+    },
+    {
+      "id": "T3",
+      "title": "Wire runtime platform config",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "Runtime constructs PlatformManager from typed config and preserves mock smoke behavior"
+    }
+  ]
+}

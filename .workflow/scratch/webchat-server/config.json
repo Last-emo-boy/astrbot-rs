@@ -1,0 +1,9 @@
+{
+  "task": "Add WebChat HTTP server boundary",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T21:04:18+08:00",
+  "status": "completed"
+}

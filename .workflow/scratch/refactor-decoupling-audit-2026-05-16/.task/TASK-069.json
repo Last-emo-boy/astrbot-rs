@@ -1,0 +1,39 @@
+{
+  "id": "TASK-069",
+  "title": "Separate skill package install, sandbox cache, activation, and prompt inventory boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "skill-package-boundary",
+  "description": "AstrBot SkillManager combines skill discovery, SKILL.md frontmatter parsing, prompt inventory rendering, local activation, sandbox-only cache, zip install/delete, and path sanitization. Rust should keep these package lifecycle concerns separate from persona prompt composition and plugin loading.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "crates/astrbot-plugin/src",
+    "crates/astrbot-web/src/management",
+    "E:/Playground/Astrbot/astrbot/core/skills/skill_manager.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/skills.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent_resources.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-skill/src",
+      "action": "create",
+      "target": "skill package domain crate",
+      "change": "Define skill catalog entries, package install/delete policy, sandbox cache, activation config, frontmatter parsing, and prompt inventory rendering."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/skills.rs",
+      "action": "create",
+      "target": "skill management API boundary",
+      "change": "Expose skill package management through DTO handlers without coupling to agent prompt assembly."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Persona prompt composition can consume active skill inventory without owning install/delete logic.",
+      "Sandbox-only skills are represented explicitly and cannot be mutated through local package operations.",
+      "Zip path validation and prompt path sanitization are tested in the skill crate."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

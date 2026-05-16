@@ -1,0 +1,38 @@
+{
+  "id": "TASK-074",
+  "title": "Split storage schema catalog into domain table groups and migration seed boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "storage-schema-catalog-boundary",
+  "description": "TASK-032 created the persistence boundary, but `schema.rs` is already a broad catalog for conversations, platform state, providers, personas, projects, API keys, cron jobs, and command metadata. Keep schema primitives, table-family builders, migration seeds, and backup manifest consumers separate before concrete SQL backends grow.",
+  "read_first": [
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-storage/src/migration.rs",
+    "E:/Playground/Astrbot/astrbot/core/db/po.py",
+    "E:/Playground/Astrbot/astrbot/core/db/sqlite.py",
+    "E:/Playground/Astrbot/astrbot/core/db/migration"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-storage/src/schema.rs",
+      "action": "split",
+      "target": "schema facade",
+      "change": "Move schema primitives and AstrBot main DB table groups into a `schema/` module tree while preserving public exports."
+    },
+    {
+      "path": "crates/astrbot-storage/src/migration.rs",
+      "action": "guard",
+      "target": "migration seed consumers",
+      "change": "Keep migrations consuming declarative schema tables without owning table-family construction."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Column/table/schema primitives are separate from domain table-family builders.",
+      "Conversation, platform, provider, persona/skill, and ops tables can evolve independently.",
+      "Migration and backup code consume schema descriptors without depending on route or runtime modules."
+    ],
+    "verification_command": "cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

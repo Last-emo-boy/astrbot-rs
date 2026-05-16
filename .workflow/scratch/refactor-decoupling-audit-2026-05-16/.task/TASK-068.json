@@ -1,0 +1,40 @@
+{
+  "id": "TASK-068",
+  "title": "Define platform outbound routing state and message binding boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "platform-outbound-routing-boundary",
+  "description": "AstrBot rich platform adapters cache session scene, last inbound/outbound message IDs, sender bindings, and platform-specific reply routing state. Rust should define a common outbound routing state boundary before QQ Official, DingTalk, Lark, WeCom, and proactive-send parity grow adapter internals.",
+  "read_first": [
+    "crates/astrbot-platform/src/adapters",
+    "crates/astrbot-core/src/message/session.rs",
+    "crates/astrbot-storage/src",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial/qqofficial_platform_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial_webhook/qo_webhook_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/dingtalk/dingtalk_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/lark/lark_adapter.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/outbound.rs",
+      "action": "create",
+      "target": "outbound routing state",
+      "change": "Define session scene, last message ID, reply target, sender binding, and proactive-send route selection types."
+    },
+    {
+      "path": "crates/astrbot-storage/src/platform_binding.rs",
+      "action": "create",
+      "target": "platform binding repository",
+      "change": "Persist adapter routing bindings behind storage ports where platform APIs require historical message IDs."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Adapters consume routing bindings through common typed state.",
+      "Proactive sends do not require each adapter to invent its own untyped session cache.",
+      "Binding storage can be tested without network platform clients."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

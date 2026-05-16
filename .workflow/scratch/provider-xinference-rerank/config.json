@@ -1,0 +1,21 @@
+{
+  "task_id": "M7-T2l-xinference-rerank-provider",
+  "milestone": "M7-platform-provider-dashboard-breadth",
+  "reference_project": "E:/Playground/Astrbot",
+  "reference_files": [
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_rerank_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/provider.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/entities.py"
+  ],
+  "scope": [
+    "crates/astrbot-provider/src/xinference_rerank.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/tests/xinference_rerank.rs",
+    "crates/astrbot-provider/tests/provider_registry.rs"
+  ],
+  "status": "completed",
+  "created_at": "2026-05-16T05:58:00+08:00",
+  "completed_at": "2026-05-16T05:58:00+08:00"
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "M7-T2p-media-conversion-boundary",
+  "milestone": "M7-platform-provider-dashboard-breadth",
+  "reference_project": "E:/Playground/Astrbot",
+  "reference_files": [
+    "E:/Playground/Astrbot/astrbot/core/utils/tencent_record_helper.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/whisper_api_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xinference_stt_provider.py"
+  ],
+  "scope": [
+    "crates/astrbot-provider/src/audio.rs",
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/openai_stt.rs",
+    "crates/astrbot-provider/src/xinference_stt.rs",
+    "crates/astrbot-provider/tests/audio_media.rs",
+    "crates/astrbot-provider/tests/openai_stt.rs",
+    "crates/astrbot-provider/tests/xinference_stt.rs"
+  ],
+  "status": "completed",
+  "created_at": "2026-05-16T07:05:00+08:00",
+  "completed_at": "2026-05-16T07:05:00+08:00"
+}

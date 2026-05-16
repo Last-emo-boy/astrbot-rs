@@ -1,147 +1,82 @@
-pub mod client;
-pub mod openai;
-pub mod openai_compatible;
-pub mod registry;
-pub mod sources;
-pub mod tts;
+mod anthropic;
+mod audio;
+mod bailian_rerank;
+mod capability;
+mod chat;
+mod config;
+mod constants;
+mod embedding;
+mod factories;
+mod gemini;
+mod gemini_embedding;
+mod gemini_tts;
+mod gsvi_tts;
+mod http;
+mod manager;
+mod media;
+mod minimax_tts;
+mod mock;
+mod openai_compatible;
+mod openai_embedding;
+mod openai_stt;
+mod openai_tts;
+mod protocol;
+mod registry;
+mod rerank;
+mod speech;
+mod streaming;
+mod tts;
+mod vllm_rerank;
+mod volcengine_tts;
+mod xinference_rerank;
+mod xinference_stt;
 
-// New providers from Redmao Phase 2
-pub mod ai21;
-pub mod azure;
-pub mod baichuan;
-pub mod baidu;
-pub mod cohere;
-pub mod fireworks;
-pub mod groq;
-pub mod openrouter;
-pub mod perplexity;
-pub mod together;
-pub mod zerooneai;
-
-pub use openai_compatible::*;
-pub use registry::*;
-pub use tts::*;
-
-use astrbot_core::{AstrMessage, MessageContent};
-use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-
-/// LLM Chat Provider trait
-#[async_trait]
-pub trait ChatProvider: Send + Sync {
-    /// 模型提供商名称
-    fn name(&self) -> &str;
-
-    /// 单次对话（非流式）
-    async fn chat(
-        &self,
-        messages: Vec<ChatMessage>,
-        options: ChatOptions,
-    ) -> Result<String, ProviderError>;
-
-    /// 是否支持流式输出
-    fn supports_streaming(&self) -> bool {
-        true
-    }
-
-    /// 流式对话
-    async fn stream_chat(
-        &self,
-        _messages: Vec<ChatMessage>,
-        _options: ChatOptions,
-    ) -> Result<Box<dyn futures::Stream<Item = Result<String, ProviderError>> + Send>, ProviderError>
-    {
-        Err(ProviderError::NotImplemented("streaming".to_string()))
-    }
-
-    /// 列出可用模型
-    fn list_models(&self) -> Vec<String>;
-
-    /// 是否可用
-    fn is_available(&self) -> bool {
-        true
-    }
-}
-
-/// 文本嵌入 Provider trait
-#[async_trait]
-pub trait EmbeddingProvider: Send + Sync {
-    /// 模型提供商名称
-    fn name(&self) -> &str;
-
-    /// 将文本列表转换为 embedding 向量
-    async fn embed(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>, ProviderError>;
-
-    /// 单个文本嵌入（便利方法）
-    async fn embed_one(&self, text: String) -> Result<Vec<f32>, ProviderError> {
-        let mut results = self.embed(vec![text]).await?;
-        results
-            .pop()
-            .ok_or_else(|| ProviderError::Unavailable("empty embedding response".to_string()))
-    }
-}
-
-/// 聊天消息
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChatMessage {
-    pub role: String,
-    pub content: String,
-}
-
-impl ChatMessage {
-    pub fn user(content: &str) -> Self {
-        Self {
-            role: "user".to_string(),
-            content: content.to_string(),
-        }
-    }
-
-    pub fn assistant(content: &str) -> Self {
-        Self {
-            role: "assistant".to_string(),
-            content: content.to_string(),
-        }
-    }
-
-    pub fn system(content: &str) -> Self {
-        Self {
-            role: "system".to_string(),
-            content: content.to_string(),
-        }
-    }
-}
-
-/// 对话选项
-#[derive(Debug, Clone, Default)]
-pub struct ChatOptions {
-    pub temperature: Option<f32>,
-    pub max_tokens: Option<u32>,
-    pub top_p: Option<f32>,
-    pub model: Option<String>,
-}
-
-/// Provider 配置
-#[derive(Debug, Clone)]
-pub struct ProviderConfig {
-    pub name: String,
-    pub base_url: String,
-    pub api_key: String,
-    pub model: String,
-    pub extra_headers: Option<Vec<(String, String)>>,
-}
-
-/// Provider 错误
-#[derive(Debug, Error)]
-pub enum ProviderError {
-    #[error("HTTP error: {0}")]
-    Http(#[from] reqwest::Error),
-    #[error("API error {status}: {message}")]
-    Api { status: u16, message: String },
-    #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
-    #[error("Not implemented: {0}")]
-    NotImplemented(String),
-    #[error("Provider unavailable: {0}")]
-    Unavailable(String),
-}
+pub use anthropic::{AnthropicConfig, AnthropicProvider};
+pub use audio::{
+    AudioConversionRequest, AudioFormat, AudioInputLoader, AudioMediaConverter,
+    UnsupportedAudioMediaConverter, detect_audio_conversion_requirement,
+};
+pub use bailian_rerank::{BailianRerankConfig, BailianRerankProvider};
+pub use capability::{ProviderAdapterMetadata, ProviderCapability};
+pub use chat::{ChatProvider, ChatRequest, ChatResponse};
+pub use config::{
+    ChatProviderConfig, EmbeddingProviderConfig, RerankProviderConfig, SpeechToTextProviderConfig,
+    TextToSpeechProviderConfig,
+};
+pub use constants::{
+    AIHUBMIX_CHAT_PROVIDER_TYPE, ANTHROPIC_CHAT_PROVIDER_TYPE, BAILIAN_RERANK_PROVIDER_TYPE,
+    GEMINI_EMBEDDING_PROVIDER_TYPE, GEMINI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    GOOGLE_GENAI_CHAT_PROVIDER_TYPE, GROQ_CHAT_PROVIDER_TYPE, GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    MINIMAX_TEXT_TO_SPEECH_PROVIDER_TYPE, MOCK_CHAT_PROVIDER_TYPE, MOCK_EMBEDDING_PROVIDER_TYPE,
+    MOCK_RERANK_PROVIDER_TYPE, MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE, OPENAI_CHAT_PROVIDER_TYPE,
+    OPENAI_COMPATIBLE_CHAT_PROVIDER_TYPES, OPENAI_EMBEDDING_PROVIDER_TYPE,
+    OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE, OPENAI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    OPENROUTER_CHAT_PROVIDER_TYPE, VLLM_RERANK_PROVIDER_TYPE,
+    VOLCENGINE_TEXT_TO_SPEECH_PROVIDER_TYPE, XAI_CHAT_PROVIDER_TYPE,
+    XINFERENCE_RERANK_PROVIDER_TYPE, XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    ZHIPU_CHAT_PROVIDER_TYPE,
+};
+pub use embedding::{EmbeddingProvider, EmbeddingRequest, EmbeddingResponse};
+pub use gemini::{GeminiConfig, GeminiProvider};
+pub use gemini_embedding::{GeminiEmbeddingConfig, GeminiEmbeddingProvider};
+pub use gemini_tts::{GeminiTextToSpeechConfig, GeminiTextToSpeechProvider};
+pub use gsvi_tts::{GsviTextToSpeechConfig, GsviTextToSpeechProvider};
+pub use manager::{ProviderManager, ProviderManagerConfigSet};
+pub use minimax_tts::{MiniMaxTextToSpeechConfig, MiniMaxTextToSpeechProvider};
+pub use mock::{
+    MockChatProvider, MockEmbeddingProvider, MockRerankProvider, MockSpeechToTextProvider,
+    MockTextToSpeechProvider,
+};
+pub use openai_compatible::{OpenAiCompatibleConfig, OpenAiCompatibleProvider};
+pub use openai_embedding::{OpenAiEmbeddingConfig, OpenAiEmbeddingProvider};
+pub use openai_stt::{OpenAiSpeechToTextConfig, OpenAiSpeechToTextProvider};
+pub use openai_tts::{OpenAiTextToSpeechConfig, OpenAiTextToSpeechProvider};
+pub use registry::ProviderRegistry;
+pub use rerank::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
+pub use speech::{SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
+pub use tts::{TextToSpeechProvider, TextToSpeechRequest, TextToSpeechResponse};
+pub use vllm_rerank::{VllmRerankConfig, VllmRerankProvider};
+pub use volcengine_tts::{VolcengineTextToSpeechConfig, VolcengineTextToSpeechProvider};
+pub use xinference_rerank::{XinferenceRerankConfig, XinferenceRerankProvider};
+pub use xinference_stt::{XinferenceSpeechToTextConfig, XinferenceSpeechToTextProvider};

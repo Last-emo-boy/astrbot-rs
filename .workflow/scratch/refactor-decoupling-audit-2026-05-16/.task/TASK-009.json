@@ -1,0 +1,44 @@
+{
+  "id": "TASK-009",
+  "title": "Split plugin crate into SDK, handler registry, filters, manifest, and sandbox capability modules",
+  "status": "completed",
+  "type": "refactor",
+  "category": "plugin-sdk-sandbox",
+  "description": "Prepare a Rust-native plugin SDK surface before adding real plugin loading, lifecycle, dashboard management, or sandbox execution.",
+  "read_first": [
+    "crates/astrbot-plugin/src/lib.rs",
+    "E:/Playground/Astrbot/astrbot/core/star/star_handler.py",
+    "E:/Playground/Astrbot/astrbot/core/star/context.py",
+    "E:/Playground/Astrbot/astrbot/core/star/filter",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_tool_exec.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/filter",
+      "action": "create",
+      "target": "typed filter modules",
+      "change": "Split command, permission, platform, event type, regex, and custom filters from registry code."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/sdk.rs",
+      "action": "create",
+      "target": "public plugin SDK",
+      "change": "Define PluginContext, handler traits, lifecycle hooks, and testing harness entry points."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/sandbox.rs",
+      "action": "create",
+      "target": "sandbox capability boundary",
+      "change": "Define plugin permissions, sandbox profiles, and capability checks inspired by AstrBot tool execution."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing PluginRegistry behavior remains compatible.",
+      "SDK types are explicit Rust boundaries rather than crate-root growth.",
+      "Sandbox capability declarations are recorded before real plugin execution is expanded."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace"
+  },
+  "risk": "high"
+}

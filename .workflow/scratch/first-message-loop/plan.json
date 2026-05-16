@@ -1,0 +1,54 @@
+{
+  "task": "Implement first typed message loop",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Create Rust workspace and shared crates",
+      "status": "completed",
+      "scope": "Root Cargo workspace, core/provider/platform/pipeline/cli crates",
+      "files": [
+        "Cargo.toml",
+        "crates/astrbot-core",
+        "crates/astrbot-provider",
+        "crates/astrbot-platform",
+        "crates/astrbot-pipeline",
+        "crates/astrbot-cli"
+      ],
+      "convergence_criteria": "cargo metadata can load the workspace"
+    },
+    {
+      "id": "T2",
+      "title": "Implement typed message and EventBus core",
+      "status": "completed",
+      "scope": "MessageChain, MessageEvent, MessageSink, EventExecutor, EventBus",
+      "files": [
+        "crates/astrbot-core/src"
+      ],
+      "convergence_criteria": "core crate compiles and EventBus run_once can dispatch one event"
+    },
+    {
+      "id": "T3",
+      "title": "Implement provider, platform and pipeline traits",
+      "status": "completed",
+      "scope": "ChatProvider, MockChatProvider, MockPlatform, RecordingSink, PipelineScheduler, ProviderStage, RespondStage",
+      "files": [
+        "crates/astrbot-provider/src",
+        "crates/astrbot-platform/src",
+        "crates/astrbot-pipeline/src"
+      ],
+      "convergence_criteria": "pipeline crate can compose mock platform/provider"
+    },
+    {
+      "id": "T4",
+      "title": "Add first E2E test and CLI smoke path",
+      "status": "completed",
+      "scope": "Mock message loop integration test and a CLI demo command",
+      "files": [
+        "crates/astrbot-pipeline/tests",
+        "crates/astrbot-cli/src/main.rs"
+      ],
+      "convergence_criteria": "cargo test passes for the workspace"
+    }
+  ]
+}

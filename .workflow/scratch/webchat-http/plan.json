@@ -1,0 +1,35 @@
+{
+  "task": "Add WebChat HTTP boundary",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Map AstrBot WebChat adapter responsibilities",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/webchat_adapter.py"
+      ],
+      "convergence_criteria": "HTTP boundary mirrors WebChat adapter input-to-event role"
+    },
+    {
+      "id": "T2",
+      "title": "Create astrbot-web crate and router",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-web/src/lib.rs",
+        "crates/astrbot-web/Cargo.toml"
+      ],
+      "convergence_criteria": "HTTP requests are converted into WebChatPlatform submissions"
+    },
+    {
+      "id": "T3",
+      "title": "Verify router behavior and workspace integration",
+      "status": "completed",
+      "files": [
+        "Cargo.toml",
+        "Cargo.lock"
+      ],
+      "convergence_criteria": "Router tests, workspace tests and CLI smoke pass"
+    }
+  ]
+}

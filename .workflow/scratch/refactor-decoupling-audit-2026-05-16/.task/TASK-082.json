@@ -1,0 +1,53 @@
+{
+  "id": "TASK-082",
+  "title": "Separate runtime maintenance, release update, migration, and package install operation boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "maintenance-operation-boundary",
+  "description": "AstrBot dashboard update routes combine release checks, project/dashboard update, pip install, and DB migration triggering. Rust already has config/storage migration and plugin dependency planning, but no operation boundary for user-triggered maintenance tasks. Define this before dashboard update/migration/install APIs grow inside web handlers, runtime config code, or plugin loader dependencies.",
+  "read_first": [
+    "crates/astrbot-runtime/src/config/migration.rs",
+    "crates/astrbot-storage/src/migration.rs",
+    "crates/astrbot-web/src/management",
+    "crates/astrbot-plugin/src/loader/dependency.rs",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/update.py",
+    "E:/Playground/Astrbot/astrbot/core/star/updator.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/pip_installer.py",
+    "E:/Playground/Astrbot/astrbot/core/db/migration/helper.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-maintenance/src/update.rs",
+      "action": "create",
+      "target": "release update service",
+      "change": "Model check/update operations, release metadata, and dashboard update descriptors outside HTTP routes."
+    },
+    {
+      "path": "crates/astrbot-maintenance/src/migration.rs",
+      "action": "create",
+      "target": "maintenance migration orchestration",
+      "change": "Coordinate config/storage migration prechecks and execution without coupling web handlers to DB migration internals."
+    },
+    {
+      "path": "crates/astrbot-maintenance/src/operation.rs",
+      "action": "create",
+      "target": "maintenance task lifecycle",
+      "change": "Represent user-triggered operation status, progress, and error reporting for dashboard use."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/update.rs",
+      "action": "create",
+      "target": "dashboard update route boundary",
+      "change": "Keep update/migration/package-install HTTP endpoints delegating to typed maintenance services."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Dashboard update/migration routes do not call storage migration or package install internals directly.",
+      "Maintenance operations expose typed progress/results usable by observability and management APIs.",
+      "Plugin dependency installation remains separate from global runtime maintenance operations."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo test -p astrbot-storage && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

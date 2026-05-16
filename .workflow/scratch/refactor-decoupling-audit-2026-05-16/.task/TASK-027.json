@@ -1,0 +1,52 @@
+{
+  "id": "TASK-027",
+  "title": "Split provider registry built-ins, factory dispatch types, and capability lookup helpers",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-registry-builtin-boundary",
+  "description": "ProviderRegistry is behaviorally stable but still combines built-in registration, factory type aliases, metadata lookup, duplicate checks, and per-capability build errors in one module.",
+  "read_first": [
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/factories",
+    "E:/Playground/Astrbot/astrbot/core/provider/register.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/registry.rs",
+      "action": "split",
+      "target": "provider registry facade",
+      "change": "Keep public ProviderRegistry imports stable while moving built-in registration and shared factory/error helpers into focused modules."
+    },
+    {
+      "path": "crates/astrbot-provider/src/registry",
+      "action": "create",
+      "target": "registry module tree",
+      "change": "Add builtins, factories, metadata, and errors modules if the split remains behavior-preserving."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProviderRegistry remains the public provider adapter entry point.",
+      "Built-in provider registration is deterministic and independently testable.",
+      "No concrete provider payload or runtime config mapping moves into the registry."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T15:23:45+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/registry.rs",
+    "crates/astrbot-provider/src/registry/builtins.rs",
+    "crates/astrbot-provider/src/registry/errors.rs",
+    "crates/astrbot-provider/src/registry/factory.rs",
+    "crates/astrbot-provider/src/registry/metadata.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "id": "TASK-035",
+  "title": "Extract provider generated media artifact writer boundary",
+  "status": "completed",
+  "type": "refactor",
+  "category": "provider-media-artifact-boundary",
+  "description": "TTS providers repeat output_dir defaults, next_audio_path, display_path, directory creation, and audio file writes. Extract a shared generated-media artifact boundary before adding more voice providers or persistent attachment storage.",
+  "read_first": [
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/gemini_tts.rs",
+    "crates/astrbot-provider/src/volcengine_tts.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-provider/src/gsvi_tts.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/provider.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/edge_tts_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/volcengine_tts.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/astrbot_path.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/media/artifact.rs",
+      "action": "create",
+      "target": "generated media artifact policy",
+      "change": "Own provider output directory, file naming, extension handling, display path conversion, and write errors."
+    },
+    {
+      "path": "crates/astrbot-provider/src/*_tts.rs",
+      "action": "update",
+      "target": "TTS providers",
+      "change": "Delegate output path and audio writing to the shared artifact writer."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Concrete TTS providers no longer duplicate create_dir_all/fs::write/display_path helpers.",
+      "Provider-specific audio decoding and protocol parsing stay inside adapters.",
+      "Existing audio output tests still prove extension and bytes."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T19:30:00+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/media/mod.rs",
+    "crates/astrbot-provider/src/media/artifact.rs",
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/gemini_tts.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-provider/src/volcengine_tts.rs",
+    "crates/astrbot-provider/src/gsvi_tts.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

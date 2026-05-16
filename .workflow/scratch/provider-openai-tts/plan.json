@@ -1,0 +1,34 @@
+{
+  "task_id": "M7-T2m-openai-tts-provider",
+  "title": "Add AstrBot-compatible OpenAI text-to-speech provider",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2m-1",
+      "title": "Study AstrBot OpenAI TTS source",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_tts_api_source.py"
+      ]
+    },
+    {
+      "id": "M7-T2m-2",
+      "title": "Implement provider and registry factory",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/src/openai_tts.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2m-3",
+      "title": "Add direct and registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/openai_tts.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    }
+  ]
+}

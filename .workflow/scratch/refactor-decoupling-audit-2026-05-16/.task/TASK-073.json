@@ -1,0 +1,45 @@
+{
+  "id": "TASK-073",
+  "title": "Define provider TTS streaming audio queue and playback artifact boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-tts-streaming-audio-boundary",
+  "description": "AstrBot TTS providers expose support_stream and get_audio_stream with text/audio queues, while some providers return bytes and others write files. Rust has TTS providers and media artifact tasks, but not a streaming audio queue/playback boundary for live feedback.",
+  "read_first": [
+    "crates/astrbot-provider/src/tts.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-agent/src/feedback",
+    "E:/Playground/Astrbot/astrbot/core/provider/provider.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/genie_tts.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/minimax_tts_api_source.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/tts/stream.rs",
+      "action": "create",
+      "target": "streaming TTS trait boundary",
+      "change": "Define typed text input/audio output stream contracts separately from file-based TTS synthesis."
+    },
+    {
+      "path": "crates/astrbot-provider/src/tts/audio_queue.rs",
+      "action": "create",
+      "target": "audio queue model",
+      "change": "Represent text-correlated audio chunks, terminal markers, and stream errors without binding to one provider protocol."
+    },
+    {
+      "path": "crates/astrbot-agent/src/feedback/tts_stream.rs",
+      "action": "create",
+      "target": "live feedback integration point",
+      "change": "Allow live-agent feedback to consume TTS audio streams through a provider-neutral port."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "File-based and streaming TTS providers remain independently testable.",
+      "Audio chunks can carry optional source text and a terminal signal.",
+      "Live feedback code depends on provider-neutral TTS stream ports, not concrete adapters."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

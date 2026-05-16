@@ -1,73 +1,86 @@
+use astrbot_core::Result;
 use async_trait::async_trait;
-use reqwest::Client;
 
-use crate::ProviderError;
-
-/// TTS Provider trait
-#[async_trait]
-pub trait TtsProvider: Send + Sync {
-    fn name(&self) -> &str;
-    async fn synthesize(&self, text: &str, voice: Option<&str>) -> Result<Vec<u8>, ProviderError>;
-    fn supported_voices(&self) -> Vec<VoiceInfo>;
+use crate::chat::non_empty_option;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextToSpeechRequest {
+    pub provider_id: Option<String>,
+    pub text: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct VoiceInfo {
-    pub id: String,
-    pub name: String,
-    pub language: Option<String>,
-}
-
-/// OpenAI-compatible TTS implementation
-pub struct OpenAiCompatibleTts {
-    client: Client,
-    base_url: String,
-    api_key: String,
-    model: String,
-    default_voice: String,
-}
-
-impl OpenAiCompatibleTts {
-    pub fn new(base_url: String, api_key: String, model: String, default_voice: String) -> Self {
+impl TextToSpeechRequest {
+    pub fn new(text: impl Into<String>) -> Self {
         Self {
-            client: Client::new(),
-            base_url,
-            api_key,
-            model,
-            default_voice,
+            provider_id: None,
+            text: text.into(),
+        }
+    }
+
+    pub fn with_provider_id(mut self, provider_id: impl Into<String>) -> Self {
+        self.provider_id = non_empty_option(provider_id);
+        self
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextToSpeechResponse {
+    pub audio_path: String,
+}
+
+impl TextToSpeechResponse {
+    pub fn new(audio_path: impl Into<String>) -> Self {
+        Self {
+            audio_path: audio_path.into(),
         }
     }
 }
 
 #[async_trait]
-impl TtsProvider for OpenAiCompatibleTts {
-    fn name(&self) -> &str {
-        "OpenAI-Compatible TTS"
+pub trait TextToSpeechProvider: Send + Sync {
+    async fn synthesize(&self, request: TextToSpeechRequest) -> Result<TextToSpeechResponse>;
+
+    fn supports_streaming(&self) -> bool {
+        false
     }
 
-    async fn synthesize(&self, text: &str, voice: Option<&str>) -> Result<Vec<u8>, ProviderError> {
-        let body = serde_json::json!({
-            "model": self.model,
-            "input": text,
-            "voice": voice.unwrap_or(&self.default_voice),
-        });
+    async fn terminate(&self) -> Result<()> {
+        Ok(())
+    }
+}
 
-        let response = self
-            .client
-            .post(format!(
-                "{}/v1/audio/speech",
-                self.base_url.trim_end_matches('/')
-            ))
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .json(&body)
-            .send()
-            .await?;
+#[derive(Clone, Debug)]
+pub struct MockTextToSpeechProvider {
+    audio_path: String,
+    supports_streaming: bool,
+}
 
-        let bytes = response.bytes().await?.to_vec();
-        Ok(bytes)
+impl MockTextToSpeechProvider {
+    pub fn new(audio_path: impl Into<String>) -> Self {
+        Self {
+            audio_path: audio_path.into(),
+            supports_streaming: false,
+        }
     }
 
-    fn supported_voices(&self) -> Vec<VoiceInfo> {
-        vec![]
+    pub fn with_streaming(mut self, supports_streaming: bool) -> Self {
+        self.supports_streaming = supports_streaming;
+        self
+    }
+}
+
+#[async_trait]
+impl TextToSpeechProvider for MockTextToSpeechProvider {
+    async fn synthesize(&self, request: TextToSpeechRequest) -> Result<TextToSpeechResponse> {
+        if request.text.trim().is_empty() {
+            return Err(astrbot_core::AstrbotError::Provider(
+                "text-to-speech request must contain text".to_string(),
+            ));
+        }
+
+        Ok(TextToSpeechResponse::new(self.audio_path.clone()))
+    }
+
+    fn supports_streaming(&self) -> bool {
+        self.supports_streaming
     }
 }

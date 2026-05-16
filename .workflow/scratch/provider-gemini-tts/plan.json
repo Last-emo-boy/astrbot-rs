@@ -1,0 +1,36 @@
+{
+  "task_id": "M7-T2q-gemini-tts-provider",
+  "title": "Add AstrBot-compatible Gemini text-to-speech provider",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "M7-T2q-1",
+      "title": "Study AstrBot Gemini TTS source",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_tts_source.py"
+      ]
+    },
+    {
+      "id": "M7-T2q-2",
+      "title": "Implement provider and registry factory",
+      "status": "completed",
+      "files": [
+        "Cargo.toml",
+        "crates/astrbot-provider/Cargo.toml",
+        "crates/astrbot-provider/src/gemini_tts.rs",
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/src/registry.rs"
+      ]
+    },
+    {
+      "id": "M7-T2q-3",
+      "title": "Add direct and registry tests",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-provider/tests/gemini_tts.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "task_id": "M7-T2h-rerank-provider-boundary",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "context",
+      "status": "completed",
+      "description": "Compare AstrBot RerankProvider, RerankResult, and provider manager rerank bucket."
+    },
+    {
+      "id": "trait",
+      "status": "completed",
+      "description": "Add RerankRequest, RerankResponse, RerankDocumentScore, RerankProvider, and MockRerankProvider."
+    },
+    {
+      "id": "registry-manager",
+      "status": "completed",
+      "description": "Add RerankProviderConfig, mock_rerank factory registration, ProviderManager rerank storage, routing, default selection, and terminate hook."
+    },
+    {
+      "id": "tests",
+      "status": "completed",
+      "description": "Cover builtin rerank metadata, manager construction, provider routing, top_n, missing provider errors, and termination."
+    },
+    {
+      "id": "verification",
+      "status": "completed",
+      "description": "Run workspace fmt, tests, clippy, CLI smoke, and workflow JSON parse."
+    }
+  ]
+}

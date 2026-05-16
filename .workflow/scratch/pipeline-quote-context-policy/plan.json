@@ -1,0 +1,27 @@
+{
+  "id": "pipeline-quote-context-policy",
+  "task_id": "M5-T3-quote-context-policy",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-quoted-message",
+      "status": "completed",
+      "summary": "Compared AstrBot quoted message extraction and WebChat reply selected_text handling."
+    },
+    {
+      "id": "quote-context-policy",
+      "status": "completed",
+      "summary": "Added QuoteContextPolicy with a default SelectedTextQuoteContextPolicy and NoQuoteContextPolicy override."
+    },
+    {
+      "id": "provider-request-enrichment",
+      "status": "completed",
+      "summary": "Provider fallback now injects quoted selected text into ProviderRequest.extra_user_content_parts before ChatRequest conversion."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Covered selected text injection, blank selected_text skipping, reply-only provider guard, and plugin ProviderRequest enrichment."
+    }
+  ]
+}

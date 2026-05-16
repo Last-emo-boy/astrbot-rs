@@ -1,0 +1,39 @@
+{
+  "id": "TASK-076",
+  "title": "Introduce knowledge-base ingestion, document repository, indexing job, and vector persistence boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "kb-ingestion-index-boundary",
+  "description": "TASK-031 added KB document, parser, chunking, retrieval, vector-store, and formatter ports, but AstrBot also has KB manager, SQLite KB metadata, helper/indexing orchestration, parser fan-out, and FAISS document/vector persistence. Rust needs an ingestion/index job boundary before dashboard KB CRUD or agent KB context wiring grows.",
+  "read_first": [
+    "crates/astrbot-kb/src",
+    "crates/astrbot-storage/src",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_db_sqlite.py",
+    "E:/Playground/Astrbot/astrbot/core/knowledge_base/kb_helper.py",
+    "E:/Playground/Astrbot/astrbot/core/db/vec_db/faiss_impl"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-kb/src",
+      "action": "extend",
+      "target": "KB ingestion and indexing service",
+      "change": "Define document repository, media store, ingestion request/progress, indexing job, and vector persistence ports outside retrieval."
+    },
+    {
+      "path": "crates/astrbot-agent/src",
+      "action": "guard",
+      "target": "agent KB request decoration",
+      "change": "Keep agent request decoration consuming formatted KB context rather than owning ingestion or vector persistence."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Parsing/chunking/embedding/vector upsert orchestration is separate from retrieval queries.",
+      "KB metadata/document repository ports are testable without dashboard routes or runtime assembly.",
+      "Agent integration receives formatted retrieval context through a port."
+    ],
+    "verification_command": "cargo test -p astrbot-kb && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

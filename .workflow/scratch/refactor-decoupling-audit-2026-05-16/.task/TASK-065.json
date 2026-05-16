@@ -1,0 +1,41 @@
+{
+  "id": "TASK-065",
+  "title": "Define external agent runner connector and stream mapping boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "external-agent-runner-boundary",
+  "description": "AstrBot supports non-standard agent runners such as Coze, Dify, DashScope, and DeerFlow. Their API clients, thread/session mapping, stream event parsing, final response mapping, and runner lifecycle should not be folded into chat provider adapters or the generic AgentRunner.",
+  "read_first": [
+    "crates/astrbot-agent/src",
+    "crates/astrbot-provider/src",
+    "crates/astrbot-runtime/src/provider_config",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/base.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/coze/coze_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/dify/dify_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/dashscope/dashscope_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/deerflow/deerflow_agent_runner.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/external",
+      "action": "create",
+      "target": "external agent runner boundary",
+      "change": "Define connector config, client lifecycle, stream event mapping, final response mapping, and provider-request adaptation."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/provider_config",
+      "action": "integrate-later",
+      "target": "external runner config mapping",
+      "change": "Route external agent configs into agent connectors without treating them as normal chat providers."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "External agent runner state is testable without pipeline stages.",
+      "Provider adapters remain focused on provider protocol, not third-party agent workflow state.",
+      "Streaming deltas and final results are normalized through agent response types."
+    ],
+    "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

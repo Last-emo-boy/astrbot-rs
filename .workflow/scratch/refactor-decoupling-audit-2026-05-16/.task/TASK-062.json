@@ -1,0 +1,45 @@
+{
+  "id": "TASK-062",
+  "title": "Separate realtime chat WebSocket, OpenAPI chat, audio-frame, and subscription gateway boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "realtime-chat-gateway-boundary",
+  "description": "AstrBot live chat and OpenAPI chat routes combine WebSocket auth, per-connection session state, audio frame assembly, attachment conversion, queue subscription, and bot response persistence. Rust should keep this as a web gateway boundary rather than mixing it with WebChat transport, agent feedback, or provider streaming.",
+  "read_first": [
+    "crates/astrbot-web/src",
+    "crates/astrbot-platform/src/adapters/webchat",
+    "crates/astrbot-agent/src/feedback",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/live_chat.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/open_api.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/webchat/webchat_queue_mgr.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-web/src/realtime/session.rs",
+      "action": "create",
+      "target": "realtime connection session boundary",
+      "change": "Track WebSocket session, auth user, subscriptions, and cleanup outside route functions."
+    },
+    {
+      "path": "crates/astrbot-web/src/realtime/audio.rs",
+      "action": "create",
+      "target": "live audio frame boundary",
+      "change": "Isolate PCM/WAV assembly and temp cleanup from chat gateway logic."
+    },
+    {
+      "path": "crates/astrbot-web/src/realtime/open_api.rs",
+      "action": "create",
+      "target": "external chat API gateway",
+      "change": "Separate OpenAPI chat/message/file DTOs from dashboard management DTOs."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Realtime WebSocket gateway code does not live in WebChat HTTP routes.",
+      "Audio frame handling uses path/temp/media boundaries.",
+      "OpenAPI chat routes authenticate and enqueue messages through typed gateway services."
+    ],
+    "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

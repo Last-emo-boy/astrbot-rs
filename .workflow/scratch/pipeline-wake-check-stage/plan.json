@@ -1,0 +1,30 @@
+{
+  "task_id": "M2-T1-wake-check-stage",
+  "steps": [
+    {
+      "id": "wake-context",
+      "title": "Add wake policy config to PipelineContext",
+      "status": "completed"
+    },
+    {
+      "id": "message-event-flags",
+      "title": "Add wake markers and session kind to core message event model",
+      "status": "completed"
+    },
+    {
+      "id": "wake-stage",
+      "title": "Implement WakeCheckStage and register it before plugin/provider/respond",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover allow/deny/default builder/runtime behavior",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    }
+  ]
+}

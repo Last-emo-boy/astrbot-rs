@@ -1,0 +1,24 @@
+{
+  "task_id": "M7-T2-provider-parity",
+  "subtask_id": "M7-T2a-openai-compatible-provider-aliases",
+  "milestone": "M7-platform-provider-dashboard-breadth",
+  "status": "completed",
+  "created_at": "2026-05-16T03:22:29+08:00",
+  "completed_at": "2026-05-16T03:22:29+08:00",
+  "method": "maestro-quick-task",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openrouter_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/oai_aihubmix_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/zhipu_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/groq_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/xai_source.py"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

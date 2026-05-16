@@ -1,0 +1,48 @@
+{
+  "id": "TASK-048",
+  "title": "Separate plugin dependency installer, import environment, conflict, and redaction boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "plugin-dependency-environment-boundary",
+  "description": "TASK-018 defines dependency plans, but AstrBot's pip installer shows that real plugin dependency installation includes package parsing, site-packages preference, conflict classification, core-version constraints, packaged-runtime patches, and secret redaction. Rust should keep dependency installation and import-environment policy separate from plugin metadata loading.",
+  "read_first": [
+    "crates/astrbot-plugin/src/loader/dependency.rs",
+    "crates/astrbot-plugin/src/loader/metadata.rs",
+    "crates/astrbot-plugin/src/manifest.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/utils/pip_installer.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/requirements_utils.py",
+    "E:/Playground/Astrbot/astrbot/core/utils/core_constraints.py",
+    "E:/Playground/Astrbot/astrbot/core/star/star_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-plugin/src/dependency/installer.rs",
+      "action": "create",
+      "target": "dependency installer port",
+      "change": "Execute dependency plans through a replaceable installer instead of embedding install logic in PluginLoader."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/dependency/environment.rs",
+      "action": "create",
+      "target": "plugin import environment",
+      "change": "Model isolated dependency roots, package preference, and runtime-specific import behavior."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/dependency/conflict.rs",
+      "action": "create",
+      "target": "dependency conflict classification",
+      "change": "Keep version/core conflicts and safe user-facing errors out of loader state transitions."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "PluginLoader depends on dependency ports, not concrete package installation mechanics.",
+      "Dependency conflict errors are classified and redact secrets before reaching logs or dashboard APIs.",
+      "Native Rust plugins and future Python compatibility can share the dependency plan boundary."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

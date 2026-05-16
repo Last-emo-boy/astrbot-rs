@@ -1,0 +1,66 @@
+{
+  "id": "TASK-036",
+  "title": "Separate streaming parser, chunk normalization, and unsupported streaming strategy",
+  "status": "completed",
+  "type": "refactor",
+  "category": "streaming-boundary",
+  "description": "OpenAI-compatible chat and MiniMax TTS already parse SSE-like streams locally, while core/pipeline have a separate MessageStream delivery boundary. Extract stream parsing and strategy policy before adding provider/tool streaming and AstrBot unsupported_streaming_strategy parity.",
+  "read_first": [
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/minimax_tts.rs",
+    "crates/astrbot-core/src/message/result.rs",
+    "crates/astrbot-pipeline/src/stages/respond.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/config/default.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/provider.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/tool_loop_agent_runner.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/streaming/sse.rs",
+      "action": "create",
+      "target": "provider SSE parser",
+      "change": "Move event splitting, JSON delta extraction, and malformed-stream errors out of concrete providers."
+    },
+    {
+      "path": "crates/astrbot-core/src/message/result.rs",
+      "action": "update",
+      "target": "stream chunk model",
+      "change": "Keep only transport-neutral MessageStream semantics in core."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider adapters do not own generic SSE splitting or chunk normalization.",
+      "Unsupported streaming behavior is represented as explicit policy, not adapter-local string errors.",
+      "RespondStage remains a delivery boundary and does not parse provider streams."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "medium",
+  "completed_at": "2026-05-16T19:34:20+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/protocol/mod.rs",
+    "crates/astrbot-provider/src/protocol/openai_chat.rs",
+    "crates/astrbot-provider/src/protocol/minimax_tts.rs",
+    "crates/astrbot-provider/src/streaming/mod.rs",
+    "crates/astrbot-provider/src/streaming/chunk.rs",
+    "crates/astrbot-provider/src/streaming/sse.rs",
+    "crates/astrbot-provider/src/streaming/policy.rs"
+  ],
+  "files_removed": [
+    "crates/astrbot-provider/src/protocol/sse.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo test -p astrbot-pipeline",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

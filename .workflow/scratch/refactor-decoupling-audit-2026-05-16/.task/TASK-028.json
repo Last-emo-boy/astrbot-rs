@@ -1,0 +1,58 @@
+{
+  "id": "TASK-028",
+  "title": "Introduce agent context window, token budget, truncation, and compression boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "agent-context-boundary",
+  "description": "AstrBot keeps context manager, compressor, truncator, and token counter as explicit agent-context concerns. Rust currently only injects session context through pipeline ports, so main-agent parity needs a separate context-window boundary before request decoration grows.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/context",
+    "crates/astrbot-core/src/message/provider_request.rs",
+    "E:/Playground/Astrbot/astrbot/core/agent/context/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/context/compressor.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/context/truncator.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/context/token_counter.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src",
+      "action": "create",
+      "target": "agent context module tree",
+      "change": "Define typed context-window traits and policies before main-agent request decoration or tool-loop work expands."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/stages/process.rs",
+      "action": "guard",
+      "target": "process stage boundary",
+      "change": "Avoid embedding token counting, truncation, or compression logic directly in pipeline stages."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Context compression/truncation is independent from concrete provider adapters.",
+      "Pipeline stages keep consuming typed ProviderRequest/context results through ports.",
+      "Token estimation is pluggable and testable without LLM calls."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T15:38:00+08:00",
+  "files_modified": [
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/context/mod.rs",
+    "crates/astrbot-agent/src/context/window.rs",
+    "crates/astrbot-agent/src/context/token.rs",
+    "crates/astrbot-agent/src/context/truncation.rs",
+    "crates/astrbot-agent/src/context/compression.rs",
+    "crates/astrbot-agent/src/context/manager.rs",
+    "crates/astrbot-agent/src/context/decorator.rs",
+    "crates/astrbot-agent/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-pipeline",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

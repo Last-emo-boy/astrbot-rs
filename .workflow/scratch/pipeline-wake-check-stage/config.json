@@ -1,0 +1,15 @@
+{
+  "task_id": "M2-T1-wake-check-stage",
+  "milestone": "M2-policy-stages",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/waking_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage.py"
+  ],
+  "scope": [
+    "Add the first Rust policy stage before plugin/provider/respond.",
+    "Keep wake policy configuration on PipelineContext.",
+    "Stop non-eligible events before provider execution."
+  ]
+}

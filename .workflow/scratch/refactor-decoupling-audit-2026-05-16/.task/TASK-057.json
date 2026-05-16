@@ -1,0 +1,44 @@
+{
+  "id": "TASK-057",
+  "title": "Extract provider TTS option normalization and factory config mapping boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-tts-factory-boundary",
+  "description": "TTS factory construction currently mixes provider option aliases, parsing, defaults, headers, and concrete config mapping for OpenAI, Gemini, Volcengine, MiniMax, and GSVI. Split option normalization from protocol parsing and media artifact writing so new TTS providers do not grow one factory file.",
+  "read_first": [
+    "crates/astrbot-provider/src/factories/tts.rs",
+    "crates/astrbot-runtime/src/provider_config/tts.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/minimax_tts_api_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/volcengine_tts.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_tts_source.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/factories/tts/mod.rs",
+      "action": "create",
+      "target": "TTS factory facade",
+      "change": "Keep public builder dispatch stable while splitting provider-specific mapping."
+    },
+    {
+      "path": "crates/astrbot-provider/src/factories/tts/options.rs",
+      "action": "create",
+      "target": "TTS option normalization",
+      "change": "Centralize provider_options alias lookup and typed parse errors for TTS factories."
+    },
+    {
+      "path": "crates/astrbot-provider/src/factories/tts/{openai,gemini,volcengine,minimax,gsvi}.rs",
+      "action": "create",
+      "target": "provider-specific TTS builders",
+      "change": "Move existing concrete config assembly into provider-specific modules."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "TTS provider construction behavior and error messages remain covered by existing tests.",
+      "Protocol DTO/parser work remains in TASK-052; generated media artifact writing remains in TASK-035.",
+      "Factory code no longer centralizes all provider-specific option aliases in one file."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium"
+}

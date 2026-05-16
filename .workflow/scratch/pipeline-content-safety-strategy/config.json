@@ -1,0 +1,16 @@
+{
+  "task_id": "M2-T3-content-safety-strategy",
+  "milestone": "M2-policy-stages",
+  "status": "completed",
+  "reference": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/content_safety_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/content_safety_check/strategies/strategy.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/content_safety_check/strategies/keywords.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py"
+  ],
+  "scope": [
+    "Add content safety as the final M2 policy stage after rate_limit and before plugin/provider/respond.",
+    "Expose a ContentSafetyStrategy trait through PipelineContext.",
+    "Implement a keyword strategy first and keep external safety providers deferred."
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "id": "TASK-029",
+  "title": "Define MCP client, resource, prompt, sampling, roots, and elicitation boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "mcp-boundary",
+  "description": "AstrBot MCP support spans client lifecycle, tool bridging, resource/prompt adapters, sampling, roots, and elicitation. Rust should isolate this behind typed MCP capability modules before plugin/tool parity pulls it into provider or pipeline code.",
+  "read_first": [
+    "crates/astrbot-plugin/src/sandbox.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_client.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_subcapability_bridge.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_resource_bridge.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_prompt_bridge.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/func_tool_manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-mcp/src",
+      "action": "create",
+      "target": "MCP boundary crate or module",
+      "change": "Separate MCP config, client lifecycle, tool/resource/prompt bridges, roots policy, sampling, and elicitation parsing."
+    },
+    {
+      "path": "crates/astrbot-plugin/src/sandbox.rs",
+      "action": "integrate-later",
+      "target": "sandbox capability gates",
+      "change": "Connect MCP capability declarations through typed permissions instead of direct provider/tool-manager coupling."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "MCP client lifecycle is not owned by provider adapters.",
+      "Resource/prompt/sampling/elicitation capabilities are separately testable.",
+      "Roots/path allowlist logic has its own security boundary."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T16:13:00+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "crates/astrbot-mcp/Cargo.toml",
+    "crates/astrbot-mcp/src/lib.rs",
+    "crates/astrbot-mcp/src/types.rs",
+    "crates/astrbot-mcp/src/config.rs",
+    "crates/astrbot-mcp/src/client.rs",
+    "crates/astrbot-mcp/src/tools.rs",
+    "crates/astrbot-mcp/src/resources.rs",
+    "crates/astrbot-mcp/src/prompts.rs",
+    "crates/astrbot-mcp/src/sampling.rs",
+    "crates/astrbot-mcp/src/elicitation.rs",
+    "crates/astrbot-mcp/src/roots.rs",
+    "crates/astrbot-mcp/src/naming.rs",
+    "crates/astrbot-mcp/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-mcp",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo test --workspace"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "id": "TASK-006",
+  "title": "Split PipelineContext policy and port modules",
+  "status": "completed",
+  "type": "refactor",
+  "category": "ports-and-policy",
+  "description": "Move pipeline context policy configs, injected ports, in-memory state, content safety strategy, provider preference storage, quote policy, and result decoration config into focused modules.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/context.rs",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/waking_check/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/whitelist_check/stage.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-pipeline/src/context/mod.rs",
+      "action": "create",
+      "target": "PipelineContext facade",
+      "change": "Own PipelineContext and re-export context submodules."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/context/policy.rs",
+      "action": "create",
+      "target": "policy configs",
+      "change": "Move wake, whitelist, rate limit, provider fallback, and result decorate configs."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/context/ports.rs",
+      "action": "create",
+      "target": "injected traits",
+      "change": "Move SessionStatusPort, ProviderPreferencePort, QuoteContextPolicy, and ContentSafetyStrategy traits."
+    },
+    {
+      "path": "crates/astrbot-pipeline/src/context/provider_preference.rs",
+      "action": "create",
+      "target": "provider preference storage",
+      "change": "Move InMemoryProviderPreferencePort and related tests."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "context.rs or context/mod.rs is focused on PipelineContext composition.",
+      "Policy stage imports remain stable through re-exports.",
+      "Pipeline package tests pass."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "implementation_steps": [
+    "Extract config structs and keep re-exports.",
+    "Extract trait ports and in-memory implementations.",
+    "Move focused tests with the modules they verify.",
+    "Run pipeline and workspace tests."
+  ],
+  "risk": "medium"
+}

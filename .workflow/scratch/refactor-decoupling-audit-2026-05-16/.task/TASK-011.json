@@ -1,0 +1,42 @@
+{
+  "id": "TASK-011",
+  "title": "Split large integration test files by behavior area",
+  "status": "pending",
+  "type": "refactor",
+  "category": "testability",
+  "description": "Reduce test-file coupling so future behavior changes can run targeted package tests without editing broad integration files.",
+  "read_first": [
+    "crates/astrbot-pipeline/tests/process_stage.rs",
+    "crates/astrbot-platform/src/tests.rs",
+    "crates/astrbot-runtime/src/tests.rs"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-pipeline/tests/process_stage",
+      "action": "create",
+      "target": "process stage test modules",
+      "change": "Split fallback, plugin provider request, session context, provider preference, quote context, and error policy tests."
+    },
+    {
+      "path": "crates/astrbot-platform/src/tests",
+      "action": "create",
+      "target": "platform test modules",
+      "change": "Split registry, manager, sink, console, webchat, and onebot tests."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/tests",
+      "action": "create",
+      "target": "runtime test modules",
+      "change": "Split config, lifecycle, provider bucket, platform, policy, and webchat tests."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "No test coverage is removed.",
+      "Package-level tests remain green.",
+      "Shared fixtures are local helpers, not new production abstractions."
+    ],
+    "verification_command": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo test -p astrbot-runtime"
+  },
+  "risk": "low"
+}

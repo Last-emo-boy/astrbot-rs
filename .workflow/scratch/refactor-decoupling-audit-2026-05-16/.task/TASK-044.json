@@ -1,0 +1,47 @@
+{
+  "id": "TASK-044",
+  "title": "Define persona, skill catalog, and prompt composition boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "persona-skill-boundary",
+  "description": "AstrBot has dedicated PersonaManager and SkillManager surfaces that feed main-agent prompt composition. Rust should avoid embedding persona resolution, skill activation, and prompt rendering directly into ProcessStage or plugin SDK code when main-agent parity starts.",
+  "read_first": [
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "crates/astrbot-plugin/src/sdk.rs",
+    "crates/astrbot-agent/src"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/persona_mgr.py",
+    "E:/Playground/Astrbot/astrbot/core/skills/skill_manager.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-persona/src/manager.rs",
+      "action": "create",
+      "target": "persona manager",
+      "change": "Resolve default/session persona and folder metadata outside the agent runner."
+    },
+    {
+      "path": "crates/astrbot-skill/src/catalog.rs",
+      "action": "create",
+      "target": "skill catalog",
+      "change": "Separate skill discovery/activation from plugin handler registration."
+    },
+    {
+      "path": "crates/astrbot-skill/src/prompt.rs",
+      "action": "create",
+      "target": "skill prompt rendering",
+      "change": "Keep prompt composition policy testable before agent request decoration is implemented."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProcessStage does not own persona or skill prompt policy.",
+      "Persona selection and skill activation have typed ports that can later back dashboard APIs.",
+      "Agent runner request decoration consumes resolved persona/skill data through explicit inputs."
+    ],
+    "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-pipeline && cargo test --workspace"
+  },
+  "risk": "high"
+}

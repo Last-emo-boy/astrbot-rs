@@ -1,0 +1,56 @@
+{
+  "id": "TASK-078",
+  "title": "Define provider response metadata, token usage, reasoning, and tool-call boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-response-metadata-boundary",
+  "description": "Rust ChatResponse currently only carries a MessageChain, while AstrBot LLMResponse keeps token usage, reasoning content/signatures, raw completion identity, finish/stop data, and tool-call payloads. Define this response metadata boundary before provider parity, tool orchestration, dashboard trace, and live feedback push those fields into concrete provider adapters or agent runner code.",
+  "read_first": [
+    "crates/astrbot-provider/src/chat.rs",
+    "crates/astrbot-provider/src/protocol/openai_chat.rs",
+    "crates/astrbot-provider/src/protocol/gemini_chat.rs",
+    "crates/astrbot-provider/src/protocol/anthropic_chat.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-core/src/message/result.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/entities.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/openai_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/gemini_source.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/sources/anthropic_source.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/response.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/response/mod.rs",
+      "action": "create",
+      "target": "provider response facade",
+      "change": "Expose metadata, token usage, reasoning, tool-call, and streaming response DTOs without growing ChatResponse directly."
+    },
+    {
+      "path": "crates/astrbot-provider/src/response/token_usage.rs",
+      "action": "create",
+      "target": "token usage metadata",
+      "change": "Represent prompt/completion/total tokens and provider-specific usage details outside protocol parsers."
+    },
+    {
+      "path": "crates/astrbot-provider/src/response/reasoning.rs",
+      "action": "create",
+      "target": "reasoning metadata",
+      "change": "Model reasoning text/signatures and provider thinking config outputs separately from user-visible message chains."
+    },
+    {
+      "path": "crates/astrbot-provider/src/response/tool_call.rs",
+      "action": "create",
+      "target": "provider tool-call result model",
+      "change": "Normalize provider tool-call IDs, names, arguments, partial JSON, and extra content before agent/tool-loop consumption."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Concrete provider protocol modules do not become the only place that understands reasoning, token usage, and tool-call payload shape.",
+      "AgentRunner can forward response metadata without coupling to OpenAI/Gemini/Anthropic DTOs.",
+      "Future observability/live-feedback code can consume typed provider response metadata."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

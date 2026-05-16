@@ -1,0 +1,53 @@
+{
+  "id": "TASK-087",
+  "title": "Define tool output reference, citation extraction, and route-independent refs boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "tool-reference-boundary",
+  "description": "AstrBot dashboard chat, live_chat, and OpenAPI routes duplicate logic for collecting web_search tool results, matching <ref> tags, adding favicons, and saving refs in bot history. Rust should place tool-result reference extraction in a tool/agent boundary so WebChat, realtime, OpenAPI, and future dashboard history routes do not parse provider/tool output ad hoc.",
+  "read_first": [
+    "crates/astrbot-tool/src",
+    "crates/astrbot-agent/src/tool_loop.rs",
+    "crates/astrbot-web/src/routes.rs",
+    "crates/astrbot-storage/src/conversation.rs",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/chat.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/live_chat.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/open_api.py",
+    "E:/Playground/Astrbot/astrbot/builtin_stars/web_searcher/main.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-tool/src/reference.rs",
+      "action": "create",
+      "target": "tool output reference extraction",
+      "change": "Model supported reference-producing tools, parsed result items, ref tags, and citation payloads independent of web routes."
+    },
+    {
+      "path": "crates/astrbot-agent/src/references.rs",
+      "action": "create",
+      "target": "agent response reference decoration",
+      "change": "Attach extracted refs to agent/chat response metadata without mixing with streaming transport."
+    },
+    {
+      "path": "crates/astrbot-storage/src/conversation_refs.rs",
+      "action": "create",
+      "target": "conversation reference persistence port",
+      "change": "Persist route-independent refs alongside bot history without forcing storage to understand tool-call internals."
+    },
+    {
+      "path": "crates/astrbot-web/src/reference.rs",
+      "action": "create",
+      "target": "web response mapping",
+      "change": "Keep HTTP/SSE/WebSocket routes limited to serializing reference DTOs produced by agent/tool services."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "WebChat, realtime chat, and OpenAPI routes do not duplicate web_search ref extraction.",
+      "Tool reference extraction consumes typed tool-call results rather than arbitrary route-local JSON maps.",
+      "Conversation history can store refs without coupling to specific web transport code."
+    ],
+    "verification_command": "cargo test -p astrbot-tool && cargo test -p astrbot-agent && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

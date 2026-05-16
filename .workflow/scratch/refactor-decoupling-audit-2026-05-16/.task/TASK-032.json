@@ -1,0 +1,59 @@
+{
+  "id": "TASK-032",
+  "title": "Separate database schema, migrations, backup import/export, stats, and repository implementations",
+  "status": "completed",
+  "type": "refactor",
+  "category": "persistence-migration-boundary",
+  "description": "TASK-024 records storage ports, but AstrBot's database and backup layers also show migration, stats, API key, persona, cron, project/session, import, and export concerns that should not collapse into one persistence module.",
+  "read_first": [
+    "crates/astrbot-runtime/src/config_io.rs",
+    "E:/Playground/Astrbot/astrbot/core/db/__init__.py",
+    "E:/Playground/Astrbot/astrbot/core/db/sqlite.py",
+    "E:/Playground/Astrbot/astrbot/core/db/migration",
+    "E:/Playground/Astrbot/astrbot/core/backup/exporter.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/importer.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-storage/src",
+      "action": "extend-plan",
+      "target": "storage module tree",
+      "change": "Keep repository traits, concrete SQL implementations, migration runner, backup export/import, and stats queries in separate modules."
+    },
+    {
+      "path": "crates/astrbot-web/src",
+      "action": "guard",
+      "target": "management API boundary",
+      "change": "Expose persistence through management services instead of direct DB access in HTTP route handlers."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Storage ports remain independent from concrete SQLite or backup format code.",
+      "Migrations are ordered, idempotent, and testable with temporary stores.",
+      "Backup import/export does not depend on dashboard route handlers."
+    ],
+    "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T18:00:00+08:00",
+  "files_modified": [
+    "crates/astrbot-storage/Cargo.toml",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-storage/src/migration.rs",
+    "crates/astrbot-storage/src/stats.rs",
+    "crates/astrbot-storage/src/repository.rs",
+    "crates/astrbot-storage/src/sqlite.rs",
+    "crates/astrbot-storage/src/backup.rs",
+    "crates/astrbot-storage/src/backup/export.rs",
+    "crates/astrbot-storage/src/backup/import.rs",
+    "crates/astrbot-storage/src/backup/manifest.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-storage",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "TASK-040",
+  "title": "Introduce observability, trace, log buffer, and runtime status event boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "observability-boundary",
+  "description": "Runtime, provider, platform, and future dashboard management work will need status events, trace records, and log streaming. Define an observability boundary before status/log APIs are mixed into runtime handle, managers, or WebChat transport routes.",
+  "read_first": [
+    "crates/astrbot-runtime/src/handle.rs",
+    "crates/astrbot-platform/src/manager.rs",
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-web/src/routes.rs"
+  ],
+  "astrbot_reference": [
+    "E:/Playground/Astrbot/astrbot/core/utils/trace.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-observability/src/status_event.rs",
+      "action": "create",
+      "target": "runtime status events",
+      "change": "Define typed events for provider/platform/plugin lifecycle, reload, and task supervision."
+    },
+    {
+      "path": "crates/astrbot-observability/src/log_buffer.rs",
+      "action": "create",
+      "target": "dashboard log streaming boundary",
+      "change": "Keep log buffering and management exposure outside chat transport routes."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Runtime managers emit typed status events through a trait, not direct dashboard/web dependencies.",
+      "Trace/log storage is separate from WebChat transport.",
+      "Existing runtime stop/restart behavior remains unchanged."
+    ],
+  "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings",
+  "completed_at": "2026-05-16T23:05:29+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "crates/astrbot-observability/Cargo.toml",
+    "crates/astrbot-observability/src/lib.rs",
+    "crates/astrbot-observability/src/status_event.rs",
+    "crates/astrbot-observability/src/log_buffer.rs",
+    "crates/astrbot-observability/src/trace.rs",
+    "crates/astrbot-platform/Cargo.toml",
+    "crates/astrbot-platform/src/manager.rs",
+    "crates/astrbot-provider/Cargo.toml",
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-provider/src/manager/lifecycle.rs",
+    "crates/astrbot-runtime/Cargo.toml",
+    "crates/astrbot-runtime/src/handle/runtime.rs",
+    "crates/astrbot-runtime/src/handle/restart.rs",
+    "crates/astrbot-runtime/src/tests/lifecycle.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-observability",
+    "cargo test -p astrbot-runtime",
+    "cargo test -p astrbot-provider",
+    "cargo test -p astrbot-platform",
+    "cargo clippy -p astrbot-observability -- -D warnings",
+    "cargo clippy -p astrbot-runtime -- -D warnings",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo clippy -p astrbot-platform -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+  },
+  "risk": "medium"
+}

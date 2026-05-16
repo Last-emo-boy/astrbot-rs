@@ -1,0 +1,37 @@
+{
+  "id": "TASK-054",
+  "title": "Split provider manager bucket assembly and accessors into a reusable capability bucket boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "provider-manager-bucket-boundary",
+  "description": "ProviderManager already has per-capability routing modules, but from_configs still repeats build/default-selection/accessor logic for every bucket. Introduce a reusable provider bucket helper so future capability additions or dashboard mutations do not grow manager.rs directly.",
+  "read_first": [
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-provider/src/manager/chat.rs",
+    "crates/astrbot-provider/src/manager/tts.rs",
+    "E:/Playground/Astrbot/astrbot/core/provider/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-provider/src/manager/bucket.rs",
+      "action": "create",
+      "target": "generic provider bucket helper",
+      "change": "Own provider map, default selection, count, and lookup patterns shared across capability buckets."
+    },
+    {
+      "path": "crates/astrbot-provider/src/manager.rs",
+      "action": "update",
+      "target": "ProviderManager facade",
+      "change": "Delegate repeated per-capability assembly/accessor mechanics to the bucket helper while preserving public methods."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ProviderManager public behavior and default fallback remain unchanged.",
+      "Capability-specific modules keep trait-specific routing while shared bucket logic removes repeated map/default code.",
+      "No provider selection change-hook behavior is introduced here; TASK-042 remains separate."
+    ],
+    "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+  },
+  "risk": "medium"
+}

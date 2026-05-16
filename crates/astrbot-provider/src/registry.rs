@@ -1,127 +1,250 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{ChatProvider, ProviderConfig};
+use astrbot_core::Result;
 
+use crate::capability::{ProviderAdapterMetadata, ProviderCapability};
+use crate::config::{
+    ChatProviderConfig, EmbeddingProviderConfig, RerankProviderConfig, SpeechToTextProviderConfig,
+    TextToSpeechProviderConfig,
+};
+use crate::{
+    ChatProvider, EmbeddingProvider, RerankProvider, SpeechToTextProvider, TextToSpeechProvider,
+};
+
+mod builtins;
+mod errors;
+mod factory;
+mod metadata;
+
+use errors::missing_factory_error;
+use factory::{
+    ChatProviderFactory, EmbeddingProviderFactory, RerankProviderFactory,
+    SpeechToTextProviderFactory, TextToSpeechProviderFactory,
+};
+use metadata::ProviderMetadataIndex;
+
+#[derive(Clone, Default)]
 pub struct ProviderRegistry {
-    llm_factories: HashMap<String, Box<dyn Fn(ProviderConfig) -> Box<dyn ChatProvider>>>,
+    adapter_metadata: ProviderMetadataIndex,
+    chat_factories: HashMap<String, ChatProviderFactory>,
+    speech_to_text_factories: HashMap<String, SpeechToTextProviderFactory>,
+    text_to_speech_factories: HashMap<String, TextToSpeechProviderFactory>,
+    embedding_factories: HashMap<String, EmbeddingProviderFactory>,
+    rerank_factories: HashMap<String, RerankProviderFactory>,
 }
 
 impl ProviderRegistry {
     pub fn new() -> Self {
-        let mut registry = Self {
-            llm_factories: HashMap::new(),
-        };
-
-        registry.register("openai", |c| {
-            Box::new(crate::OpenAiCompatibleProvider::new(c))
-        });
-        registry.register("moonshot", |c| {
-            Box::new(crate::sources::moonshot::create(c.api_key, c.model))
-        });
-        registry.register("deepseek", |c| {
-            Box::new(crate::sources::deepseek::create(c.api_key, c.model))
-        });
-        registry.register("groq", |c| {
-            Box::new(crate::sources::groq::create(c.api_key, c.model))
-        });
-        registry.register("ollama", |c| {
-            Box::new(crate::sources::ollama::OllamaProvider::new(c))
-        });
-        registry.register("openrouter", |c| {
-            Box::new(crate::sources::openrouter::create(c.api_key, c.model))
-        });
-        registry.register("siliconflow", |c| {
-            Box::new(crate::sources::siliconflow::create(c.api_key, c.model))
-        });
-        registry.register("oneapi", |c| {
-            Box::new(crate::sources::oneapi::create(
-                c.base_url, c.api_key, c.model,
-            ))
-        });
-        registry.register("lmstudio", |c| {
-            Box::new(crate::sources::lmstudio::create(c.base_url, c.model))
-        });
-        registry.register("zhipu", |c| {
-            Box::new(crate::sources::zhipu::create(c.api_key, c.model))
-        });
-        registry.register("xai", |c| {
-            Box::new(crate::sources::xai::create(c.api_key, c.model))
-        });
-        registry.register("minimax", |c| {
-            Box::new(crate::sources::minimax::create(c.api_key, c.model))
-        });
-        registry.register("volcengine", |c| {
-            Box::new(crate::sources::volcengine::create(c.api_key, c.model))
-        });
-        registry.register("qwen", |c| {
-            Box::new(crate::sources::qwen::create(c.api_key, c.model))
-        });
-        registry.register("stepfun", |c| {
-            Box::new(crate::sources::stepfun::create(c.api_key, c.model))
-        });
-        registry.register("hyperbolic", |c| {
-            Box::new(crate::sources::hyperbolic::create(c.api_key, c.model))
-        });
-        registry.register("ai21", |c| {
-            Box::new(crate::sources::ai21::create(c.api_key, c.model))
-        });
-        registry.register("azure", |c| {
-            Box::new(crate::sources::azure::create(c.api_key, c.model))
-        });
-        registry.register("baichuan", |c| {
-            Box::new(crate::sources::baichuan::create(c.api_key, c.model))
-        });
-        registry.register("claude", |c| {
-            Box::new(crate::sources::claude::ClaudeProvider::new(c))
-        });
-        registry.register("cohere", |c| {
-            Box::new(crate::sources::cohere::create(c.api_key, c.model))
-        });
-        registry.register("fireworks", |c| {
-            Box::new(crate::sources::fireworks::create(c.api_key, c.model))
-        });
-        registry.register("perplexity", |c| {
-            Box::new(crate::sources::perplexity::create(c.api_key, c.model))
-        });
-        registry.register("together", |c| {
-            Box::new(crate::sources::together::create(c.api_key, c.model))
-        });
-        registry.register("zerooneai", |c| {
-            Box::new(crate::sources::zerooneai::create(c.api_key, c.model))
-        });
-        registry.register("baidu", |c| {
-            Box::new(crate::sources::baidu::create(c.api_key, c.model))
-        });
-        registry.register("hunyuan", |c| {
-            Box::new(crate::sources::hunyuan::create(c.api_key, c.model))
-        });
-        registry.register("spark", |c| {
-            Box::new(crate::sources::spark::create(c.api_key, c.model))
-        });
-
-        registry
+        Self::default()
     }
 
-    pub fn register(
+    pub fn with_builtin_providers() -> Self {
+        builtins::with_builtin_providers()
+    }
+
+    pub fn with_builtin_chat_providers() -> Self {
+        builtins::with_builtin_chat_providers()
+    }
+
+    pub fn register_chat_provider(
         &mut self,
-        name: &str,
-        factory: impl Fn(ProviderConfig) -> Box<dyn ChatProvider> + 'static,
-    ) {
-        self.llm_factories
-            .insert(name.to_string(), Box::new(factory));
+        provider_type: impl Into<String>,
+        factory: impl Fn(&ChatProviderConfig) -> Result<Arc<dyn ChatProvider>> + Send + Sync + 'static,
+    ) -> Result<()> {
+        let provider_type = provider_type.into();
+        self.register_provider_adapter(&provider_type, ProviderCapability::ChatCompletion)?;
+        self.chat_factories.insert(provider_type, Arc::new(factory));
+        Ok(())
     }
 
-    pub fn create(&self, name: &str, config: ProviderConfig) -> Option<Box<dyn ChatProvider>> {
-        self.llm_factories.get(name).map(|f| f(config))
+    pub fn register_speech_to_text_provider(
+        &mut self,
+        provider_type: impl Into<String>,
+        factory: impl Fn(&SpeechToTextProviderConfig) -> Result<Arc<dyn SpeechToTextProvider>>
+        + Send
+        + Sync
+        + 'static,
+    ) -> Result<()> {
+        let provider_type = provider_type.into();
+        self.register_provider_adapter(&provider_type, ProviderCapability::SpeechToText)?;
+        self.speech_to_text_factories
+            .insert(provider_type, Arc::new(factory));
+        Ok(())
     }
 
-    pub fn list(&self) -> Vec<&String> {
-        self.llm_factories.keys().collect()
+    pub fn register_text_to_speech_provider(
+        &mut self,
+        provider_type: impl Into<String>,
+        factory: impl Fn(&TextToSpeechProviderConfig) -> Result<Arc<dyn TextToSpeechProvider>>
+        + Send
+        + Sync
+        + 'static,
+    ) -> Result<()> {
+        let provider_type = provider_type.into();
+        self.register_provider_adapter(&provider_type, ProviderCapability::TextToSpeech)?;
+        self.text_to_speech_factories
+            .insert(provider_type, Arc::new(factory));
+        Ok(())
     }
-}
 
-impl Default for ProviderRegistry {
-    fn default() -> Self {
-        Self::new()
+    pub fn register_embedding_provider(
+        &mut self,
+        provider_type: impl Into<String>,
+        factory: impl Fn(&EmbeddingProviderConfig) -> Result<Arc<dyn EmbeddingProvider>>
+        + Send
+        + Sync
+        + 'static,
+    ) -> Result<()> {
+        let provider_type = provider_type.into();
+        self.register_provider_adapter(&provider_type, ProviderCapability::Embedding)?;
+        self.embedding_factories
+            .insert(provider_type, Arc::new(factory));
+        Ok(())
+    }
+
+    pub fn register_rerank_provider(
+        &mut self,
+        provider_type: impl Into<String>,
+        factory: impl Fn(&RerankProviderConfig) -> Result<Arc<dyn RerankProvider>>
+        + Send
+        + Sync
+        + 'static,
+    ) -> Result<()> {
+        let provider_type = provider_type.into();
+        self.register_provider_adapter(&provider_type, ProviderCapability::Rerank)?;
+        self.rerank_factories
+            .insert(provider_type, Arc::new(factory));
+        Ok(())
+    }
+
+    pub fn register_provider_adapter(
+        &mut self,
+        provider_type: impl Into<String>,
+        capability: ProviderCapability,
+    ) -> Result<()> {
+        self.adapter_metadata.register(provider_type, capability)
+    }
+
+    pub fn provider_metadata(&self, provider_type: &str) -> Option<&ProviderAdapterMetadata> {
+        self.adapter_metadata.get(provider_type)
+    }
+
+    pub fn has_provider_adapter(&self, provider_type: &str) -> bool {
+        self.adapter_metadata.contains(provider_type)
+    }
+
+    pub fn has_chat_provider(&self, provider_type: &str) -> bool {
+        self.chat_factories.contains_key(provider_type)
+    }
+
+    pub fn has_speech_to_text_provider(&self, provider_type: &str) -> bool {
+        self.speech_to_text_factories.contains_key(provider_type)
+    }
+
+    pub fn has_text_to_speech_provider(&self, provider_type: &str) -> bool {
+        self.text_to_speech_factories.contains_key(provider_type)
+    }
+
+    pub fn has_embedding_provider(&self, provider_type: &str) -> bool {
+        self.embedding_factories.contains_key(provider_type)
+    }
+
+    pub fn has_rerank_provider(&self, provider_type: &str) -> bool {
+        self.rerank_factories.contains_key(provider_type)
+    }
+
+    pub fn provider_types_by_capability(&self, capability: ProviderCapability) -> Vec<String> {
+        self.adapter_metadata.types_by_capability(capability)
+    }
+
+    pub fn build_chat_provider(
+        &self,
+        config: &ChatProviderConfig,
+    ) -> Result<Arc<dyn ChatProvider>> {
+        let factory = self
+            .chat_factories
+            .get(&config.provider_type)
+            .ok_or_else(|| {
+                missing_factory_error(
+                    &config.provider_type,
+                    "chat provider",
+                    "chat provider type",
+                    self.adapter_metadata.get(&config.provider_type),
+                )
+            })?;
+        factory(config)
+    }
+
+    pub fn build_speech_to_text_provider(
+        &self,
+        config: &SpeechToTextProviderConfig,
+    ) -> Result<Arc<dyn SpeechToTextProvider>> {
+        let factory = self
+            .speech_to_text_factories
+            .get(&config.provider_type)
+            .ok_or_else(|| {
+                missing_factory_error(
+                    &config.provider_type,
+                    "speech-to-text provider",
+                    "speech-to-text provider type",
+                    self.adapter_metadata.get(&config.provider_type),
+                )
+            })?;
+        factory(config)
+    }
+
+    pub fn build_text_to_speech_provider(
+        &self,
+        config: &TextToSpeechProviderConfig,
+    ) -> Result<Arc<dyn TextToSpeechProvider>> {
+        let factory = self
+            .text_to_speech_factories
+            .get(&config.provider_type)
+            .ok_or_else(|| {
+                missing_factory_error(
+                    &config.provider_type,
+                    "text-to-speech provider",
+                    "text-to-speech provider type",
+                    self.adapter_metadata.get(&config.provider_type),
+                )
+            })?;
+        factory(config)
+    }
+
+    pub fn build_embedding_provider(
+        &self,
+        config: &EmbeddingProviderConfig,
+    ) -> Result<Arc<dyn EmbeddingProvider>> {
+        let factory = self
+            .embedding_factories
+            .get(&config.provider_type)
+            .ok_or_else(|| {
+                missing_factory_error(
+                    &config.provider_type,
+                    "embedding provider",
+                    "embedding provider type",
+                    self.adapter_metadata.get(&config.provider_type),
+                )
+            })?;
+        factory(config)
+    }
+
+    pub fn build_rerank_provider(
+        &self,
+        config: &RerankProviderConfig,
+    ) -> Result<Arc<dyn RerankProvider>> {
+        let factory = self
+            .rerank_factories
+            .get(&config.provider_type)
+            .ok_or_else(|| {
+                missing_factory_error(
+                    &config.provider_type,
+                    "rerank provider",
+                    "rerank provider type",
+                    self.adapter_metadata.get(&config.provider_type),
+                )
+            })?;
+        factory(config)
     }
 }

@@ -1,0 +1,9 @@
+{
+  "task": "Add console platform adapter",
+  "flags": {
+    "discuss": false,
+    "full": true
+  },
+  "created_at": "2026-05-15T20:40:26+08:00",
+  "status": "completed"
+}

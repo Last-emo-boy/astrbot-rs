@@ -1,0 +1,54 @@
+{
+  "id": "TASK-086",
+  "title": "Introduce metrics, usage accounting, installation identity, and stats sink boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "metrics-usage-boundary",
+  "description": "TASK-040 covers trace/log/status events and TASK-078 covers provider response metadata. AstrBot also has a metrics surface for installation identity, remote metric upload, platform message counts, LLM/TTS stats, token usage persistence, and dashboard stat aggregation. Rust should keep metrics and usage accounting distinct from observability logs, provider parsers, platform adapters, and storage table helpers.",
+  "read_first": [
+    "crates/astrbot-storage/src/stats.rs",
+    "crates/astrbot-provider/src/chat.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-platform/src/manager.rs",
+    "E:/Playground/Astrbot/astrbot/core/utils/metrics.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/runners/tool_loop_agent_runner.py",
+    "E:/Playground/Astrbot/astrbot/core/astr_agent_run_util.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/stat.py",
+    "E:/Playground/Astrbot/astrbot/core/db/po.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-metrics/src/lib.rs",
+      "action": "create",
+      "target": "metrics crate facade",
+      "change": "Expose typed metric events, sinks, usage accounting, and installation identity without coupling to runtime/web."
+    },
+    {
+      "path": "crates/astrbot-metrics/src/event.rs",
+      "action": "create",
+      "target": "metric event model",
+      "change": "Represent message ticks, LLM ticks, TTS stats, platform adapter IDs, provider IDs, and timing snapshots."
+    },
+    {
+      "path": "crates/astrbot-metrics/src/usage.rs",
+      "action": "create",
+      "target": "token and cost usage accounting",
+      "change": "Bridge provider token usage metadata into conversation/session stats without embedding accounting in providers."
+    },
+    {
+      "path": "crates/astrbot-metrics/src/sink.rs",
+      "action": "create",
+      "target": "local and remote metrics sinks",
+      "change": "Separate storage-backed platform stats from optional remote metric upload and redaction policy."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Provider response metadata can feed usage accounting without providers importing storage or dashboard code.",
+      "Platform adapters emit metric events instead of writing stats directly.",
+      "Remote metric upload is optional and separated from local platform stats persistence."
+    ],
+    "verification_command": "cargo test -p astrbot-metrics && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

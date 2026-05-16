@@ -1,0 +1,33 @@
+{
+  "task": "Add runtime start stop handle",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Study AstrBot lifecycle task ownership",
+      "status": "completed",
+      "files": [
+        "E:/Playground/Astrbot/astrbot/core/core_lifecycle.py"
+      ],
+      "convergence_criteria": "Runtime owns event bus and platform adapter task startup and shutdown"
+    },
+    {
+      "id": "T2",
+      "title": "Expose platform adapter task spawning",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-platform/src/lib.rs"
+      ],
+      "convergence_criteria": "PlatformManager can spawn all configured adapters and run them as tasks"
+    },
+    {
+      "id": "T3",
+      "title": "Add RuntimeHandle",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "convergence_criteria": "AstrbotRuntime can start background EventBus/platform tasks and stop them cleanly"
+    }
+  ]
+}

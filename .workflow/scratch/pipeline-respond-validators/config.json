@@ -1,0 +1,21 @@
+{
+  "id": "pipeline-respond-validators",
+  "milestone": "M4-respond-decoration",
+  "task_id": "M4-T2-respond-validators",
+  "status": "completed",
+  "created_at": "2026-05-16T01:44:47+08:00",
+  "completed_at": "2026-05-16T01:44:47+08:00",
+  "references": [
+    "E:/Playground/Astrbot/astrbot/core/pipeline/respond/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/result_decorate/stage.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/stage_order.py"
+  ],
+  "scope": [
+    "Keep RespondStage focused on the final send boundary.",
+    "Move send-chain normalization into astrbot-core MessageChain helpers.",
+    "Skip empty/header-only result chains without expanding streaming or segmented reply."
+  ],
+  "verification": [
+    "cargo test -p astrbot-core -p astrbot-pipeline respond_stage --tests"
+  ]
+}

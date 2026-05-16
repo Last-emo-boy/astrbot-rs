@@ -10,6 +10,18 @@ Rust 版应把 AstrBot 的核心理念拆成清晰 crate：`core` 定义事件�
 
 </spec-entry>
 
+<spec-entry category="decision" keywords="facade-roots,module-split,decoupling,runtime,provider,web,core,pipeline,maestro" date="2026-05-16" source="crates/astrbot-runtime/src/lib.rs:38; crates/astrbot-provider/src/registry.rs:821; crates/astrbot-web/src/lib.rs:133; crates/astrbot-core/src/message.rs:9; crates/astrbot-pipeline/src/context.rs:14; E:/Playground/Astrbot/astrbot/core/provider/manager.py:31">
+
+### Large Crate Roots Stay Thin Facades
+
+继续迁移 AstrBot provider/platform parity 前，应先拆掉当前 Rust 版的大文件耦合点。`lib.rs`、`registry.rs`、`message.rs`、`context.rs` 这类入口文件只应做 module 声明、公开 re-export 或单一边界组合，不应同时承载 config DTO、factory、manager、concrete adapter、policy port、HTTP DTO、转换逻辑和测试。
+
+优先级按增长压力排序：`astrbot-runtime/src/lib.rs` 拆成 config/provider_config/policy_config/assembly/handle/ports/config_io；`astrbot-provider/src/registry.rs` 拆成 constants/capability/config/factories/options/registry/manager；`astrbot-provider/src/lib.rs` 拆成 chat/speech/tts/embedding/rerank/mock 门面；`astrbot-web/src/lib.rs` 拆成 DTO/routes/server/message_parts/error；`astrbot-core/src/message.rs` 拆成 component/chain/session/sink/result/provider_request/event；`astrbot-pipeline/src/context.rs` 拆成 context policy/ports/session/content_safety/provider_preference/result。
+
+这与 AstrBot 的理念一致：ProviderManager 虽然统一管理 provider，但 chat、STT、TTS、embedding、rerank 是独立 capability bucket；Platform 也通过 register/manager 分开注册和装载。Rust 版应保留这些概念边界，并用模块和 trait re-export 保持编译期依赖清晰。后续大拆分必须先保持行为不变，包级测试通过后再继续新增 provider/platform 功能。
+
+</spec-entry>
+
 <spec-entry category="decision" keywords="gsvi-tts,text-to-speech,http-get,provider-registry" date="2026-05-16" source="E:/Playground/Astrbot/astrbot/core/provider/sources/gsvi_tts_source.py">
 
 ### GSVI TTS Stays A Thin HTTP Adapter
@@ -83,6 +95,18 @@ Rust 版应把 AstrBot `WakingCheckStage` 的唤醒边界放在默认 pipeline �
 ### Extension Points Use Traits And Registries
 
 AstrBot 的 Star 机制使用 Handler Registry、EventType 和 Filter 组合扩展点。Rust 版应保留这个理念，但用 trait、typed metadata、registry 和依赖注入表达，减少动态导入和全局可变状态。
+
+</spec-entry>
+
+<spec-entry category="decision" keywords="plugin-sdk,sandbox,rust-native,capability,star,tool-execution" date="2026-05-16" source="E:/Playground/Astrbot/astrbot/core/star/star_handler.py; E:/Playground/Astrbot/astrbot/core/star/star_manager.py; E:/Playground/Astrbot/astrbot/core/astr_agent_tool_exec.py:171; E:/Playground/Astrbot/astrbot/core/config/default.py:139">
+
+### Plugin SDK And Sandbox Are Rust-Native Boundaries
+
+Rust 版插件系统应学习 AstrBot Star 的 handler metadata、event type、filter、priority 和 plugin context 理念，但不必复制 Python 动态导入模型。`astrbot-plugin` 应逐步演进成自有 SDK：提供 typed `PluginContext`、event/command handler trait、插件 manifest、capability declaration、配置 schema、资源生命周期和测试 harness。宏或 builder API 可以作为易用层，但核心仍应是 trait/registry，方便静态检查和沙箱约束。
+
+沙箱不应散落在 agent tool 执行逻辑里。参考 AstrBot 在 tool execution 前检查 sandbox capability 的实践，Rust 版应把沙箱抽成明确边界，例如 `SandboxRuntime`、`ToolCapability`、`PluginPermission`、`SandboxProfile` 和 per-session capability resolver。插件或工具声明需要的能力，runtime/pipeline 在调用前做 capability gate；具体执行可以后续接入进程隔离、WASM、受限文件系统、网络 allowlist 或外部 sandbox service。
+
+Python 插件兼容可以作为后续 adapter，不应阻止 Rust-native SDK 先建立更强的类型、权限和生命周期模型。Dashboard 只能通过 SDK/manager 观察插件 manifest、状态和能力，不应直接接触插件实现或沙箱执行细节。
 
 </spec-entry>
 

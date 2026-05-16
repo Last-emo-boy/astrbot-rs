@@ -1,0 +1,49 @@
+{
+  "task": "Add WebChat non-image media message parts",
+  "status": "completed",
+  "completed_at": "2026-05-15T22:50:14+08:00",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Extend MessageComponent media variants",
+      "description": "Add record, video, and file variants to core MessageComponent with empty checks and tests.",
+      "scope": [
+        "crates/astrbot-core/src/message.rs"
+      ],
+      "convergence_criteria": "Core tests prove text/image extraction remains stable while non-image media is represented.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Extend WebChat typed media parts",
+      "description": "Accept and read back record, video, and file parts through WebChat HTTP without changing provider fallback behavior.",
+      "scope": [
+        "crates/astrbot-web/src/lib.rs",
+        "crates/astrbot-pipeline/tests/mock_message_loop.rs"
+      ],
+      "convergence_criteria": "WebChat tests prove non-image media parts survive submit and history readback.",
+      "status": "completed"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Record Maestro state and verify",
+      "description": "Update specs/state and run standard checks.",
+      "scope": [
+        ".workflow/state.json",
+        ".workflow/specs/architecture-constraints.md",
+        ".workflow/scratch/webchat-non-image-media-parts"
+      ],
+      "convergence_criteria": "Maestro artifacts record the increment and all checks pass.",
+      "status": "completed"
+    }
+  ],
+  "verification": [
+    "cargo test -p astrbot-core",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-pipeline",
+    "cargo fmt --all --check",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo run -p astrbot-cli"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "task": "Add config-driven CLI entrypoint",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Keep CLI as a thin lifecycle entrypoint",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-cli/src/main.rs"
+      ],
+      "convergence_criteria": "CLI dispatches commands but delegates runtime work to astrbot-runtime"
+    },
+    {
+      "id": "T2",
+      "title": "Add init run smoke commands",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-cli/src/main.rs",
+        "Cargo.toml",
+        "Cargo.lock"
+      ],
+      "convergence_criteria": "CLI can create a runtime config, start runtime until Ctrl+C and keep the existing smoke path"
+    },
+    {
+      "id": "T3",
+      "title": "Verify CLI command parsing and smoke behavior",
+      "status": "completed",
+      "files": [
+        "crates/astrbot-cli/src/main.rs"
+      ],
+      "convergence_criteria": "CLI parser tests and cargo run smoke/init checks pass"
+    }
+  ]
+}

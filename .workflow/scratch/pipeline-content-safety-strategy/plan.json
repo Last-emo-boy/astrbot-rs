@@ -1,0 +1,30 @@
+{
+  "task_id": "M2-T3-content-safety-strategy",
+  "steps": [
+    {
+      "id": "strategy-port",
+      "title": "Add content safety strategy trait and config to PipelineContext",
+      "status": "completed"
+    },
+    {
+      "id": "keyword-strategy",
+      "title": "Implement keyword content safety strategy",
+      "status": "completed"
+    },
+    {
+      "id": "stage-registry",
+      "title": "Implement ContentSafetyCheckStage and register it before plugin/provider/respond",
+      "status": "completed"
+    },
+    {
+      "id": "tests",
+      "title": "Cover allow, block with reply, and silent stop behavior",
+      "status": "completed"
+    },
+    {
+      "id": "workflow-update",
+      "title": "Update Maestro state, roadmap, and architecture constraints",
+      "status": "completed"
+    }
+  ]
+}

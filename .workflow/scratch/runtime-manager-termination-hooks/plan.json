@@ -1,0 +1,27 @@
+{
+  "id": "runtime-manager-termination-hooks",
+  "task_id": "M6-T3-manager-termination-hooks",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-termination-boundary",
+      "status": "completed",
+      "summary": "Compared AstrBot stop/restart manager termination order."
+    },
+    {
+      "id": "provider-platform-plugin-hooks",
+      "status": "completed",
+      "summary": "Added default terminate hooks to ChatProvider, PlatformAdapter, and PluginHandler, plus manager-level terminate methods."
+    },
+    {
+      "id": "runtime-stop-order",
+      "status": "completed",
+      "summary": "RuntimeHandle::stop now stops background tasks before terminating plugin, provider, and platform managers."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Added manager/registry tests proving terminate hooks are called."
+    }
+  ]
+}

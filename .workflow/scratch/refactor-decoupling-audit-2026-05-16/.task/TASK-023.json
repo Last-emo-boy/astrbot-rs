@@ -1,0 +1,66 @@
+{
+  "id": "TASK-023",
+  "title": "Define platform adapter transport, session, reconnect, and media upload boundaries",
+  "status": "completed",
+  "type": "refactor",
+  "category": "platform-transport-boundary",
+  "description": "TASK-010 split adapter event/message conversion, but real QQ/WeChat/OneBot parity will also need long-running transport, reconnect, session metadata, outbound send, and media upload/download boundaries. Record this before transport code grows inside adapter mod.rs files.",
+  "read_first": [
+    "crates/astrbot-platform/src/adapters/onebot/mod.rs",
+    "crates/astrbot-platform/src/adapters/onebot/event.rs",
+    "crates/astrbot-platform/src/adapters/onebot/message.rs",
+    "crates/astrbot-platform/src/manager.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/aiocqhttp/aiocqhttp_platform_adapter.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/sources/qqofficial/qqofficial_platform_adapter.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/adapters/onebot/transport.rs",
+      "action": "create",
+      "target": "OneBot transport runtime",
+      "change": "Separate reverse WebSocket/HTTP lifecycle from message conversion."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/onebot/session.rs",
+      "action": "create",
+      "target": "OneBot session metadata",
+      "change": "Track message IDs, scene/group metadata, and reply routing separately from adapter orchestration."
+    },
+    {
+      "path": "crates/astrbot-platform/src/adapters/common/transport.rs",
+      "action": "create",
+      "target": "shared adapter transport traits",
+      "change": "Define minimal transport lifecycle traits that PlatformManager can supervise without knowing adapter internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "PlatformRegistry/PlatformManager remain the runtime entry points.",
+      "Adapter event/message conversion stays independent from network transport.",
+      "Task supervision remains compatible with future reconnect and terminate behavior."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo test --workspace"
+  },
+  "risk": "high",
+  "completed_at": "2026-05-16T18:00:00+08:00",
+  "files_modified": [
+    "crates/astrbot-platform/src/lib.rs",
+    "crates/astrbot-platform/src/adapters/mod.rs",
+    "crates/astrbot-platform/src/adapters/common/mod.rs",
+    "crates/astrbot-platform/src/adapters/common/transport.rs",
+    "crates/astrbot-platform/src/adapters/common/media.rs",
+    "crates/astrbot-platform/src/adapters/onebot/mod.rs",
+    "crates/astrbot-platform/src/adapters/onebot/message.rs",
+    "crates/astrbot-platform/src/adapters/onebot/session.rs",
+    "crates/astrbot-platform/src/adapters/onebot/transport.rs",
+    "crates/astrbot-platform/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-platform",
+    "cargo clippy -p astrbot-platform -- -D warnings",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ]
+}

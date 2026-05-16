@@ -1,0 +1,27 @@
+{
+  "id": "pipeline-respond-validators",
+  "task_id": "M4-T2-respond-validators",
+  "status": "completed",
+  "steps": [
+    {
+      "id": "reference-respond-stage",
+      "status": "completed",
+      "summary": "Read AstrBot RespondStage validators and limited this task to non-streaming send normalization."
+    },
+    {
+      "id": "core-sendable-chain",
+      "status": "completed",
+      "summary": "Added MessageComponent and MessageChain helpers for sendable content and valid send components."
+    },
+    {
+      "id": "respond-stage-normalization",
+      "status": "completed",
+      "summary": "RespondStage now sends only normalized sendable chains while preserving Stop control."
+    },
+    {
+      "id": "focused-tests",
+      "status": "completed",
+      "summary": "Added RespondStage tests for empty plain, empty media, header-only chains, media content, and stopped empty results."
+    }
+  ]
+}

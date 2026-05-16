@@ -1,0 +1,37 @@
+{
+  "id": "TASK-056",
+  "title": "Split runtime policy config into per-policy modules before AstrBot platform_settings parity grows",
+  "status": "pending",
+  "type": "refactor",
+  "category": "runtime-policy-config-boundary",
+  "description": "Runtime policy_config.rs is still the single DTO/conversion point for wake, whitelist, session status, rate limit, content safety, provider fallback, result decoration, and restart state. AstrBot platform_settings is much broader, so split this before adding segmented reply, permissions, platform-specific policy, or richer safety config.",
+  "read_first": [
+    "crates/astrbot-runtime/src/policy_config.rs",
+    "crates/astrbot-runtime/src/config/schema.rs",
+    "crates/astrbot-runtime/src/config/ui_metadata.rs",
+    "E:/Playground/Astrbot/astrbot/core/config/default.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-runtime/src/policy_config/mod.rs",
+      "action": "create",
+      "target": "policy config facade",
+      "change": "Re-export public runtime policy config DTOs."
+    },
+    {
+      "path": "crates/astrbot-runtime/src/policy_config/{wake,whitelist,session,rate_limit,content_safety,provider_fallback,result_decorate,state}.rs",
+      "action": "create",
+      "target": "per-policy DTO modules",
+      "change": "Move current policy DTOs and From conversions by behavior area."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Runtime policy public re-exports remain compatible.",
+      "Schema/UI metadata imports continue to compile without reaching into unrelated policy modules.",
+      "No new policy behavior is added."
+    ],
+    "verification_command": "cargo test -p astrbot-runtime && cargo clippy -p astrbot-runtime -- -D warnings"
+  },
+  "risk": "medium"
+}

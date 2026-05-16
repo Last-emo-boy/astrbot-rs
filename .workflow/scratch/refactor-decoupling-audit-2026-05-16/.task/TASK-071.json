@@ -1,0 +1,45 @@
+{
+  "id": "TASK-071",
+  "title": "Define internal tool provider source, registration, and management boundaries",
+  "status": "pending",
+  "type": "refactor",
+  "category": "internal-tool-provider-boundary",
+  "description": "AstrBot registers built-in tools such as cron, KB query, send-message, and computer-use through FunctionToolManager, and dashboard tools distinguish internal, plugin, and MCP origins. Rust has tool schema/catalog and execution placeholders, but not an explicit internal-tool provider/source boundary.",
+  "read_first": [
+    "crates/astrbot-tool/src/catalog.rs",
+    "crates/astrbot-tool/src/activation.rs",
+    "crates/astrbot-plugin/src/tool",
+    "E:/Playground/Astrbot/astrbot/core/provider/func_tool_manager.py",
+    "E:/Playground/Astrbot/astrbot/core/tools/kb_query.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/tools.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-tool/src/source.rs",
+      "action": "create",
+      "target": "tool source model",
+      "change": "Represent internal/plugin/MCP/subagent tool source metadata and user-toggle policy in one typed location."
+    },
+    {
+      "path": "crates/astrbot-tool/src/internal.rs",
+      "action": "create",
+      "target": "internal tool provider boundary",
+      "change": "Define registration descriptors for built-in tools without wiring their execution into provider or plugin managers."
+    },
+    {
+      "path": "crates/astrbot-web/src/management/tools.rs",
+      "action": "create",
+      "target": "tool management snapshot/mutation route boundary",
+      "change": "Keep dashboard tool list/toggle behavior outside provider manager internals."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Tool source metadata can distinguish internal, plugin, MCP, and subagent tools.",
+      "Internal tools cannot be user-disabled through the same path as plugin/MCP tools unless policy explicitly allows it.",
+      "Runtime assembly can register internal tool providers without importing dashboard or provider adapter code."
+    ],
+    "verification_command": "cargo test -p astrbot-tool && cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "high"
+}

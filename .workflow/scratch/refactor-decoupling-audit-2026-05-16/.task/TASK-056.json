@@ -1,7 +1,7 @@
 {
   "id": "TASK-056",
   "title": "Split runtime policy config into per-policy modules before AstrBot platform_settings parity grows",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "runtime-policy-config-boundary",
   "description": "Runtime policy_config.rs is still the single DTO/conversion point for wake, whitelist, session status, rate limit, content safety, provider fallback, result decoration, and restart state. AstrBot platform_settings is much broader, so split this before adding segmented reply, permissions, platform-specific policy, or richer safety config.",
@@ -33,5 +33,28 @@
     ],
     "verification_command": "cargo test -p astrbot-runtime && cargo clippy -p astrbot-runtime -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:48:09+08:00",
+  "files_modified": [
+    "crates/astrbot-runtime/src/policy_config.rs",
+    "crates/astrbot-runtime/src/policy_config/mod.rs",
+    "crates/astrbot-runtime/src/policy_config/wake.rs",
+    "crates/astrbot-runtime/src/policy_config/whitelist.rs",
+    "crates/astrbot-runtime/src/policy_config/session.rs",
+    "crates/astrbot-runtime/src/policy_config/rate_limit.rs",
+    "crates/astrbot-runtime/src/policy_config/content_safety.rs",
+    "crates/astrbot-runtime/src/policy_config/provider_fallback.rs",
+    "crates/astrbot-runtime/src/policy_config/result_decorate.rs",
+    "crates/astrbot-runtime/src/policy_config/state.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-056.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-056-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-056/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy -p astrbot-runtime -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "medium"
 }

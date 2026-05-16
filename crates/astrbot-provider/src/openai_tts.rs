@@ -4,10 +4,10 @@ use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
-use serde::Serialize;
 
 use crate::http::{build_http_client, extract_error_message, join_api_path, json_bearer_headers};
 use crate::media::{GeneratedMediaArtifactWriter, default_tts_output_dir, safe_media_extension};
+use crate::protocol::tts::build_openai_tts_request;
 use crate::{TextToSpeechProvider, TextToSpeechRequest, TextToSpeechResponse};
 
 #[derive(Clone, Debug)]
@@ -99,19 +99,16 @@ impl OpenAiTextToSpeechProvider {
         Ok(Self { config, client })
     }
 
-    fn build_payload(&self, request: &TextToSpeechRequest) -> Result<OpenAiTextToSpeechRequest> {
-        if request.text.trim().is_empty() {
-            return Err(AstrbotError::Provider(
-                "text-to-speech request must contain text".to_string(),
-            ));
-        }
-
-        Ok(OpenAiTextToSpeechRequest {
-            model: self.config.model.clone(),
-            voice: self.config.voice.clone(),
-            input: request.text.clone(),
-            response_format: self.config.response_format.clone(),
-        })
+    fn build_payload(
+        &self,
+        request: &TextToSpeechRequest,
+    ) -> Result<impl serde::Serialize + use<>> {
+        build_openai_tts_request(
+            request,
+            &self.config.model,
+            &self.config.voice,
+            &self.config.response_format,
+        )
     }
 
     fn write_audio(&self, audio: &[u8]) -> Result<String> {
@@ -147,12 +144,4 @@ impl TextToSpeechProvider for OpenAiTextToSpeechProvider {
 
         Ok(TextToSpeechResponse::new(self.write_audio(&body)?))
     }
-}
-
-#[derive(Debug, Serialize)]
-struct OpenAiTextToSpeechRequest {
-    model: String,
-    voice: String,
-    input: String,
-    response_format: String,
 }

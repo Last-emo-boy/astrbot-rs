@@ -1,5 +1,10 @@
 pub(crate) mod anthropic_chat;
 pub(crate) mod gemini_chat;
+pub(crate) mod gemini_embedding;
 pub(crate) mod minimax_tts;
 pub(crate) mod openai_chat;
+pub(crate) mod openai_embedding;
+pub(crate) mod rerank;
+pub(crate) mod speech;
+pub(crate) mod tts;
 pub(crate) mod xinference;

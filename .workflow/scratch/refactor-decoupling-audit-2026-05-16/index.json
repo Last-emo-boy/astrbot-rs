@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T03:06:26+08:00",
+  "updated_at": "2026-05-17T03:19:15+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 51,
-    "pending_tasks": 39,
+    "completed_tasks": 52,
+    "pending_tasks": 38,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 55,
-    "current_task_id": "TASK-051",
-    "next_task": "TASK-052"
+    "reflection_rounds": 56,
+    "current_task_id": "TASK-052",
+    "next_task": "TASK-053"
   },
-  "latest_update": "TASK-051 separated live agent feedback status, stop-signal policy, streaming final-chain extraction, and optional TTS feedback boundaries. Next pending task is TASK-052.",
+  "latest_update": "TASK-052 extracted non-chat provider protocol DTOs and parsers for embedding, TTS, STT, and rerank adapters. Next pending task is TASK-053.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

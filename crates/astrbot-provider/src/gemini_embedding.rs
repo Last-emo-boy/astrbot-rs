@@ -4,12 +4,13 @@ use std::time::Duration;
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
+use crate::protocol::gemini_embedding::{
+    build_gemini_batch_embed_contents_request, build_gemini_embed_content_request,
+    extract_gemini_embedding_error_message, gemini_embedding_method_url,
+    parse_gemini_batch_embed_contents_response, parse_gemini_embed_content_response,
+};
 use crate::{EmbeddingProvider, EmbeddingRequest, EmbeddingResponse};
-
-const ERROR_TEXT_MAX_CHARS: usize = 4096;
 
 #[derive(Clone, Debug)]
 pub struct GeminiEmbeddingConfig {
@@ -53,30 +54,12 @@ impl GeminiEmbeddingConfig {
         self
     }
 
-    fn model_resource(&self, model: &str) -> String {
-        if model.starts_with("models/") {
-            model.to_string()
-        } else {
-            format!("models/{model}")
-        }
-    }
-
     fn embed_content_url(&self, model: &str) -> String {
-        self.model_url(model, "embedContent")
+        gemini_embedding_method_url(&self.api_base, model, "embedContent")
     }
 
     fn batch_embed_contents_url(&self, model: &str) -> String {
-        self.model_url(model, "batchEmbedContents")
-    }
-
-    fn model_url(&self, model: &str, method: &str) -> String {
-        let api_base = self.api_base.trim_end_matches('/');
-        let model = self.model_resource(model);
-        if api_base.ends_with("/v1beta") {
-            format!("{api_base}/{model}:{method}")
-        } else {
-            format!("{api_base}/v1beta/{model}:{method}")
-        }
+        gemini_embedding_method_url(&self.api_base, model, "batchEmbedContents")
     }
 }
 
@@ -102,27 +85,6 @@ impl GeminiEmbeddingProvider {
             .model
             .clone()
             .unwrap_or_else(|| self.config.model.clone())
-    }
-
-    fn build_embed_payload(&self, model: &str, text: &str) -> GeminiEmbedContentRequest {
-        GeminiEmbedContentRequest {
-            model: self.config.model_resource(model),
-            content: gemini_text_content(text),
-            output_dimensionality: self.config.dimensions,
-        }
-    }
-
-    fn build_batch_payload(
-        &self,
-        model: &str,
-        texts: &[String],
-    ) -> GeminiBatchEmbedContentsRequest {
-        GeminiBatchEmbedContentsRequest {
-            requests: texts
-                .iter()
-                .map(|text| self.build_embed_payload(model, text))
-                .collect(),
-        }
     }
 }
 
@@ -153,7 +115,11 @@ impl GeminiEmbeddingProvider {
         let response = self
             .client
             .post(self.config.embed_content_url(model))
-            .json(&self.build_embed_payload(model, text))
+            .json(&build_gemini_embed_content_request(
+                model,
+                text,
+                self.config.dimensions,
+            ))
             .send()
             .await
             .map_err(|err| {
@@ -161,24 +127,20 @@ impl GeminiEmbeddingProvider {
             })?;
 
         let body = response_body_or_error(response, "Gemini embedding provider").await?;
-        let payload: GeminiEmbedContentResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-
-        if payload.embedding.values.is_empty() {
-            return Err(AstrbotError::Provider(
-                "provider response did not contain embedding values".to_string(),
-            ));
-        }
-
-        Ok(EmbeddingResponse::new(vec![payload.embedding.values]))
+        Ok(EmbeddingResponse::new(vec![
+            parse_gemini_embed_content_response(&body)?,
+        ]))
     }
 
     async fn embed_batch(&self, model: &str, texts: &[String]) -> Result<EmbeddingResponse> {
         let response = self
             .client
             .post(self.config.batch_embed_contents_url(model))
-            .json(&self.build_batch_payload(model, texts))
+            .json(&build_gemini_batch_embed_contents_request(
+                model,
+                texts,
+                self.config.dimensions,
+            ))
             .send()
             .await
             .map_err(|err| {
@@ -186,70 +148,9 @@ impl GeminiEmbeddingProvider {
             })?;
 
         let body = response_body_or_error(response, "Gemini batch embedding provider").await?;
-        let payload: GeminiBatchEmbedContentsResponse =
-            serde_json::from_str(&body).map_err(|err| {
-                AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-            })?;
-        let embeddings = payload
-            .embeddings
-            .into_iter()
-            .map(|embedding| embedding.values)
-            .collect::<Vec<_>>();
-
-        if embeddings.is_empty() {
-            return Err(AstrbotError::Provider(
-                "provider response did not contain embeddings".to_string(),
-            ));
-        }
-
-        Ok(EmbeddingResponse::new(embeddings))
-    }
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct GeminiEmbedContentRequest {
-    model: String,
-    content: GeminiContent,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    output_dimensionality: Option<usize>,
-}
-
-#[derive(Debug, Serialize)]
-struct GeminiBatchEmbedContentsRequest {
-    requests: Vec<GeminiEmbedContentRequest>,
-}
-
-#[derive(Debug, Serialize)]
-struct GeminiContent {
-    parts: Vec<GeminiPart>,
-}
-
-#[derive(Debug, Serialize)]
-struct GeminiPart {
-    text: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct GeminiEmbedContentResponse {
-    embedding: GeminiContentEmbedding,
-}
-
-#[derive(Debug, Deserialize)]
-struct GeminiBatchEmbedContentsResponse {
-    embeddings: Vec<GeminiContentEmbedding>,
-}
-
-#[derive(Debug, Deserialize)]
-struct GeminiContentEmbedding {
-    values: Vec<f32>,
-}
-
-fn gemini_text_content(text: &str) -> GeminiContent {
-    GeminiContent {
-        parts: vec![GeminiPart {
-            text: text.to_string(),
-        }],
+        Ok(EmbeddingResponse::new(
+            parse_gemini_batch_embed_contents_response(&body)?,
+        ))
     }
 }
 
@@ -290,35 +191,9 @@ async fn response_body_or_error(response: reqwest::Response, label: &str) -> Res
     if !status.is_success() {
         return Err(AstrbotError::Provider(format!(
             "{label} returned {status}: {}",
-            extract_error_message(&body)
+            extract_gemini_embedding_error_message(&body)
         )));
     }
 
     Ok(body)
-}
-
-fn extract_error_message(body: &str) -> String {
-    let fallback = truncate(body.trim());
-    let Ok(value) = serde_json::from_str::<Value>(body) else {
-        return fallback;
-    };
-
-    let extracted = value
-        .get("error")
-        .and_then(|error| error.get("message"))
-        .and_then(Value::as_str)
-        .or_else(|| value.get("message").and_then(Value::as_str))
-        .map(str::trim)
-        .filter(|message| !message.is_empty())
-        .map(str::to_string);
-
-    extracted.unwrap_or(fallback)
-}
-
-fn truncate(text: &str) -> String {
-    if text.chars().count() <= ERROR_TEXT_MAX_CHARS {
-        return text.to_string();
-    }
-
-    text.chars().take(ERROR_TEXT_MAX_CHARS).collect()
 }

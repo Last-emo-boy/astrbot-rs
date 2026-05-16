@@ -3,9 +3,11 @@ use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 
 use crate::http::{build_http_client, extract_error_message, join_api_path, json_bearer_headers};
+use crate::protocol::openai_embedding::{
+    build_openai_embedding_request, parse_openai_embedding_response,
+};
 use crate::{EmbeddingProvider, EmbeddingRequest, EmbeddingResponse};
 
 #[derive(Clone, Debug)]
@@ -75,27 +77,8 @@ impl OpenAiEmbeddingProvider {
         Ok(Self { config, client })
     }
 
-    fn build_payload(&self, request: &EmbeddingRequest) -> Result<OpenAiEmbeddingRequest> {
-        if request.texts.is_empty() {
-            return Err(AstrbotError::Provider(
-                "embedding request must contain at least one text".to_string(),
-            ));
-        }
-
-        let input = if let [text] = request.texts.as_slice() {
-            OpenAiEmbeddingInput::Text(text.clone())
-        } else {
-            OpenAiEmbeddingInput::Batch(request.texts.clone())
-        };
-
-        Ok(OpenAiEmbeddingRequest {
-            model: request
-                .model
-                .clone()
-                .unwrap_or_else(|| self.config.model.clone()),
-            input,
-            dimensions: self.config.dimensions,
-        })
+    fn build_payload(&self, request: &EmbeddingRequest) -> Result<impl serde::Serialize + use<>> {
+        build_openai_embedding_request(request, &self.config.model, self.config.dimensions)
     }
 }
 
@@ -124,21 +107,7 @@ impl EmbeddingProvider for OpenAiEmbeddingProvider {
             )));
         }
 
-        let mut payload: OpenAiEmbeddingResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-        payload.data.sort_by_key(|item| item.index);
-        let embeddings = payload
-            .data
-            .into_iter()
-            .map(|item| item.embedding)
-            .collect::<Vec<_>>();
-
-        if embeddings.is_empty() {
-            return Err(AstrbotError::Provider(
-                "provider response did not contain embeddings".to_string(),
-            ));
-        }
+        let embeddings = parse_openai_embedding_response(&body)?;
 
         Ok(EmbeddingResponse::new(embeddings))
     }
@@ -146,31 +115,4 @@ impl EmbeddingProvider for OpenAiEmbeddingProvider {
     fn dimensions(&self) -> Option<usize> {
         self.config.dimensions
     }
-}
-
-#[derive(Debug, Serialize)]
-struct OpenAiEmbeddingRequest {
-    model: String,
-    input: OpenAiEmbeddingInput,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    dimensions: Option<usize>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(untagged)]
-enum OpenAiEmbeddingInput {
-    Text(String),
-    Batch(Vec<String>),
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenAiEmbeddingResponse {
-    data: Vec<OpenAiEmbeddingData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenAiEmbeddingData {
-    embedding: Vec<f32>,
-    #[serde(default)]
-    index: usize,
 }

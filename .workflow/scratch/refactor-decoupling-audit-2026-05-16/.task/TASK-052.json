@@ -1,7 +1,7 @@
 {
   "id": "TASK-052",
   "title": "Extract remaining non-chat provider protocol DTO and response parser modules",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-non-chat-protocol-boundary",
   "description": "TASK-022 extracted chat, MiniMax TTS SSE, and Xinference parser DTOs, but other non-chat provider adapters still combine payload DTOs, response parsing, error parsing, and adapter orchestration. Record a follow-up boundary so embedding, STT, TTS, and rerank protocol shapes do not keep growing inside concrete adapter files.",
@@ -57,5 +57,32 @@
     ],
     "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:19:15+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/protocol/mod.rs",
+    "crates/astrbot-provider/src/protocol/openai_embedding.rs",
+    "crates/astrbot-provider/src/protocol/gemini_embedding.rs",
+    "crates/astrbot-provider/src/protocol/tts.rs",
+    "crates/astrbot-provider/src/protocol/rerank.rs",
+    "crates/astrbot-provider/src/protocol/speech.rs",
+    "crates/astrbot-provider/src/openai_embedding.rs",
+    "crates/astrbot-provider/src/gemini_embedding.rs",
+    "crates/astrbot-provider/src/openai_tts.rs",
+    "crates/astrbot-provider/src/gemini_tts.rs",
+    "crates/astrbot-provider/src/volcengine_tts.rs",
+    "crates/astrbot-provider/src/openai_stt.rs",
+    "crates/astrbot-provider/src/bailian_rerank.rs",
+    "crates/astrbot-provider/src/vllm_rerank.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-052.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-052-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-052/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider",
+    "cargo fmt --all --check",
+    "cargo clippy -p astrbot-provider -- -D warnings"
+  ],
   "risk": "medium"
 }

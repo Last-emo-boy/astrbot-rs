@@ -4,13 +4,12 @@ use std::time::Duration;
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use crate::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
-
-const ERROR_TEXT_MAX_CHARS: usize = 4096;
-const MAX_DOCUMENTS: usize = 500;
+use crate::protocol::rerank::{
+    build_bailian_rerank_request, extract_bailian_rerank_error_message,
+    parse_bailian_rerank_response,
+};
+use crate::{RerankProvider, RerankRequest, RerankResponse};
 
 #[derive(Clone, Debug)]
 pub struct BailianRerankConfig {
@@ -83,58 +82,13 @@ impl BailianRerankProvider {
         Ok(Self { config, client })
     }
 
-    fn build_payload(&self, request: &RerankRequest) -> Result<BailianRerankRequest> {
-        if request.documents.is_empty() {
-            return Err(AstrbotError::Provider(
-                "rerank request must contain at least one document".to_string(),
-            ));
-        }
-
-        let model = request
-            .model
-            .clone()
-            .unwrap_or_else(|| self.config.model.clone());
-        let documents = request
-            .documents
-            .iter()
-            .take(MAX_DOCUMENTS)
-            .cloned()
-            .collect::<Vec<_>>();
-        let parameters = self.build_parameters(&model, request.top_n);
-
-        Ok(BailianRerankRequest {
-            model,
-            input: BailianRerankInput {
-                query: request.query.clone(),
-                documents,
-            },
-            parameters,
-        })
-    }
-
-    fn build_parameters(
-        &self,
-        model: &str,
-        top_n: Option<usize>,
-    ) -> Option<BailianRerankParameters> {
-        let top_n = top_n.filter(|top_n| *top_n > 0);
-        let return_documents = self.config.return_documents.then_some(true);
-        let instruct = self
-            .config
-            .instruct
-            .as_ref()
-            .filter(|instruct| !instruct.trim().is_empty() && model == "qwen3-rerank")
-            .cloned();
-
-        if top_n.is_none() && return_documents.is_none() && instruct.is_none() {
-            return None;
-        }
-
-        Some(BailianRerankParameters {
-            top_n,
-            return_documents,
-            instruct,
-        })
+    fn build_payload(&self, request: &RerankRequest) -> Result<impl serde::Serialize + use<>> {
+        build_bailian_rerank_request(
+            request,
+            &self.config.model,
+            self.config.return_documents,
+            self.config.instruct.as_deref(),
+        )
     }
 }
 
@@ -159,81 +113,12 @@ impl RerankProvider for BailianRerankProvider {
         if !status.is_success() {
             return Err(AstrbotError::Provider(format!(
                 "Bailian rerank provider returned {status}: {}",
-                extract_error_message(&body)
+                extract_bailian_rerank_error_message(&body)
             )));
         }
 
-        let payload: BailianRerankResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-
-        if payload.code.as_deref().is_some_and(|code| code != "200") {
-            return Err(AstrbotError::Provider(format!(
-                "Bailian rerank provider returned code {}: {}",
-                payload.code.unwrap_or_default(),
-                payload.message.unwrap_or_default()
-            )));
-        }
-
-        let results = payload
-            .output
-            .map(|output| output.results)
-            .unwrap_or_default()
-            .into_iter()
-            .enumerate()
-            .map(|(position, result)| {
-                RerankDocumentScore::new(
-                    result.index.unwrap_or(position),
-                    result.relevance_score.unwrap_or(0.0),
-                )
-            })
-            .collect();
-
-        Ok(RerankResponse::new(results))
+        Ok(RerankResponse::new(parse_bailian_rerank_response(&body)?))
     }
-}
-
-#[derive(Debug, Serialize)]
-struct BailianRerankRequest {
-    model: String,
-    input: BailianRerankInput,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    parameters: Option<BailianRerankParameters>,
-}
-
-#[derive(Debug, Serialize)]
-struct BailianRerankInput {
-    query: String,
-    documents: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-struct BailianRerankParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    top_n: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    return_documents: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    instruct: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct BailianRerankResponse {
-    code: Option<String>,
-    message: Option<String>,
-    output: Option<BailianRerankOutput>,
-}
-
-#[derive(Debug, Deserialize)]
-struct BailianRerankOutput {
-    #[serde(default)]
-    results: Vec<BailianRerankResult>,
-}
-
-#[derive(Debug, Deserialize)]
-struct BailianRerankResult {
-    index: Option<usize>,
-    relevance_score: Option<f32>,
 }
 
 fn build_headers(config: &BailianRerankConfig) -> Result<HeaderMap> {
@@ -262,30 +147,4 @@ fn build_headers(config: &BailianRerankConfig) -> Result<HeaderMap> {
     }
 
     Ok(headers)
-}
-
-fn extract_error_message(body: &str) -> String {
-    let fallback = truncate(body.trim());
-    let Ok(value) = serde_json::from_str::<Value>(body) else {
-        return fallback;
-    };
-
-    let extracted = value
-        .get("error")
-        .and_then(|error| error.get("message"))
-        .and_then(Value::as_str)
-        .or_else(|| value.get("message").and_then(Value::as_str))
-        .map(str::trim)
-        .filter(|message| !message.is_empty())
-        .map(str::to_string);
-
-    extracted.unwrap_or(fallback)
-}
-
-fn truncate(text: &str) -> String {
-    if text.chars().count() <= ERROR_TEXT_MAX_CHARS {
-        return text.to_string();
-    }
-
-    text.chars().take(ERROR_TEXT_MAX_CHARS).collect()
 }

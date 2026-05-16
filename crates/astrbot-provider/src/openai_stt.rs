@@ -3,10 +3,9 @@ use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
-use reqwest::multipart;
-use serde::Deserialize;
 
 use crate::http::{bearer_headers, build_http_client, extract_error_message, join_api_path};
+use crate::protocol::speech::{build_openai_stt_form, parse_openai_stt_text};
 use crate::{AudioInputLoader, SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
 
 #[derive(Clone, Debug)]
@@ -74,19 +73,6 @@ impl OpenAiSpeechToTextProvider {
             audio_loader,
         })
     }
-
-    fn build_form(&self, audio: Vec<u8>) -> Result<multipart::Form> {
-        let file = multipart::Part::bytes(audio)
-            .file_name("audio.wav")
-            .mime_str("audio/wav")
-            .map_err(|err| {
-                AstrbotError::Provider(format!("failed to build audio multipart field: {err}"))
-            })?;
-
-        Ok(multipart::Form::new()
-            .text("model", self.config.model.clone())
-            .part("file", file))
-    }
 }
 
 #[async_trait]
@@ -99,7 +85,7 @@ impl SpeechToTextProvider for OpenAiSpeechToTextProvider {
         let response = self
             .client
             .post(self.config.transcriptions_url())
-            .multipart(self.build_form(audio)?)
+            .multipart(build_openai_stt_form(audio, &self.config.model)?)
             .send()
             .await
             .map_err(|err| AstrbotError::Provider(format!("OpenAI STT request failed: {err}")))?;
@@ -116,20 +102,6 @@ impl SpeechToTextProvider for OpenAiSpeechToTextProvider {
             )));
         }
 
-        let payload: OpenAiSpeechToTextResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-        if payload.text.trim().is_empty() {
-            return Err(AstrbotError::Provider(
-                "provider response did not contain transcription text".to_string(),
-            ));
-        }
-
-        Ok(SpeechToTextResponse::new(payload.text))
+        Ok(SpeechToTextResponse::new(parse_openai_stt_text(&body)?))
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenAiSpeechToTextResponse {
-    text: String,
 }

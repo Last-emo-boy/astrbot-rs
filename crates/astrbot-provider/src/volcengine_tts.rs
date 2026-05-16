@@ -5,15 +5,15 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
-use base64::Engine as _;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::media::{GeneratedMediaArtifactWriter, default_tts_output_dir};
+use crate::protocol::tts::{
+    VolcengineTtsRequestOptions, build_volcengine_tts_request,
+    extract_volcengine_tts_error_message, parse_volcengine_tts_audio,
+};
 use crate::{TextToSpeechProvider, TextToSpeechRequest, TextToSpeechResponse};
 
-const ERROR_TEXT_MAX_CHARS: usize = 4096;
 static NEXT_AUDIO_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Debug)]
@@ -110,39 +110,23 @@ impl VolcengineTextToSpeechProvider {
         Ok(Self { config, client })
     }
 
-    fn build_payload(&self, request: &TextToSpeechRequest) -> Result<VolcengineTtsRequest> {
-        if request.text.trim().is_empty() {
-            return Err(AstrbotError::Provider(
-                "text-to-speech request must contain text".to_string(),
-            ));
-        }
-
+    fn build_payload(
+        &self,
+        request: &TextToSpeechRequest,
+    ) -> Result<impl serde::Serialize + use<>> {
         let token = self.config.api_key.clone().unwrap_or_default();
-        Ok(VolcengineTtsRequest {
-            app: VolcengineApp {
-                appid: self.config.appid.clone(),
-                token,
-                cluster: self.config.cluster.clone(),
-            },
-            user: VolcengineUser {
-                uid: next_audio_id(),
-            },
-            audio: VolcengineAudio {
-                voice_type: self.config.voice_type.clone(),
-                encoding: "mp3",
+        build_volcengine_tts_request(
+            request,
+            VolcengineTtsRequestOptions {
+                appid: &self.config.appid,
+                token: &token,
+                cluster: &self.config.cluster,
+                voice_type: &self.config.voice_type,
                 speed_ratio: self.config.speed_ratio,
-                volume_ratio: 1.0,
-                pitch_ratio: 1.0,
-            },
-            request: VolcengineRequest {
+                uid: next_audio_id(),
                 reqid: next_audio_id(),
-                text: request.text.clone(),
-                text_type: "plain",
-                operation: "query",
-                with_frontend: 1,
-                frontend_type: "unitTson",
             },
-        })
+        )
     }
 
     fn write_audio(&self, audio: &[u8]) -> Result<String> {
@@ -173,78 +157,13 @@ impl TextToSpeechProvider for VolcengineTextToSpeechProvider {
         if !status.is_success() {
             return Err(AstrbotError::Provider(format!(
                 "Volcengine TTS provider returned {status}: {}",
-                extract_error_message(&body)
+                extract_volcengine_tts_error_message(&body)
             )));
         }
 
-        let payload: VolcengineTtsResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-        let data = payload
-            .data
-            .as_deref()
-            .map(str::trim)
-            .filter(|data| !data.is_empty())
-            .ok_or_else(|| {
-                AstrbotError::Provider(format!(
-                    "Volcengine TTS provider returned no audio data: {}",
-                    payload
-                        .message
-                        .unwrap_or_else(|| "missing data".to_string())
-                ))
-            })?;
-        let audio = base64::engine::general_purpose::STANDARD
-            .decode(data)
-            .map_err(|err| {
-                AstrbotError::Provider(format!("invalid Volcengine TTS audio data: {err}"))
-            })?;
+        let audio = parse_volcengine_tts_audio(&body)?;
         Ok(TextToSpeechResponse::new(self.write_audio(&audio)?))
     }
-}
-
-#[derive(Debug, Serialize)]
-struct VolcengineTtsRequest {
-    app: VolcengineApp,
-    user: VolcengineUser,
-    audio: VolcengineAudio,
-    request: VolcengineRequest,
-}
-
-#[derive(Debug, Serialize)]
-struct VolcengineApp {
-    appid: String,
-    token: String,
-    cluster: String,
-}
-
-#[derive(Debug, Serialize)]
-struct VolcengineUser {
-    uid: String,
-}
-
-#[derive(Debug, Serialize)]
-struct VolcengineAudio {
-    voice_type: String,
-    encoding: &'static str,
-    speed_ratio: f32,
-    volume_ratio: f32,
-    pitch_ratio: f32,
-}
-
-#[derive(Debug, Serialize)]
-struct VolcengineRequest {
-    reqid: String,
-    text: String,
-    text_type: &'static str,
-    operation: &'static str,
-    with_frontend: u8,
-    frontend_type: &'static str,
-}
-
-#[derive(Debug, Deserialize)]
-struct VolcengineTtsResponse {
-    data: Option<String>,
-    message: Option<String>,
 }
 
 fn build_headers(config: &VolcengineTextToSpeechConfig) -> Result<HeaderMap> {
@@ -274,36 +193,6 @@ fn build_headers(config: &VolcengineTextToSpeechConfig) -> Result<HeaderMap> {
     }
 
     Ok(headers)
-}
-
-fn extract_error_message(body: &str) -> String {
-    let fallback = truncate(body.trim());
-    let Ok(value) = serde_json::from_str::<Value>(body) else {
-        return fallback;
-    };
-
-    let extracted = value
-        .get("message")
-        .and_then(Value::as_str)
-        .or_else(|| {
-            value
-                .get("error")
-                .and_then(|error| error.get("message"))
-                .and_then(Value::as_str)
-        })
-        .map(str::trim)
-        .filter(|message| !message.is_empty())
-        .map(str::to_string);
-
-    extracted.unwrap_or(fallback)
-}
-
-fn truncate(text: &str) -> String {
-    if text.chars().count() <= ERROR_TEXT_MAX_CHARS {
-        return text.to_string();
-    }
-
-    text.chars().take(ERROR_TEXT_MAX_CHARS).collect()
 }
 
 fn next_audio_id() -> String {

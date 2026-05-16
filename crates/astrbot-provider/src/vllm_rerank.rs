@@ -3,10 +3,10 @@ use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 
 use crate::http::{build_http_client, extract_error_message, join_api_path, json_bearer_headers};
-use crate::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
+use crate::protocol::rerank::{build_vllm_rerank_request, parse_vllm_rerank_response};
+use crate::{RerankProvider, RerankRequest, RerankResponse};
 
 #[derive(Clone, Debug)]
 pub struct VllmRerankConfig {
@@ -68,22 +68,8 @@ impl VllmRerankProvider {
         Ok(Self { config, client })
     }
 
-    fn build_payload(&self, request: &RerankRequest) -> Result<VllmRerankRequest> {
-        if request.documents.is_empty() {
-            return Err(AstrbotError::Provider(
-                "rerank request must contain at least one document".to_string(),
-            ));
-        }
-
-        Ok(VllmRerankRequest {
-            query: request.query.clone(),
-            documents: request.documents.clone(),
-            model: request
-                .model
-                .clone()
-                .unwrap_or_else(|| self.config.model.clone()),
-            top_n: request.top_n,
-        })
+    fn build_payload(&self, request: &RerankRequest) -> Result<impl serde::Serialize + use<>> {
+        build_vllm_rerank_request(request, &self.config.model)
     }
 }
 
@@ -110,37 +96,6 @@ impl RerankProvider for VllmRerankProvider {
             )));
         }
 
-        let payload: VllmRerankResponse = serde_json::from_str(&body).map_err(|err| {
-            AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
-        })?;
-
-        Ok(RerankResponse::new(
-            payload
-                .results
-                .into_iter()
-                .map(|result| RerankDocumentScore::new(result.index, result.relevance_score))
-                .collect(),
-        ))
+        Ok(RerankResponse::new(parse_vllm_rerank_response(&body)?))
     }
-}
-
-#[derive(Debug, Serialize)]
-struct VllmRerankRequest {
-    query: String,
-    documents: Vec<String>,
-    model: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    top_n: Option<usize>,
-}
-
-#[derive(Debug, Deserialize)]
-struct VllmRerankResponse {
-    #[serde(default)]
-    results: Vec<VllmRerankResult>,
-}
-
-#[derive(Debug, Deserialize)]
-struct VllmRerankResult {
-    index: usize,
-    relevance_score: f32,
 }

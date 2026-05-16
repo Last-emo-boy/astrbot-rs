@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-063","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-063 from the scratch refactor plan. Define file-token repository, dashboard static asset policy, and scoped management download service boundaries; update TASK-063 status and summary; run cargo fmt --all, cargo test -p astrbot-web, cargo test -p astrbot-storage, cargo test -p astrbot-runtime, cargo clippy --workspace -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

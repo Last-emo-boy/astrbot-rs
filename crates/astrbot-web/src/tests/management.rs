@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fs, sync::Arc};
 
 use astrbot_core::{MessageChain, MessageEvent, Result};
 use astrbot_platform::{PlatformBuildContext, PlatformConfig, PlatformManager, PlatformRegistry};
@@ -11,14 +11,21 @@ use astrbot_provider::{
     ChatProviderConfig, ProviderManager, ProviderManagerConfigSet, ProviderRegistry,
 };
 use astrbot_runtime::{RuntimeConfig, RuntimeConfigService};
+use astrbot_storage::{
+    FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
+};
 use async_trait::async_trait;
-use axum::http::StatusCode;
+use axum::{
+    body::to_bytes,
+    http::{StatusCode, header::CONTENT_TYPE},
+};
 use serde_json::json;
 use tokio::sync::mpsc;
 
 use crate::{
-    DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementStatusResponse,
-    PluginMarketManagementState, management_router, management_router_with_auth,
+    DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementFileDownloadState,
+    ManagementStatusResponse, PluginMarketManagementState, management_router,
+    management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -183,6 +190,45 @@ async fn management_plugin_market_routes_return_catalog_and_side_effect_free_pla
     assert_eq!(uninstall["plan"]["delete_config"], true);
 }
 
+#[tokio::test]
+async fn management_file_download_route_consumes_scoped_file_token() {
+    let path = temp_management_file_path("download.txt");
+    let _ = fs::remove_file(&path);
+    fs::write(&path, "download body").expect("download fixture should write");
+    let repository = Arc::new(InMemoryFileTokenRepository::new());
+    repository
+        .put_file_token(
+            FileTokenRecord::new("token-1", &path, FileTokenScope::Dashboard)
+                .with_filename("download.txt")
+                .with_content_type("text/plain"),
+        )
+        .await
+        .expect("file token should store");
+    let state = management_state_fixture()
+        .with_file_downloads(ManagementFileDownloadState::new(repository));
+    let router = management_router(state);
+
+    let response = get(router.clone(), "/api/management/files/token-1").await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok()),
+        Some("text/plain")
+    );
+    let body = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("download body should read");
+    assert_eq!(&body[..], b"download body");
+
+    let second_response = get(router, "/api/management/files/token-1").await;
+    assert_eq!(second_response.status(), StatusCode::NOT_FOUND);
+
+    let _ = fs::remove_file(path);
+}
+
 fn management_state_fixture() -> ManagementApiState {
     let provider_manager = ProviderManager::from_configs(
         &ProviderRegistry::with_builtin_providers(),
@@ -217,6 +263,14 @@ fn management_state_fixture() -> ManagementApiState {
 fn temp_management_config_path(suffix: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "astrbot-web-management-config-{}-{}.json",
+        std::process::id(),
+        suffix
+    ))
+}
+
+fn temp_management_file_path(suffix: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!(
+        "astrbot-web-management-file-{}-{}",
         std::process::id(),
         suffix
     ))

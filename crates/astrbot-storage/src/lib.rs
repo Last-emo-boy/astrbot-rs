@@ -3,6 +3,7 @@ mod attachment;
 pub mod backup;
 mod config_snapshot;
 mod conversation;
+mod file_token;
 mod migration;
 mod provider_preference;
 mod repository;
@@ -24,6 +25,9 @@ pub use config_snapshot::{
 };
 pub use conversation::{
     ConversationHistoryRepository, ConversationMessageRecord, InMemoryConversationHistoryRepository,
+};
+pub use file_token::{
+    FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
 };
 pub use migration::{
     DeclarativeMigration, InMemoryMigrationStateRepository, MigrationOperation, MigrationOutcome,

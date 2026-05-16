@@ -1,7 +1,7 @@
 {
   "id": "TASK-063",
   "title": "Define file token, static asset, and scoped download service boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "file-token-static-boundary",
   "description": "AstrBot dashboard serves file-token downloads and dashboard static assets through dedicated routes. Rust has WebChat attachment ports and path/temp tasks, but still needs a scoped download/static asset boundary before dashboard files, plugin logos, backups, and OpenAPI file uploads expand.",
@@ -41,5 +41,28 @@
     ],
     "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T07:53:16+08:00",
+  "files_modified": [
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/file_token.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/dashboard_assets.rs",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/files.rs",
+    "crates/astrbot-web/src/tests/management.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-063.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-063-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-063/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-storage",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "medium"
 }

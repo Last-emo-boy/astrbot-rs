@@ -1,6 +1,7 @@
 mod api_key;
 mod auth;
 mod config;
+mod files;
 mod platforms;
 mod plugin_market;
 mod plugins;
@@ -30,6 +31,7 @@ pub use config::{
     ManagementConfigMutationRequest, ManagementConfigMutationResponse,
     ManagementConfigSchemaResponse,
 };
+pub use files::{ManagementFileDownloadState, ScopedDownloadError, ScopedDownloadFile};
 pub use platforms::PlatformManagementResponse;
 pub use plugin_market::{
     PluginMarketCatalogResponse, PluginMarketManagementState, PluginMarketPlanRequest,
@@ -46,6 +48,7 @@ pub struct ManagementApiState {
     plugins: PluginManagementResponse,
     config_service: Option<RuntimeConfigService>,
     plugin_market: Option<PluginMarketManagementState>,
+    file_downloads: Option<ManagementFileDownloadState>,
 }
 
 impl ManagementApiState {
@@ -60,6 +63,7 @@ impl ManagementApiState {
             plugins,
             config_service: None,
             plugin_market: None,
+            file_downloads: None,
         }
     }
 
@@ -70,6 +74,11 @@ impl ManagementApiState {
 
     pub fn with_plugin_market(mut self, plugin_market: PluginMarketManagementState) -> Self {
         self.plugin_market = Some(plugin_market);
+        self
+    }
+
+    pub fn with_file_downloads(mut self, file_downloads: ManagementFileDownloadState) -> Self {
+        self.file_downloads = Some(file_downloads);
         self
     }
 
@@ -103,6 +112,10 @@ impl ManagementApiState {
 
     pub fn plugin_market(&self) -> Option<&PluginMarketManagementState> {
         self.plugin_market.as_ref()
+    }
+
+    pub fn file_downloads(&self) -> Option<&ManagementFileDownloadState> {
+        self.file_downloads.as_ref()
     }
 
     pub fn status(&self) -> ManagementStatusResponse {
@@ -140,6 +153,7 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
+        .route("/api/management/files/{token}", get(files::download))
         .route(
             "/api/management/plugin-market/install-plan",
             post(plugin_market::install_plan),

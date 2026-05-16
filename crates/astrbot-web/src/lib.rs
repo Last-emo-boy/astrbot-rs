@@ -17,12 +17,12 @@ pub use management::{
     ApiKeyAuthDecision, ApiKeyIssuer, ApiKeyRejectionReason, AuthRejectionReason,
     DashboardAuthDecision, DashboardAuthPolicy, IssuedApiKey, ManagementApiState,
     ManagementAuthState, ManagementConfigMutationRequest, ManagementConfigMutationResponse,
-    ManagementConfigSchemaResponse, ManagementStatusResponse, OpenApiScope, OpenApiScopeSet,
-    PlatformManagementResponse, PluginHandlerManagementResponse, PluginManagementResponse,
-    PluginMarketCatalogResponse, PluginMarketManagementState, PluginMarketPlanRequest,
-    PluginMarketPlanResponse, PresentedApiKey, ProviderManagementResponse, authorize_api_key,
-    extract_bearer_token, extract_presented_api_key, hash_api_key, management_router,
-    management_router_with_auth,
+    ManagementConfigSchemaResponse, ManagementFileDownloadState, ManagementStatusResponse,
+    OpenApiScope, OpenApiScopeSet, PlatformManagementResponse, PluginHandlerManagementResponse,
+    PluginManagementResponse, PluginMarketCatalogResponse, PluginMarketManagementState,
+    PluginMarketPlanRequest, PluginMarketPlanResponse, PresentedApiKey, ProviderManagementResponse,
+    ScopedDownloadError, ScopedDownloadFile, authorize_api_key, extract_bearer_token,
+    extract_presented_api_key, hash_api_key, management_router, management_router_with_auth,
 };
 pub use realtime::{
     DEFAULT_LIVE_AUDIO_FORMAT, LiveAudioBuffer, LiveAudioError, LiveAudioFormat, LiveAudioWavFile,

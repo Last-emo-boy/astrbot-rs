@@ -3,6 +3,7 @@ mod config;
 mod config_io;
 mod config_route;
 mod config_service;
+mod dashboard_assets;
 mod defaults;
 mod handle;
 mod path_config;
@@ -23,6 +24,10 @@ pub use config_route::{UmopConfigRoute, UmopConfigRoutePattern, UmopConfigRouter
 pub use config_service::{
     RuntimeConfigMutationPlan, RuntimeConfigReloadAction, RuntimeConfigService,
     RuntimeConfigUpdatePreview, validate_runtime_config_value,
+};
+pub use dashboard_assets::{
+    DASHBOARD_INDEX_ROUTES, DashboardAssetPolicy, DashboardAssetSelection, DashboardAssetSource,
+    is_dashboard_index_route,
 };
 pub use handle::{AstrbotRuntime, RuntimeHandle};
 pub use path_config::{RuntimePathConfig, RuntimePathLayout};

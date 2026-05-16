@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use astrbot_core::Result;
 use astrbot_observability::{NoopStatusEventSink, StatusEventSink};
 
+mod bucket;
 mod chat;
 mod config_set;
 mod embedding;
@@ -25,14 +25,15 @@ use crate::{
     ChatProvider, EmbeddingProvider, RerankProvider, SpeechToTextProvider, TextToSpeechProvider,
 };
 use crate::{ProviderCapability, ProviderSelection, ProviderSelectionState};
+use bucket::ProviderBucket;
 
 #[derive(Clone)]
 pub struct ProviderManager {
-    pub(super) chat_providers: HashMap<String, Arc<dyn ChatProvider>>,
-    pub(super) speech_to_text_providers: HashMap<String, Arc<dyn SpeechToTextProvider>>,
-    pub(super) text_to_speech_providers: HashMap<String, Arc<dyn TextToSpeechProvider>>,
-    pub(super) embedding_providers: HashMap<String, Arc<dyn EmbeddingProvider>>,
-    pub(super) rerank_providers: HashMap<String, Arc<dyn RerankProvider>>,
+    chat_providers: ProviderBucket<dyn ChatProvider>,
+    speech_to_text_providers: ProviderBucket<dyn SpeechToTextProvider>,
+    text_to_speech_providers: ProviderBucket<dyn TextToSpeechProvider>,
+    embedding_providers: ProviderBucket<dyn EmbeddingProvider>,
+    rerank_providers: ProviderBucket<dyn RerankProvider>,
     selection_state: ProviderSelectionState,
     selection_hook: Arc<dyn ProviderSelectionHook>,
     pub(super) status_sink: Arc<dyn StatusEventSink>,
@@ -49,119 +50,65 @@ impl ProviderManager {
         registry: &ProviderRegistry,
         configs: ProviderManagerConfigSet,
     ) -> Result<Self> {
-        let mut chat_providers = HashMap::new();
-        let mut first_chat_provider_id = None;
-        for config in configs.chat_providers {
-            if !config.enabled {
-                continue;
-            }
-
-            let provider = registry.build_chat_provider(&config)?;
-            first_chat_provider_id.get_or_insert_with(|| config.id.clone());
-            chat_providers.insert(config.id, provider);
-        }
-        let default_chat_provider_id = configs
-            .default_chat_provider_id
-            .filter(|id| chat_providers.contains_key(id))
-            .or(first_chat_provider_id);
-
-        let mut speech_to_text_providers = HashMap::new();
-        let mut first_speech_to_text_provider_id = None;
-        for config in configs.speech_to_text_providers {
-            if !config.enabled {
-                continue;
-            }
-
-            let provider = registry.build_speech_to_text_provider(&config)?;
-            first_speech_to_text_provider_id.get_or_insert_with(|| config.id.clone());
-            speech_to_text_providers.insert(config.id, provider);
-        }
-        let default_speech_to_text_provider_id = configs
-            .default_speech_to_text_provider_id
-            .filter(|id| speech_to_text_providers.contains_key(id))
-            .or(first_speech_to_text_provider_id);
-
-        let mut text_to_speech_providers = HashMap::new();
-        let mut first_text_to_speech_provider_id = None;
-        for config in configs.text_to_speech_providers {
-            if !config.enabled {
-                continue;
-            }
-
-            let provider = registry.build_text_to_speech_provider(&config)?;
-            first_text_to_speech_provider_id.get_or_insert_with(|| config.id.clone());
-            text_to_speech_providers.insert(config.id, provider);
-        }
-        let default_text_to_speech_provider_id = configs
-            .default_text_to_speech_provider_id
-            .filter(|id| text_to_speech_providers.contains_key(id))
-            .or(first_text_to_speech_provider_id);
-
-        let mut embedding_providers = HashMap::new();
-        let mut first_embedding_provider_id = None;
-        for config in configs.embedding_providers {
-            if !config.enabled {
-                continue;
-            }
-
-            let provider = registry.build_embedding_provider(&config)?;
-            first_embedding_provider_id.get_or_insert_with(|| config.id.clone());
-            embedding_providers.insert(config.id, provider);
-        }
-        let default_embedding_provider_id = configs
-            .default_embedding_provider_id
-            .filter(|id| embedding_providers.contains_key(id))
-            .or(first_embedding_provider_id);
-
-        let mut rerank_providers = HashMap::new();
-        let mut first_rerank_provider_id = None;
-        for config in configs.rerank_providers {
-            if !config.enabled {
-                continue;
-            }
-
-            let provider = registry.build_rerank_provider(&config)?;
-            first_rerank_provider_id.get_or_insert_with(|| config.id.clone());
-            rerank_providers.insert(config.id, provider);
-        }
-        let default_rerank_provider_id = configs
-            .default_rerank_provider_id
-            .filter(|id| rerank_providers.contains_key(id))
-            .or(first_rerank_provider_id);
+        let chat_providers = ProviderBucket::from_configs(
+            configs.chat_providers,
+            configs.default_chat_provider_id,
+            |config| registry.build_chat_provider(config),
+        )?;
+        let speech_to_text_providers = ProviderBucket::from_configs(
+            configs.speech_to_text_providers,
+            configs.default_speech_to_text_provider_id,
+            |config| registry.build_speech_to_text_provider(config),
+        )?;
+        let text_to_speech_providers = ProviderBucket::from_configs(
+            configs.text_to_speech_providers,
+            configs.default_text_to_speech_provider_id,
+            |config| registry.build_text_to_speech_provider(config),
+        )?;
+        let embedding_providers = ProviderBucket::from_configs(
+            configs.embedding_providers,
+            configs.default_embedding_provider_id,
+            |config| registry.build_embedding_provider(config),
+        )?;
+        let rerank_providers = ProviderBucket::from_configs(
+            configs.rerank_providers,
+            configs.default_rerank_provider_id,
+            |config| registry.build_rerank_provider(config),
+        )?;
 
         let mut selection_state = ProviderSelectionState::new();
         set_default_selection(
             &mut selection_state,
             ProviderCapability::ChatCompletion,
-            default_chat_provider_id,
+            chat_providers.default_provider_id.clone(),
         );
         set_default_selection(
             &mut selection_state,
             ProviderCapability::SpeechToText,
-            default_speech_to_text_provider_id,
+            speech_to_text_providers.default_provider_id.clone(),
         );
         set_default_selection(
             &mut selection_state,
             ProviderCapability::TextToSpeech,
-            default_text_to_speech_provider_id,
+            text_to_speech_providers.default_provider_id.clone(),
         );
         set_default_selection(
             &mut selection_state,
             ProviderCapability::Embedding,
-            default_embedding_provider_id,
+            embedding_providers.default_provider_id.clone(),
         );
         set_default_selection(
             &mut selection_state,
             ProviderCapability::Rerank,
-            default_rerank_provider_id,
+            rerank_providers.default_provider_id.clone(),
         );
 
         Ok(Self {
-            chat_providers,
-            speech_to_text_providers,
-            text_to_speech_providers,
-            embedding_providers,
-            rerank_providers,
+            chat_providers: chat_providers.bucket,
+            speech_to_text_providers: speech_to_text_providers.bucket,
+            text_to_speech_providers: text_to_speech_providers.bucket,
+            embedding_providers: embedding_providers.bucket,
+            rerank_providers: rerank_providers.bucket,
             selection_state,
             selection_hook: Arc::new(NoopProviderSelectionHook),
             status_sink: Arc::new(NoopStatusEventSink),
@@ -245,11 +192,11 @@ impl ProviderManager {
 
     pub fn empty() -> Self {
         Self {
-            chat_providers: HashMap::new(),
-            speech_to_text_providers: HashMap::new(),
-            text_to_speech_providers: HashMap::new(),
-            embedding_providers: HashMap::new(),
-            rerank_providers: HashMap::new(),
+            chat_providers: ProviderBucket::default(),
+            speech_to_text_providers: ProviderBucket::default(),
+            text_to_speech_providers: ProviderBucket::default(),
+            embedding_providers: ProviderBucket::default(),
+            rerank_providers: ProviderBucket::default(),
             selection_state: ProviderSelectionState::new(),
             selection_hook: Arc::new(NoopProviderSelectionHook),
             status_sink: Arc::new(NoopStatusEventSink),
@@ -320,12 +267,12 @@ impl ProviderManager {
     }
 
     pub fn chat_provider(&self, id: &str) -> Option<Arc<dyn ChatProvider>> {
-        self.chat_providers.get(id).cloned()
+        self.chat_providers.get(id)
     }
 
     pub fn default_chat_provider(&self) -> Option<Arc<dyn ChatProvider>> {
-        self.default_chat_provider_id()
-            .and_then(|id| self.chat_provider(id))
+        self.chat_providers
+            .selected(self.default_chat_provider_id())
     }
 
     pub fn default_chat_provider_id(&self) -> Option<&str> {
@@ -337,12 +284,12 @@ impl ProviderManager {
     }
 
     pub fn speech_to_text_provider(&self, id: &str) -> Option<Arc<dyn SpeechToTextProvider>> {
-        self.speech_to_text_providers.get(id).cloned()
+        self.speech_to_text_providers.get(id)
     }
 
     pub fn default_speech_to_text_provider(&self) -> Option<Arc<dyn SpeechToTextProvider>> {
-        self.default_speech_to_text_provider_id()
-            .and_then(|id| self.speech_to_text_provider(id))
+        self.speech_to_text_providers
+            .selected(self.default_speech_to_text_provider_id())
     }
 
     pub fn default_speech_to_text_provider_id(&self) -> Option<&str> {
@@ -354,12 +301,12 @@ impl ProviderManager {
     }
 
     pub fn text_to_speech_provider(&self, id: &str) -> Option<Arc<dyn TextToSpeechProvider>> {
-        self.text_to_speech_providers.get(id).cloned()
+        self.text_to_speech_providers.get(id)
     }
 
     pub fn default_text_to_speech_provider(&self) -> Option<Arc<dyn TextToSpeechProvider>> {
-        self.default_text_to_speech_provider_id()
-            .and_then(|id| self.text_to_speech_provider(id))
+        self.text_to_speech_providers
+            .selected(self.default_text_to_speech_provider_id())
     }
 
     pub fn default_text_to_speech_provider_id(&self) -> Option<&str> {
@@ -376,12 +323,12 @@ impl ProviderManager {
     }
 
     pub fn embedding_provider(&self, id: &str) -> Option<Arc<dyn EmbeddingProvider>> {
-        self.embedding_providers.get(id).cloned()
+        self.embedding_providers.get(id)
     }
 
     pub fn default_embedding_provider(&self) -> Option<Arc<dyn EmbeddingProvider>> {
-        self.default_embedding_provider_id()
-            .and_then(|id| self.embedding_provider(id))
+        self.embedding_providers
+            .selected(self.default_embedding_provider_id())
     }
 
     pub fn default_embedding_provider_id(&self) -> Option<&str> {
@@ -393,12 +340,12 @@ impl ProviderManager {
     }
 
     pub fn rerank_provider(&self, id: &str) -> Option<Arc<dyn RerankProvider>> {
-        self.rerank_providers.get(id).cloned()
+        self.rerank_providers.get(id)
     }
 
     pub fn default_rerank_provider(&self) -> Option<Arc<dyn RerankProvider>> {
-        self.default_rerank_provider_id()
-            .and_then(|id| self.rerank_provider(id))
+        self.rerank_providers
+            .selected(self.default_rerank_provider_id())
     }
 
     pub fn default_rerank_provider_id(&self) -> Option<&str> {

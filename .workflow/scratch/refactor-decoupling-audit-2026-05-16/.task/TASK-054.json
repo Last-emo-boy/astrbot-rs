@@ -1,7 +1,7 @@
 {
   "id": "TASK-054",
   "title": "Split provider manager bucket assembly and accessors into a reusable capability bucket boundary",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-manager-bucket-boundary",
   "description": "ProviderManager already has per-capability routing modules, but from_configs still repeats build/default-selection/accessor logic for every bucket. Introduce a reusable provider bucket helper so future capability additions or dashboard mutations do not grow manager.rs directly.",
@@ -33,5 +33,20 @@
     ],
     "verification_command": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
   },
+  "completed_at": "2026-05-17T03:36:43+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-provider/src/manager/bucket.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-054.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-054-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-054/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider",
+    "cargo clippy -p astrbot-provider -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "medium"
 }

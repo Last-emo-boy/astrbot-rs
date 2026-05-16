@@ -1,3 +1,4 @@
+pub mod dependency;
 mod event;
 pub mod extension;
 pub mod filter;
@@ -9,6 +10,14 @@ pub mod sandbox;
 pub mod sdk;
 pub mod tool;
 
+pub use dependency::{
+    DependencyConflictKind, DependencyConflictReport, DependencyErrorRedactor,
+    DependencyInstallOutcome, DependencyInstallRequest, DependencyInstallStatus,
+    NoopDependencyInstaller, PackagePreferencePolicy, PluginDependency, PluginDependencyInstaller,
+    PluginDependencyKind, PluginDependencyPlan, PluginDependencyPlanInstaller,
+    PluginImportEnvironment, PluginRuntimeKind, RecordingDependencyInstaller,
+    RuntimeImportBehavior,
+};
 pub use event::{PluginControl, PluginEventType};
 pub use extension::{
     PluginPlatformExtension, PluginPlatformExtensionKind, PluginWebApiMethod, PluginWebApiRoute,
@@ -19,11 +28,10 @@ pub use filter::{
 };
 pub use handler::{HandlerMetadata, PluginHandler, RegisteredHandler};
 pub use loader::{
-    HotReloadDecision, InMemoryPluginStore, NoopDependencyInstaller, PluginDependency,
-    PluginDependencyInstaller, PluginDependencyKind, PluginDependencyPlan, PluginFileChange,
-    PluginFileChangeKind, PluginLifecycleAction, PluginLifecycleEvent, PluginLifecycleState,
-    PluginLoadSource, PluginLoadSourceKind, PluginLoader, PluginMetadata, PluginRecord,
-    PluginStateStore, plan_hot_reload,
+    HotReloadDecision, InMemoryPluginStore, PluginFileChange, PluginFileChangeKind,
+    PluginLifecycleAction, PluginLifecycleEvent, PluginLifecycleState, PluginLoadSource,
+    PluginLoadSourceKind, PluginLoader, PluginMetadata, PluginRecord, PluginStateStore,
+    plan_hot_reload,
 };
 pub use manifest::{PluginCapability, PluginManifest};
 pub use registry::PluginRegistry;

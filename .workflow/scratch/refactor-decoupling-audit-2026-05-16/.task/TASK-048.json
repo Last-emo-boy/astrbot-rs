@@ -1,7 +1,7 @@
 {
   "id": "TASK-048",
   "title": "Separate plugin dependency installer, import environment, conflict, and redaction boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "plugin-dependency-environment-boundary",
   "description": "TASK-018 defines dependency plans, but AstrBot's pip installer shows that real plugin dependency installation includes package parsing, site-packages preference, conflict classification, core-version constraints, packaged-runtime patches, and secret redaction. Rust should keep dependency installation and import-environment policy separate from plugin metadata loading.",
@@ -44,5 +44,24 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T02:29:06+08:00",
+  "files_modified": [
+    "crates/astrbot-plugin/src/dependency/mod.rs",
+    "crates/astrbot-plugin/src/dependency/installer.rs",
+    "crates/astrbot-plugin/src/dependency/environment.rs",
+    "crates/astrbot-plugin/src/dependency/conflict.rs",
+    "crates/astrbot-plugin/src/loader/dependency.rs",
+    "crates/astrbot-plugin/src/loader/mod.rs",
+    "crates/astrbot-plugin/src/lib.rs",
+    "crates/astrbot-plugin/src/tests.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-048.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-plugin",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "high"
 }

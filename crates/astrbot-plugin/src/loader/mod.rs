@@ -4,11 +4,17 @@ mod lifecycle;
 mod metadata;
 mod store;
 
+use std::sync::Arc;
+
 use astrbot_core::Result;
 
 pub use dependency::{
-    NoopDependencyInstaller, PluginDependency, PluginDependencyInstaller, PluginDependencyKind,
-    PluginDependencyPlan,
+    DependencyConflictKind, DependencyConflictReport, DependencyErrorRedactor,
+    DependencyInstallOutcome, DependencyInstallRequest, DependencyInstallStatus,
+    NoopDependencyInstaller, PackagePreferencePolicy, PluginDependency, PluginDependencyInstaller,
+    PluginDependencyKind, PluginDependencyPlan, PluginDependencyPlanInstaller,
+    PluginImportEnvironment, PluginRuntimeKind, RecordingDependencyInstaller,
+    RuntimeImportBehavior,
 };
 pub use hot_reload::{HotReloadDecision, PluginFileChange, PluginFileChangeKind, plan_hot_reload};
 pub use lifecycle::{PluginLifecycleAction, PluginLifecycleEvent, PluginLifecycleState};
@@ -20,13 +26,12 @@ use crate::sdk::PluginContext;
 
 pub struct PluginLoader<S = InMemoryPluginStore> {
     store: S,
+    dependency_installer: Arc<dyn PluginDependencyPlanInstaller>,
 }
 
 impl PluginLoader<InMemoryPluginStore> {
     pub fn new() -> Self {
-        Self {
-            store: InMemoryPluginStore::new(),
-        }
+        Self::with_store(InMemoryPluginStore::new())
     }
 }
 
@@ -41,7 +46,18 @@ where
     S: PluginStateStore,
 {
     pub fn with_store(store: S) -> Self {
-        Self { store }
+        Self {
+            store,
+            dependency_installer: Arc::new(NoopDependencyInstaller),
+        }
+    }
+
+    pub fn with_dependency_installer<I>(mut self, dependency_installer: I) -> Self
+    where
+        I: PluginDependencyPlanInstaller + 'static,
+    {
+        self.dependency_installer = Arc::new(dependency_installer);
+        self
     }
 
     pub fn store(&self) -> &S {
@@ -50,6 +66,10 @@ where
 
     pub fn store_mut(&mut self) -> &mut S {
         &mut self.store
+    }
+
+    pub fn dependency_installer(&self) -> &dyn PluginDependencyPlanInstaller {
+        self.dependency_installer.as_ref()
     }
 
     pub fn discover_manifest(
@@ -83,6 +103,16 @@ where
         self.store()
             .get(plugin_id)
             .map(|record| PluginContext::from_manifest(&record.metadata.manifest))
+    }
+
+    pub async fn ensure_dependencies(
+        &self,
+        plan: PluginDependencyPlan,
+        environment: PluginImportEnvironment,
+    ) -> Result<DependencyInstallOutcome> {
+        self.dependency_installer
+            .install_dependencies(DependencyInstallRequest::new(plan, environment))
+            .await
     }
 
     fn transition(

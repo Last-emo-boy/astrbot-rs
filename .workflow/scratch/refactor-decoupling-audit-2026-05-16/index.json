@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T01:45:16+08:00",
+  "updated_at": "2026-05-17T01:56:24+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 44,
-    "pending_tasks": 46,
+    "completed_tasks": 45,
+    "pending_tasks": 45,
     "blocked_tasks": 0
   },
   "execution": {
     "reflection_rounds": 53,
-    "current_task_id": "TASK-044",
-    "next_task": "TASK-045"
+    "current_task_id": "TASK-045",
+    "next_task": "TASK-046"
   },
-  "latest_update": "TASK-044 introduced astrbot-persona and astrbot-skill crates for persona resolution, skill activation, and prompt rendering boundaries while keeping ProcessStage and plugin SDK free of persona/skill prompt policy. Next pending task is TASK-045.",
+  "latest_update": "TASK-045 introduced the astrbot-cron crate with typed cron job metadata, scheduler repository/driver/handler ports, and proactive active-agent wake events that enter the pipeline through the existing MessageEvent boundary. Next pending task is TASK-046.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

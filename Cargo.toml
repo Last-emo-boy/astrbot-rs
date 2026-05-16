@@ -3,6 +3,7 @@ members = [
     "crates/astrbot-agent",
     "crates/astrbot-conversation",
     "crates/astrbot-core",
+    "crates/astrbot-cron",
     "crates/astrbot-kb",
     "crates/astrbot-mcp",
     "crates/astrbot-observability",

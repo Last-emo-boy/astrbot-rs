@@ -54,6 +54,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "astrbot-cron"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "async-trait",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "astrbot-kb"
 version = "0.1.0"
 dependencies = [

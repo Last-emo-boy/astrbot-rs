@@ -1,7 +1,7 @@
 {
   "id": "TASK-045",
   "title": "Introduce cron and proactive agent job boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "cron-proactive-boundary",
   "description": "AstrBot CronJobManager stores scheduled jobs, wakes the main agent with special events, injects conversation history, and persists agent history. Rust should define cron/proactive job scheduling and active-agent wake boundaries before such logic grows inside runtime handle, plugin tools, or WebChat routes.",
@@ -44,5 +44,21 @@
     ],
     "verification_command": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T01:56:24+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-cron/Cargo.toml",
+    "crates/astrbot-cron/src/lib.rs",
+    "crates/astrbot-cron/src/job.rs",
+    "crates/astrbot-cron/src/scheduler.rs",
+    "crates/astrbot-cron/src/proactive.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-cron",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "high"
 }

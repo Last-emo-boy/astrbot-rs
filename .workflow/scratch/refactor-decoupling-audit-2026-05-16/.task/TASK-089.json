@@ -1,0 +1,67 @@
+{
+  "id": "TASK-089",
+  "title": "Separate agent request envelope, decorator chain, and context source ports",
+  "status": "pending",
+  "type": "refactor",
+  "category": "agent-request-decoration-boundary",
+  "description": "Agent request preparation is now split across runner, request_decorator.rs, context decorators, persona, multimodal decorators, and pipeline adapters. AstrBot keeps provider request construction, agent sub-stage request building, context managers, modality fixes, plugin-tool fixes, and hooks as separate concepts even though they meet in the main agent. Rust should make request envelope creation, decorator chain composition, and injected context source ports explicit before tool, hook, KB, memory, and provider-response metadata grow around ChatAgentRunner.",
+  "read_first": [
+    "crates/astrbot-agent/src/request_decorator.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-agent/src/context/mod.rs",
+    "crates/astrbot-agent/src/multimodal/mod.rs",
+    "crates/astrbot-pipeline/src/stages/process.rs",
+    "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_request.py",
+    "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_sub_stages/internal.py",
+    "E:/Playground/Astrbot/astrbot/core/agent/context/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/request/mod.rs",
+      "action": "create",
+      "target": "agent request facade",
+      "change": "Re-export request envelope, decorator traits, ports, and composition helpers from a focused module tree."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request/envelope.rs",
+      "action": "create",
+      "target": "event-to-provider request envelope",
+      "change": "Move ProviderRequestEnvelope and explicit/implicit request policy out of generic decorator code."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request/decorator.rs",
+      "action": "create",
+      "target": "decorator trait and composition",
+      "change": "Keep ProviderRequestDecorator, NoopProviderRequestDecorator, and CompositeProviderRequestDecorator independent from concrete context ports."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request/ports.rs",
+      "action": "create",
+      "target": "context source ports",
+      "change": "Move provider preference, session context, and quote context ports into a dedicated port module."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request/context.rs",
+      "action": "create",
+      "target": "context decorators",
+      "change": "Group ProviderPreferenceRequestDecorator, SessionContextRequestDecorator, and QuoteContextRequestDecorator away from the decorator framework."
+    },
+    {
+      "path": "crates/astrbot-agent/src/request/composer.rs",
+      "action": "create",
+      "target": "request decorator assembly",
+      "change": "Prepare a composition point for persona, multimodal, KB, memory, hook, and plugin-tool decorators without bloating ChatAgentRunner."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "ChatAgentRunner behavior remains unchanged for explicit provider requests, implicit text requests, and fallback error messages.",
+      "Pipeline ProcessStage can still adapt its ports into the agent request boundary without depending on concrete agent decorators.",
+      "Multimodal and persona decorators remain composable through the same trait.",
+      "Request envelope policy is testable without a real provider."
+    ],
+    "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "medium"
+}

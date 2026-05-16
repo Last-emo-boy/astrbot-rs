@@ -1,0 +1,67 @@
+{
+  "id": "TASK-088",
+  "title": "Split platform core contracts, build config, recording sink, and validation helpers",
+  "status": "pending",
+  "type": "refactor",
+  "category": "platform-core-contract-boundary",
+  "description": "The Rust platform core facade now mixes platform type constants, adapter traits, build config, event-sender build context, recording sinks, conversation-history test storage, and platform ID validation in one file. AstrBot keeps platform metadata, message/session models, adapter base classes, register/manager code, and platform sources separated. Split this Rust core boundary before richer WeChat/QQ/Lark/Kook-style adapters add more metadata, sink, validation, and outbound behavior.",
+  "read_first": [
+    "crates/astrbot-platform/src/core.rs",
+    "crates/astrbot-platform/src/built.rs",
+    "crates/astrbot-platform/src/registry.rs",
+    "crates/astrbot-platform/src/manager.rs",
+    "crates/astrbot-platform/src/tests.rs",
+    "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/platform_metadata.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/register.py",
+    "E:/Playground/Astrbot/astrbot/core/platform/manager.py"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-platform/src/core/mod.rs",
+      "action": "create",
+      "target": "platform core facade",
+      "change": "Keep current public exports stable while moving platform contracts into focused submodules."
+    },
+    {
+      "path": "crates/astrbot-platform/src/core/adapter.rs",
+      "action": "create",
+      "target": "adapter contracts",
+      "change": "Move PlatformAdapter and MessageRecorder traits out of the mixed core file."
+    },
+    {
+      "path": "crates/astrbot-platform/src/core/config.rs",
+      "action": "create",
+      "target": "platform config and type constants",
+      "change": "Group platform type constants and PlatformConfig constructors without mixing sink or validation code."
+    },
+    {
+      "path": "crates/astrbot-platform/src/core/build_context.rs",
+      "action": "create",
+      "target": "adapter build context",
+      "change": "Keep event sender/build-time dependencies separate from runtime manager state."
+    },
+    {
+      "path": "crates/astrbot-platform/src/core/recording.rs",
+      "action": "create",
+      "target": "recording sink and sent message DTOs",
+      "change": "Move RecordingSink, SentMessage, StreamedMessage, and test-history adapter behavior into a focused module."
+    },
+    {
+      "path": "crates/astrbot-platform/src/core/validation.rs",
+      "action": "create",
+      "target": "platform ID validation",
+      "change": "Isolate platform ID validation so future platform identity and binding rules can grow outside adapter traits."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "Existing astrbot_platform crate-root exports remain compatible.",
+      "Registry and manager imports do not need to know recording sink internals.",
+      "RecordingSink remains usable by tests and WebChat/mock platform paths without adding storage coupling to adapter contracts.",
+      "Platform ID validation is independently testable."
+    ],
+    "verification_command": "cargo test -p astrbot-platform && cargo clippy -p astrbot-platform -- -D warnings && cargo test --workspace"
+  },
+  "risk": "medium"
+}

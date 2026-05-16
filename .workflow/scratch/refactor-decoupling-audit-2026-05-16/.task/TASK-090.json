@@ -1,0 +1,64 @@
+{
+  "id": "TASK-090",
+  "title": "Split agent, MCP, and tool crate tests by behavior boundary",
+  "status": "pending",
+  "type": "refactor",
+  "category": "agent-mcp-tool-test-boundary",
+  "description": "The remaining test facades for agent, MCP, and tool crates are still broad behavior aggregates. This is a low-risk decoupling pass that should split tests before request decoration, MCP runtime/transport, and tool reference/command work expand. The split should keep source behavior unchanged and only move tests plus shared test helpers.",
+  "read_first": [
+    "crates/astrbot-agent/src/tests.rs",
+    "crates/astrbot-mcp/src/tests.rs",
+    "crates/astrbot-tool/src/tests.rs",
+    "crates/astrbot-agent/src/request_decorator.rs",
+    "crates/astrbot-mcp/src/{config,tools,resources,prompts,sampling,elicitation,roots}.rs",
+    "crates/astrbot-tool/src/{catalog,activation,commands,conflicts}.rs"
+  ],
+  "files": [
+    {
+      "path": "crates/astrbot-agent/src/tests/mod.rs",
+      "action": "create",
+      "target": "agent test facade",
+      "change": "Move shared helpers such as NoopSink and test events into a support module."
+    },
+    {
+      "path": "crates/astrbot-agent/src/tests/request_decorator.rs",
+      "action": "create",
+      "target": "request decorator tests",
+      "change": "Group preference, session context, quote context, persona, and envelope tests."
+    },
+    {
+      "path": "crates/astrbot-agent/src/tests/context.rs",
+      "action": "create",
+      "target": "context window tests",
+      "change": "Group token counting, truncation, compression, and context window decorator tests."
+    },
+    {
+      "path": "crates/astrbot-agent/src/tests/runner.rs",
+      "action": "create",
+      "target": "agent runner tests",
+      "change": "Group ChatAgentRunner success, fallback, and error propagation behavior."
+    },
+    {
+      "path": "crates/astrbot-mcp/src/tests/mod.rs",
+      "action": "create",
+      "target": "MCP test facade",
+      "change": "Split config, tool argument, resource bridge, prompt/sampling, elicitation, and roots tests into focused modules."
+    },
+    {
+      "path": "crates/astrbot-tool/src/tests/mod.rs",
+      "action": "create",
+      "target": "tool test facade",
+      "change": "Split catalog, provider schema serializer, command descriptor, and conflict detection tests."
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "No production source behavior changes are made.",
+      "Agent tests are grouped by request decoration, context management, runner behavior, and tool-loop policy.",
+      "MCP tests are grouped by protocol surface so future transport/runtime tests do not grow one large file.",
+      "Tool tests are grouped by catalog, schema, command, and conflict responsibilities."
+    ],
+    "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-mcp && cargo test -p astrbot-tool && cargo clippy --workspace -- -D warnings"
+  },
+  "risk": "low"
+}

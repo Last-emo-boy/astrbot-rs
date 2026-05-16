@@ -1,0 +1,2007 @@
+{
+  "scope": "Decouple large Rust crate roots and boundary files before continuing AstrBot platform/provider parity.",
+  "status": "in_progress",
+  "strategy": "incremental, facade-preserving module splits; do not change public behavior in the first pass",
+  "created_at": "2026-05-16T08:50:00+08:00",
+  "updated_at": "2026-05-16T23:54:28+08:00",
+  "total_tasks": 90,
+  "ordering_rationale": "Split runtime and provider first because new parity work currently lands there. Then split web/core/pipeline boundaries that feed dashboard and platform work.",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Split astrbot-runtime crate root into config, assembly, handle, ports, and config IO modules",
+      "priority": 1,
+      "risk": "high",
+      "category": "god-object",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/lib.rs"
+      ],
+      "suggested_modules": [
+        "config.rs",
+        "provider_config.rs",
+        "policy_config.rs",
+        "assembly.rs",
+        "handle.rs",
+        "ports.rs",
+        "config_io.rs",
+        "tests.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-002",
+      "title": "Split provider registry/manager/factory/config responsibilities",
+      "priority": 2,
+      "risk": "high",
+      "category": "dependencies",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/registry.rs"
+      ],
+      "suggested_modules": [
+        "constants.rs",
+        "capability.rs",
+        "config/mod.rs",
+        "factories/mod.rs",
+        "options.rs",
+        "registry.rs",
+        "manager.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Split provider public traits and registry tests by capability",
+      "priority": 3,
+      "risk": "medium",
+      "category": "testability",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/lib.rs",
+        "crates/astrbot-provider/tests/provider_registry.rs"
+      ],
+      "suggested_modules": [
+        "chat.rs",
+        "speech.rs",
+        "tts.rs",
+        "embedding.rs",
+        "rerank.rs",
+        "mock.rs",
+        "tests/provider_registry/chat.rs",
+        "tests/provider_registry/speech.rs",
+        "tests/provider_registry/tts.rs",
+        "tests/provider_registry/embedding.rs",
+        "tests/provider_registry/rerank.rs",
+        "tests/provider_registry/lifecycle.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Split astrbot-web into DTO, routes, server, message conversion, and errors",
+      "priority": 4,
+      "risk": "medium",
+      "category": "transport-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-web/src/lib.rs"
+      ],
+      "suggested_modules": [
+        "dto.rs",
+        "message_parts.rs",
+        "routes.rs",
+        "server.rs",
+        "error.rs",
+        "tests.rs"
+      ],
+      "verification": "cargo test -p astrbot-web"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Split core message domain into component, chain, session, sink/result, provider request, and event modules",
+      "priority": 5,
+      "risk": "medium",
+      "category": "domain-model",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-core/src/message.rs"
+      ],
+      "suggested_modules": [
+        "message/component.rs",
+        "message/chain.rs",
+        "message/session.rs",
+        "message/sink.rs",
+        "message/result.rs",
+        "message/provider_request.rs",
+        "message/event.rs",
+        "message/mod.rs"
+      ],
+      "verification": "cargo test -p astrbot-core && cargo test --workspace"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Split PipelineContext policies, ports, state, and result decoration config",
+      "priority": 6,
+      "risk": "medium",
+      "category": "ports-and-policy",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-pipeline/src/context.rs"
+      ],
+      "suggested_modules": [
+        "context/mod.rs",
+        "context/policy.rs",
+        "context/ports.rs",
+        "context/session.rs",
+        "context/content_safety.rs",
+        "context/provider_preference.rs",
+        "context/result.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Split runtime provider config mappings and runtime tests by capability/lifecycle",
+      "priority": 7,
+      "risk": "medium",
+      "category": "second-pass-runtime",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/provider_config.rs",
+        "crates/astrbot-runtime/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "provider_config/mod.rs",
+        "provider_config/chat.rs",
+        "provider_config/speech.rs",
+        "provider_config/tts.rs",
+        "provider_config/embedding.rs",
+        "provider_config/rerank.rs",
+        "tests/config_io.rs",
+        "tests/lifecycle.rs",
+        "tests/provider_config.rs",
+        "tests/platform_webchat.rs",
+        "tests/policy.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Split provider config and factory modules by capability/family",
+      "priority": 8,
+      "risk": "medium",
+      "category": "second-pass-provider",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/config.rs",
+        "crates/astrbot-provider/src/factories.rs",
+        "crates/astrbot-provider/src/manager.rs"
+      ],
+      "suggested_modules": [
+        "config/mod.rs",
+        "config/chat.rs",
+        "config/speech.rs",
+        "config/tts.rs",
+        "config/embedding.rs",
+        "config/rerank.rs",
+        "factories/mod.rs",
+        "factories/chat.rs",
+        "factories/speech.rs",
+        "factories/tts.rs",
+        "factories/embedding.rs",
+        "factories/rerank.rs",
+        "manager/mod.rs",
+        "manager/chat.rs",
+        "manager/speech.rs",
+        "manager/tts.rs",
+        "manager/embedding.rs",
+        "manager/rerank.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-009",
+      "title": "Split plugin crate into SDK, handler registry, filters, manifest, and sandbox capability modules",
+      "priority": 9,
+      "risk": "high",
+      "category": "plugin-sdk-sandbox",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src/lib.rs"
+      ],
+      "suggested_modules": [
+        "event.rs",
+        "handler.rs",
+        "registry.rs",
+        "filter/mod.rs",
+        "filter/command.rs",
+        "filter/permission.rs",
+        "sdk.rs",
+        "manifest.rs",
+        "sandbox.rs",
+        "tests.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test --workspace"
+    },
+    {
+      "id": "TASK-010",
+      "title": "Prepare platform adapter transport/message-conversion submodules before WeChat/QQ parity",
+      "priority": 10,
+      "risk": "medium",
+      "category": "platform-adapter-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-platform/src"
+      ],
+      "suggested_modules": [
+        "adapters/onebot/mod.rs",
+        "adapters/onebot/event.rs",
+        "adapters/onebot/message.rs",
+        "adapters/onebot/transport.rs",
+        "adapters/webchat/message_parts.rs",
+        "adapters/wechat/*",
+        "adapters/qq/*",
+        "tests/registry.rs",
+        "tests/manager.rs",
+        "tests/adapters.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo test --workspace"
+    },
+    {
+      "id": "TASK-011",
+      "title": "Split large integration test files by behavior area",
+      "priority": 11,
+      "risk": "low",
+      "category": "testability",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-pipeline/tests/process_stage.rs",
+        "crates/astrbot-platform/src/tests.rs",
+        "crates/astrbot-runtime/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "tests/process_stage/fallback.rs",
+        "tests/process_stage/session_context.rs",
+        "tests/process_stage/provider_preference.rs",
+        "tests/process_stage/quote.rs",
+        "tests/platform/registry.rs",
+        "tests/platform/adapters.rs",
+        "tests/runtime/lifecycle.rs",
+        "tests/runtime/config.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo test -p astrbot-runtime"
+    },
+    {
+      "id": "TASK-012",
+      "title": "Extract WebChat attachment/message-part service boundary before dashboard media storage",
+      "priority": 12,
+      "risk": "medium",
+      "category": "webchat-media-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-web/src/lib.rs",
+        "crates/astrbot-platform/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-web/src/message_parts.rs",
+        "crates/astrbot-web/src/attachment.rs",
+        "crates/astrbot-web/src/history.rs",
+        "crates/astrbot-platform/src/adapters/webchat/message_parts.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-platform && cargo test --workspace"
+    },
+    {
+      "id": "TASK-013",
+      "title": "Split pipeline stage registry order, builtins, entries, and registry tests",
+      "priority": 13,
+      "risk": "low",
+      "category": "pipeline-registry-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-pipeline/src/registry.rs"
+      ],
+      "suggested_modules": [
+        "registry/mod.rs",
+        "registry/order.rs",
+        "registry/builtins.rs",
+        "registry/entry.rs",
+        "tests/registry/order.rs",
+        "tests/registry/initialize.rs",
+        "tests/registry/errors.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-014",
+      "title": "Extract provider HTTP base URL, error parsing, and request helper boundaries",
+      "priority": 14,
+      "risk": "medium",
+      "category": "provider-http-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/openai_compatible.rs",
+        "crates/astrbot-provider/src/anthropic.rs",
+        "crates/astrbot-provider/src/gemini.rs",
+        "crates/astrbot-provider/src/*_tts.rs",
+        "crates/astrbot-provider/src/*_stt.rs",
+        "crates/astrbot-provider/src/*_rerank.rs"
+      ],
+      "suggested_modules": [
+        "http/mod.rs",
+        "http/base_url.rs",
+        "http/error.rs",
+        "http/json.rs",
+        "http/auth.rs",
+        "http/audio.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-015",
+      "title": "Split CLI command parsing, command handlers, and WebChat server launcher",
+      "priority": 15,
+      "risk": "low",
+      "category": "cli-entrypoint-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-cli/src/main.rs"
+      ],
+      "suggested_modules": [
+        "args.rs",
+        "commands/mod.rs",
+        "commands/init.rs",
+        "commands/run.rs",
+        "commands/smoke.rs",
+        "webchat_server.rs"
+      ],
+      "verification": "cargo test -p astrbot-cli && cargo test --workspace"
+    },
+    {
+      "id": "TASK-016",
+      "title": "Extract provider test HTTP fixtures and request capture helpers",
+      "priority": 16,
+      "risk": "low",
+      "category": "provider-test-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/tests/*.rs",
+        "crates/astrbot-provider/tests/provider_registry/*.rs"
+      ],
+      "suggested_modules": [
+        "tests/support/mod.rs",
+        "tests/support/http_server.rs",
+        "tests/support/captured_request.rs",
+        "tests/support/fixtures.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider"
+    },
+    {
+      "id": "TASK-017",
+      "title": "Split runtime handle task supervision and restart state helpers",
+      "priority": 17,
+      "risk": "medium",
+      "category": "runtime-lifecycle-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/handle.rs"
+      ],
+      "suggested_modules": [
+        "handle/mod.rs",
+        "handle/runtime.rs",
+        "handle/supervisor.rs",
+        "handle/restart.rs",
+        "handle/testing.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-018",
+      "title": "Define plugin loader, lifecycle, dependency, and hot-reload boundaries before Star parity",
+      "priority": 18,
+      "risk": "high",
+      "category": "plugin-lifecycle-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src"
+      ],
+      "suggested_modules": [
+        "loader/mod.rs",
+        "loader/metadata.rs",
+        "loader/dependency.rs",
+        "loader/lifecycle.rs",
+        "loader/hot_reload.rs",
+        "loader/store.rs",
+        "extension/platform.rs",
+        "extension/web_api.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test --workspace"
+    },
+    {
+      "id": "TASK-019",
+      "title": "Extract tool execution, handoff, background task, and sandbox capability boundaries",
+      "priority": 19,
+      "risk": "high",
+      "category": "tool-execution-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src/sandbox.rs",
+        "crates/astrbot-plugin/src/sdk.rs",
+        "crates/astrbot-pipeline/src/stages/process.rs"
+      ],
+      "suggested_modules": [
+        "tool/mod.rs",
+        "tool/registry.rs",
+        "tool/executor.rs",
+        "tool/handoff.rs",
+        "tool/background.rs",
+        "tool/capability.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-020",
+      "title": "Split config defaults, schema metadata, env/secret resolution, and migration policy",
+      "priority": 20,
+      "risk": "medium",
+      "category": "config-schema-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/config.rs",
+        "crates/astrbot-runtime/src/config_io.rs",
+        "crates/astrbot-runtime/src/defaults.rs",
+        "crates/astrbot-runtime/src/provider_config"
+      ],
+      "suggested_modules": [
+        "config/schema.rs",
+        "config/defaults.rs",
+        "config/migration.rs",
+        "config/env.rs",
+        "config/secrets.rs",
+        "config/ui_metadata.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-021",
+      "title": "Split WebChat HTTP tests by route, message-part, history, and server behavior",
+      "priority": 21,
+      "risk": "low",
+      "category": "web-test-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-web/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "tests/mod.rs",
+        "tests/submit.rs",
+        "tests/message_parts.rs",
+        "tests/history.rs",
+        "tests/server.rs",
+        "tests/support.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test --workspace"
+    },
+    {
+      "id": "TASK-022",
+      "title": "Extract provider protocol DTO and response parser modules from concrete adapters",
+      "priority": 22,
+      "risk": "medium",
+      "category": "provider-protocol-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/openai_compatible.rs",
+        "crates/astrbot-provider/src/gemini.rs",
+        "crates/astrbot-provider/src/anthropic.rs",
+        "crates/astrbot-provider/src/minimax_tts.rs",
+        "crates/astrbot-provider/src/xinference_stt.rs",
+        "crates/astrbot-provider/src/xinference_rerank.rs"
+      ],
+      "suggested_modules": [
+        "protocol/openai_chat.rs",
+        "protocol/gemini_chat.rs",
+        "protocol/anthropic_chat.rs",
+        "protocol/minimax_tts.rs",
+        "protocol/xinference.rs",
+        "protocol/sse.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-023",
+      "title": "Define platform adapter transport, session, reconnect, and media upload boundaries",
+      "priority": 23,
+      "risk": "high",
+      "category": "platform-transport-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/onebot",
+        "crates/astrbot-platform/src/adapters/webchat",
+        "crates/astrbot-platform/src/adapters"
+      ],
+      "suggested_modules": [
+        "adapters/onebot/transport.rs",
+        "adapters/onebot/session.rs",
+        "adapters/onebot/media.rs",
+        "adapters/qq/*",
+        "adapters/wechat/*",
+        "adapters/common/transport.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo test --workspace"
+    },
+    {
+      "id": "TASK-024",
+      "title": "Introduce storage/repository ports for conversation history, attachments, provider preference, and config snapshots",
+      "priority": 24,
+      "risk": "high",
+      "category": "storage-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/webchat",
+        "crates/astrbot-web/src/history.rs",
+        "crates/astrbot-pipeline/src/context/provider_preference.rs",
+        "crates/astrbot-runtime/src/config_io.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-storage/src/lib.rs",
+        "crates/astrbot-storage/src/conversation.rs",
+        "crates/astrbot-storage/src/attachment.rs",
+        "crates/astrbot-storage/src/provider_preference.rs",
+        "crates/astrbot-storage/src/config_snapshot.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-025",
+      "title": "Introduce agent runner and request decoration boundary before main-agent parity",
+      "priority": 25,
+      "risk": "high",
+      "category": "agent-runner-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-pipeline/src/stages/process.rs",
+        "crates/astrbot-core/src/message/provider_request.rs",
+        "crates/astrbot-provider/src/chat.rs",
+        "crates/astrbot-plugin/src/sdk.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/lib.rs",
+        "crates/astrbot-agent/src/runner.rs",
+        "crates/astrbot-agent/src/request_decorator.rs",
+        "crates/astrbot-agent/src/tool_loop.rs",
+        "crates/astrbot-agent/src/fallback.rs",
+        "crates/astrbot-agent/src/persona.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-026",
+      "title": "Separate dashboard/management API surface from WebChat chat transport routes",
+      "priority": 26,
+      "risk": "medium",
+      "category": "management-api-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-web/src/routes.rs",
+        "crates/astrbot-web/src/server.rs",
+        "crates/astrbot-runtime/src/handle.rs",
+        "crates/astrbot-plugin/src"
+      ],
+      "suggested_modules": [
+        "management/mod.rs",
+        "management/providers.rs",
+        "management/platforms.rs",
+        "management/plugins.rs",
+        "management/config.rs",
+        "management/status.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-027",
+      "title": "Split provider registry built-ins, factory dispatch types, and capability lookup helpers",
+      "priority": 27,
+      "risk": "medium",
+      "category": "provider-registry-builtin-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/registry.rs"
+      ],
+      "suggested_modules": [
+        "registry/mod.rs",
+        "registry/builtins.rs",
+        "registry/factory.rs",
+        "registry/metadata.rs",
+        "registry/error.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-028",
+      "title": "Introduce agent context window, token budget, truncation, and compression boundaries",
+      "priority": 28,
+      "risk": "high",
+      "category": "agent-context-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-pipeline/src/context",
+        "crates/astrbot-core/src/message/provider_request.rs",
+        "crates/astrbot-agent/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/context/mod.rs",
+        "crates/astrbot-agent/src/context/window.rs",
+        "crates/astrbot-agent/src/context/token.rs",
+        "crates/astrbot-agent/src/context/truncation.rs",
+        "crates/astrbot-agent/src/context/compression.rs",
+        "crates/astrbot-agent/src/context/manager.rs",
+        "crates/astrbot-agent/src/context/decorator.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-029",
+      "title": "Define MCP client, resource, prompt, sampling, roots, and elicitation boundaries",
+      "priority": 29,
+      "risk": "high",
+      "category": "mcp-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src/sandbox.rs",
+        "crates/astrbot-plugin/src/sdk.rs",
+        "crates/astrbot-mcp/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-mcp/src/lib.rs",
+        "crates/astrbot-mcp/src/config.rs",
+        "crates/astrbot-mcp/src/client.rs",
+        "crates/astrbot-mcp/src/tools.rs",
+        "crates/astrbot-mcp/src/resources.rs",
+        "crates/astrbot-mcp/src/prompts.rs",
+        "crates/astrbot-mcp/src/sampling.rs",
+        "crates/astrbot-mcp/src/elicitation.rs",
+        "crates/astrbot-mcp/src/roots.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-030",
+      "title": "Separate tool schema catalog, provider-format serializers, activation policy, and command management",
+      "priority": 30,
+      "risk": "high",
+      "category": "tool-schema-command-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-core/src/message/provider_request.rs",
+        "crates/astrbot-plugin/src/filter",
+        "crates/astrbot-plugin/src/registry.rs",
+        "crates/astrbot-tool/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-tool/src/catalog.rs",
+        "crates/astrbot-tool/src/schema/openai.rs",
+        "crates/astrbot-tool/src/schema/anthropic.rs",
+        "crates/astrbot-tool/src/schema/gemini.rs",
+        "crates/astrbot-tool/src/activation.rs",
+        "crates/astrbot-tool/src/commands.rs",
+        "crates/astrbot-tool/src/conflicts.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test -p astrbot-provider && cargo test --workspace"
+    },
+    {
+      "id": "TASK-031",
+      "title": "Introduce knowledge-base document, parser, chunking, retrieval, rerank, and vector-store boundaries",
+      "priority": 31,
+      "risk": "high",
+      "category": "knowledge-base-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/embedding.rs",
+        "crates/astrbot-provider/src/rerank.rs",
+        "crates/astrbot-kb/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-kb/src/document.rs",
+        "crates/astrbot-kb/src/parser.rs",
+        "crates/astrbot-kb/src/chunking.rs",
+        "crates/astrbot-kb/src/retrieval.rs",
+        "crates/astrbot-kb/src/rank_fusion.rs",
+        "crates/astrbot-kb/src/vector_store.rs",
+        "crates/astrbot-kb/src/formatter.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-032",
+      "title": "Separate database schema, migrations, backup import/export, stats, and repository implementations",
+      "priority": 32,
+      "risk": "high",
+      "category": "persistence-migration-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-storage/src",
+        "crates/astrbot-runtime/src/config_io.rs",
+        "crates/astrbot-web/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-storage/src/repository.rs",
+        "crates/astrbot-storage/src/sqlite.rs",
+        "crates/astrbot-storage/src/migration.rs",
+        "crates/astrbot-storage/src/backup/export.rs",
+        "crates/astrbot-storage/src/backup/import.rs",
+        "crates/astrbot-storage/src/stats.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-033",
+      "title": "Define platform webhook verification, encryption, callback server, and long-connection boundaries",
+      "priority": 33,
+      "risk": "high",
+      "category": "platform-webhook-security-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/onebot",
+        "crates/astrbot-platform/src/adapters/webchat",
+        "crates/astrbot-platform/src/adapters/common",
+        "crates/astrbot-platform/src/adapters/wechat"
+      ],
+      "suggested_modules": [
+        "adapters/common/webhook.rs",
+        "adapters/common/signature.rs",
+        "adapters/common/crypto.rs",
+        "adapters/common/long_connection.rs",
+        "adapters/common/queue.rs",
+        "adapters/wechat/mod.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo test --workspace"
+    },
+    {
+      "id": "TASK-034",
+      "title": "Extract provider test media fixture and temp path helpers",
+      "priority": 34,
+      "risk": "low",
+      "category": "provider-test-media-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/tests/*.rs",
+        "crates/astrbot-provider/tests/support"
+      ],
+      "suggested_modules": [
+        "tests/support/media_fixture.rs",
+        "tests/support/temp_path.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-035",
+      "title": "Extract provider generated media artifact writer boundary",
+      "priority": 35,
+      "risk": "medium",
+      "category": "provider-media-artifact-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/openai_tts.rs",
+        "crates/astrbot-provider/src/gemini_tts.rs",
+        "crates/astrbot-provider/src/volcengine_tts.rs",
+        "crates/astrbot-provider/src/minimax_tts.rs",
+        "crates/astrbot-provider/src/gsvi_tts.rs"
+      ],
+      "suggested_modules": [
+        "media/mod.rs",
+        "media/artifact.rs",
+        "media/audio_writer.rs",
+        "media/path.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-036",
+      "title": "Separate streaming parser, chunk normalization, and unsupported streaming strategy",
+      "priority": 36,
+      "risk": "medium",
+      "category": "streaming-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-provider/src/openai_compatible.rs",
+        "crates/astrbot-provider/src/minimax_tts.rs",
+        "crates/astrbot-core/src/message/result.rs",
+        "crates/astrbot-pipeline/src/stages/respond.rs"
+      ],
+      "suggested_modules": [
+        "streaming/mod.rs",
+        "streaming/sse.rs",
+        "streaming/chunk.rs",
+        "streaming/strategy.rs",
+        "streaming/tests.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-037",
+      "title": "Introduce multimodal request preparation and image caption boundaries",
+      "priority": 37,
+      "risk": "high",
+      "category": "multimodal-agent-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-core/src/message/provider_request.rs",
+        "crates/astrbot-pipeline/src/stages/provider.rs",
+        "crates/astrbot-pipeline/src/stages/process.rs",
+        "crates/astrbot-provider/src/{openai_compatible.rs,gemini.rs,anthropic.rs}"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/multimodal/mod.rs",
+        "crates/astrbot-agent/src/multimodal/image_caption.rs",
+        "crates/astrbot-agent/src/multimodal/quoted_image.rs",
+        "crates/astrbot-agent/src/multimodal/capability_filter.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test -p astrbot-provider && cargo test --workspace"
+    },
+    {
+      "id": "TASK-038",
+      "title": "Define data path, temp artifact root, and cleanup policy boundary",
+      "priority": 38,
+      "risk": "medium",
+      "category": "path-temp-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/config.rs",
+        "crates/astrbot-runtime/src/config_io.rs",
+        "crates/astrbot-provider/src/audio.rs",
+        "crates/astrbot-web/src/attachment.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-runtime/src/path_config.rs",
+        "crates/astrbot-storage/src/temp_artifact.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-039",
+      "title": "Define text-to-image rendering and template boundary before T2I parity",
+      "priority": 39,
+      "risk": "high",
+      "category": "t2i-render-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-core/src/message/result.rs",
+        "crates/astrbot-pipeline/src/stages/respond.rs",
+        "crates/astrbot-web/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-render/src/lib.rs",
+        "crates/astrbot-render/src/t2i.rs",
+        "crates/astrbot-render/src/template.rs",
+        "crates/astrbot-render/src/strategy.rs",
+        "crates/astrbot-render/src/storage.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-040",
+      "title": "Introduce observability, trace, log buffer, and runtime status event boundaries",
+      "priority": 40,
+      "risk": "medium",
+      "category": "observability-boundary",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-runtime/src/handle.rs",
+        "crates/astrbot-platform/src/manager.rs",
+        "crates/astrbot-provider/src/manager.rs",
+        "crates/astrbot-web/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-observability/src/lib.rs",
+        "crates/astrbot-observability/src/trace.rs",
+        "crates/astrbot-observability/src/log_buffer.rs",
+        "crates/astrbot-observability/src/status_event.rs",
+        "management/logs.rs"
+      ],
+      "verification": [
+        "cargo fmt --all --check",
+        "cargo test -p astrbot-observability",
+        "cargo test -p astrbot-runtime",
+        "cargo test -p astrbot-provider",
+        "cargo test -p astrbot-platform",
+        "cargo clippy -p astrbot-observability -- -D warnings",
+        "cargo clippy -p astrbot-runtime -- -D warnings",
+        "cargo clippy -p astrbot-provider -- -D warnings",
+        "cargo clippy -p astrbot-platform -- -D warnings",
+        "cargo test --workspace",
+        "cargo clippy --workspace -- -D warnings"
+      ]
+    },
+    {
+      "id": "TASK-041",
+      "title": "Split event bus dispatch, pipeline routing, and event logging boundaries",
+      "priority": 41,
+      "risk": "medium",
+      "category": "event-bus-routing-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-core/src/event.rs",
+        "crates/astrbot-pipeline/src/scheduler.rs",
+        "crates/astrbot-runtime/src/handle.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-core/src/event/mod.rs",
+        "crates/astrbot-core/src/event/bus.rs",
+        "crates/astrbot-core/src/event/router.rs",
+        "crates/astrbot-core/src/event/logging.rs",
+        "crates/astrbot-core/src/event/backpressure.rs"
+      ],
+      "verification": "cargo test -p astrbot-core && cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-042",
+      "title": "Define provider selection state and change notification boundary",
+      "priority": 42,
+      "risk": "medium",
+      "category": "provider-selection-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/manager.rs",
+        "crates/astrbot-pipeline/src/context/provider_preference.rs",
+        "crates/astrbot-runtime/src/assembly.rs",
+        "crates/astrbot-web/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-provider/src/selection.rs",
+        "crates/astrbot-provider/src/manager/selection.rs",
+        "crates/astrbot-provider/src/manager/hooks.rs",
+        "crates/astrbot-runtime/src/provider_selection.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo test -p astrbot-runtime && cargo test --workspace"
+    },
+    {
+      "id": "TASK-043",
+      "title": "Introduce conversation and platform message history domain boundary",
+      "priority": 43,
+      "risk": "high",
+      "category": "conversation-history-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-pipeline/src/context/session.rs",
+        "crates/astrbot-web/src/history.rs",
+        "crates/astrbot-platform/src/adapters/webchat",
+        "crates/astrbot-storage/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-conversation/src/lib.rs",
+        "crates/astrbot-conversation/src/conversation.rs",
+        "crates/astrbot-conversation/src/message_history.rs",
+        "crates/astrbot-conversation/src/current.rs",
+        "crates/astrbot-conversation/src/persona_link.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-044",
+      "title": "Define persona, skill catalog, and prompt composition boundaries",
+      "priority": 44,
+      "risk": "high",
+      "category": "persona-skill-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-pipeline/src/stages/process.rs",
+        "crates/astrbot-plugin/src/sdk.rs",
+        "crates/astrbot-agent/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-persona/src/lib.rs",
+        "crates/astrbot-persona/src/manager.rs",
+        "crates/astrbot-persona/src/selection.rs",
+        "crates/astrbot-persona/src/folder.rs",
+        "crates/astrbot-skill/src/catalog.rs",
+        "crates/astrbot-skill/src/prompt.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test -p astrbot-pipeline && cargo test --workspace"
+    },
+    {
+      "id": "TASK-045",
+      "title": "Introduce cron and proactive agent job boundaries",
+      "priority": 45,
+      "risk": "high",
+      "category": "cron-proactive-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-runtime/src/handle.rs",
+        "crates/astrbot-plugin/src/sdk.rs",
+        "crates/astrbot-pipeline/src",
+        "crates/astrbot-storage/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-cron/src/lib.rs",
+        "crates/astrbot-cron/src/job.rs",
+        "crates/astrbot-cron/src/scheduler.rs",
+        "crates/astrbot-cron/src/proactive.rs",
+        "crates/astrbot-cron/src/repository.rs"
+      ],
+      "verification": "cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-046",
+      "title": "Define subagent orchestration and handoff registry boundaries",
+      "priority": 46,
+      "risk": "high",
+      "category": "subagent-handoff-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-plugin/src/sandbox.rs",
+        "crates/astrbot-plugin/src/sdk.rs",
+        "crates/astrbot-tool/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/subagent/mod.rs",
+        "crates/astrbot-agent/src/subagent/config.rs",
+        "crates/astrbot-agent/src/subagent/orchestrator.rs",
+        "crates/astrbot-agent/src/subagent/handoff.rs",
+        "crates/astrbot-agent/src/subagent/tool_bridge.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-047",
+      "title": "Define computer-use booter, component, tool, and skill-sync boundaries",
+      "priority": 47,
+      "risk": "high",
+      "category": "computer-use-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-plugin/src/tool",
+        "crates/astrbot-agent/src",
+        "crates/astrbot-computer/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-computer/src/lib.rs",
+        "crates/astrbot-computer/src/booter.rs",
+        "crates/astrbot-computer/src/components.rs",
+        "crates/astrbot-computer/src/tools.rs",
+        "crates/astrbot-computer/src/skill_sync.rs",
+        "crates/astrbot-computer/src/prompt.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-048",
+      "title": "Separate plugin dependency installer, import environment, conflict, and redaction boundaries",
+      "priority": 48,
+      "risk": "high",
+      "category": "plugin-dependency-environment-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-plugin/src/loader/dependency.rs",
+        "crates/astrbot-plugin/src/loader/metadata.rs",
+        "crates/astrbot-plugin/src/manifest.rs"
+      ],
+      "suggested_modules": [
+        "dependency/mod.rs",
+        "dependency/installer.rs",
+        "dependency/environment.rs",
+        "dependency/conflict.rs",
+        "dependency/redaction.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-049",
+      "title": "Define platform API client, retry, rate-limit, and rich-event normalization boundaries",
+      "priority": 49,
+      "risk": "medium",
+      "category": "platform-api-client-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters",
+        "crates/astrbot-platform/src/manager.rs",
+        "crates/astrbot-platform/src/registry.rs"
+      ],
+      "suggested_modules": [
+        "adapters/common/api_client.rs",
+        "adapters/common/retry.rs",
+        "adapters/common/rate_limit.rs",
+        "adapters/common/rich_event.rs",
+        "adapters/common/error.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-050",
+      "title": "Extract quoted and forwarded message parser boundaries",
+      "priority": 50,
+      "risk": "medium",
+      "category": "quote-forward-parser-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-core/src/message",
+        "crates/astrbot-platform/src/adapters/onebot",
+        "crates/astrbot-pipeline/src/context/quote.rs",
+        "crates/astrbot-agent/src/multimodal"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-core/src/message/quote.rs",
+        "crates/astrbot-platform/src/adapters/common/quote.rs",
+        "crates/astrbot-platform/src/adapters/onebot/forward.rs",
+        "crates/astrbot-agent/src/multimodal/quote_media.rs"
+      ],
+      "verification": "cargo test -p astrbot-core && cargo test -p astrbot-platform && cargo test --workspace"
+    },
+    {
+      "id": "TASK-051",
+      "title": "Separate live agent streaming, tool-status, stop-signal, and TTS feedback boundaries",
+      "priority": 51,
+      "risk": "high",
+      "category": "live-agent-feedback-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-pipeline/src/stages/respond.rs",
+        "crates/astrbot-core/src/message/result.rs",
+        "crates/astrbot-provider/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/feedback/mod.rs",
+        "crates/astrbot-agent/src/feedback/status.rs",
+        "crates/astrbot-agent/src/feedback/stop_signal.rs",
+        "crates/astrbot-agent/src/feedback/voice.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-052",
+      "title": "Extract remaining non-chat provider protocol DTO and response parser modules",
+      "priority": 52,
+      "risk": "medium",
+      "category": "provider-non-chat-protocol-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/openai_embedding.rs",
+        "crates/astrbot-provider/src/gemini_embedding.rs",
+        "crates/astrbot-provider/src/openai_tts.rs",
+        "crates/astrbot-provider/src/gemini_tts.rs",
+        "crates/astrbot-provider/src/volcengine_tts.rs",
+        "crates/astrbot-provider/src/openai_stt.rs",
+        "crates/astrbot-provider/src/bailian_rerank.rs",
+        "crates/astrbot-provider/src/vllm_rerank.rs"
+      ],
+      "suggested_modules": [
+        "protocol/openai_embedding.rs",
+        "protocol/gemini_embedding.rs",
+        "protocol/tts.rs",
+        "protocol/rerank.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-053",
+      "title": "Extract Xinference model resolver lifecycle boundary",
+      "priority": 53,
+      "risk": "medium",
+      "category": "provider-model-resolver-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/xinference_stt.rs",
+        "crates/astrbot-provider/src/xinference_rerank.rs",
+        "crates/astrbot-provider/src/protocol/xinference.rs"
+      ],
+      "suggested_modules": [
+        "model_resolver/mod.rs",
+        "model_resolver/xinference.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider --test xinference_stt --test xinference_rerank && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-054",
+      "title": "Split provider manager bucket assembly and accessors into a reusable capability bucket boundary",
+      "priority": 54,
+      "risk": "medium",
+      "category": "provider-manager-bucket-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/manager.rs",
+        "crates/astrbot-provider/src/manager/{chat,speech,tts,embedding,rerank}.rs"
+      ],
+      "suggested_modules": [
+        "manager/bucket.rs",
+        "manager/build.rs",
+        "manager/access.rs",
+        "manager/streaming.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-055",
+      "title": "Split plugin integration tests by registry, filters, loader, manifest, SDK, sandbox, and tool behavior",
+      "priority": 55,
+      "risk": "low",
+      "category": "plugin-test-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-plugin/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "tests/mod.rs",
+        "tests/registry.rs",
+        "tests/filters.rs",
+        "tests/manifest_sdk.rs",
+        "tests/loader.rs",
+        "tests/dependency.rs",
+        "tests/tool.rs",
+        "tests/sandbox.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo clippy -p astrbot-plugin -- -D warnings"
+    },
+    {
+      "id": "TASK-056",
+      "title": "Split runtime policy config into per-policy modules before AstrBot platform_settings parity grows",
+      "priority": 56,
+      "risk": "medium",
+      "category": "runtime-policy-config-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-runtime/src/policy_config.rs",
+        "crates/astrbot-runtime/src/config/schema.rs",
+        "crates/astrbot-runtime/src/config/ui_metadata.rs"
+      ],
+      "suggested_modules": [
+        "policy_config/mod.rs",
+        "policy_config/wake.rs",
+        "policy_config/whitelist.rs",
+        "policy_config/session.rs",
+        "policy_config/rate_limit.rs",
+        "policy_config/content_safety.rs",
+        "policy_config/provider_fallback.rs",
+        "policy_config/result_decorate.rs",
+        "policy_config/state.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo clippy -p astrbot-runtime -- -D warnings"
+    },
+    {
+      "id": "TASK-057",
+      "title": "Extract provider TTS option normalization and factory config mapping boundary",
+      "priority": 57,
+      "risk": "medium",
+      "category": "provider-tts-factory-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/factories/tts.rs",
+        "crates/astrbot-runtime/src/provider_config/tts.rs",
+        "crates/astrbot-provider/src/{openai_tts.rs,gemini_tts.rs,volcengine_tts.rs,minimax_tts.rs,gsvi_tts.rs}"
+      ],
+      "suggested_modules": [
+        "factories/tts/mod.rs",
+        "factories/tts/options.rs",
+        "factories/tts/openai.rs",
+        "factories/tts/gemini.rs",
+        "factories/tts/volcengine.rs",
+        "factories/tts/minimax.rs",
+        "factories/tts/gsvi.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo clippy -p astrbot-provider -- -D warnings"
+    },
+    {
+      "id": "TASK-058",
+      "title": "Define dashboard and OpenAPI auth, API-key scope, and route middleware boundaries",
+      "priority": 58,
+      "risk": "high",
+      "category": "management-auth-api-key-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-web/src/server.rs",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-runtime/src/config.rs"
+      ],
+      "suggested_modules": [
+        "management/auth.rs",
+        "management/api_key.rs",
+        "management/middleware.rs",
+        "management/response.rs",
+        "crates/astrbot-storage/src/api_key.rs",
+        "crates/astrbot-runtime/src/dashboard_config.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-059",
+      "title": "Separate dashboard config mutation, validation, UMOP routing, and restart/reload boundaries",
+      "priority": 59,
+      "risk": "high",
+      "category": "management-config-mutation-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-runtime/src/config_io.rs",
+        "crates/astrbot-runtime/src/config/schema.rs",
+        "crates/astrbot-runtime/src/handle/restart.rs"
+      ],
+      "suggested_modules": [
+        "management/config.rs",
+        "management/config_validation.rs",
+        "management/config_files.rs",
+        "crates/astrbot-runtime/src/config_service.rs",
+        "crates/astrbot-runtime/src/config_route.rs",
+        "crates/astrbot-runtime/src/reload_policy.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-060",
+      "title": "Define plugin marketplace, update, package cache, and install source boundaries",
+      "priority": 60,
+      "risk": "high",
+      "category": "plugin-market-update-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-plugin/src/loader",
+        "crates/astrbot-plugin/src/extension",
+        "crates/astrbot-web/src/management/plugins.rs"
+      ],
+      "suggested_modules": [
+        "market/mod.rs",
+        "market/source.rs",
+        "market/cache.rs",
+        "market/package.rs",
+        "market/update.rs",
+        "market/compatibility.rs",
+        "management/plugin_market.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-061",
+      "title": "Introduce session waiter, per-session lock, and active-event interruption boundaries",
+      "priority": 61,
+      "risk": "high",
+      "category": "session-concurrency-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-core/src/message/session.rs",
+        "crates/astrbot-pipeline/src/scheduler.rs",
+        "crates/astrbot-agent/src",
+        "crates/astrbot-plugin/src/sdk.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-session/src/lib.rs",
+        "crates/astrbot-session/src/waiter.rs",
+        "crates/astrbot-session/src/lock.rs",
+        "crates/astrbot-session/src/active_event.rs",
+        "crates/astrbot-session/src/interrupt.rs"
+      ],
+      "verification": "cargo test -p astrbot-core && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-062",
+      "title": "Separate realtime chat WebSocket, OpenAPI chat, audio-frame, and subscription gateway boundaries",
+      "priority": 62,
+      "risk": "high",
+      "category": "realtime-chat-gateway-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src",
+        "crates/astrbot-platform/src/adapters/webchat",
+        "crates/astrbot-agent/src/feedback",
+        "crates/astrbot-storage/src"
+      ],
+      "suggested_modules": [
+        "realtime/mod.rs",
+        "realtime/session.rs",
+        "realtime/websocket.rs",
+        "realtime/open_api.rs",
+        "realtime/audio.rs",
+        "realtime/subscription.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-063",
+      "title": "Define file token, static asset, and scoped download service boundaries",
+      "priority": 63,
+      "risk": "medium",
+      "category": "file-token-static-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src",
+        "crates/astrbot-storage/src/attachment.rs",
+        "crates/astrbot-runtime/src/config.rs"
+      ],
+      "suggested_modules": [
+        "management/files.rs",
+        "management/static_assets.rs",
+        "crates/astrbot-storage/src/file_token.rs",
+        "crates/astrbot-storage/src/static_asset.rs",
+        "crates/astrbot-runtime/src/dashboard_assets.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-064",
+      "title": "Introduce long-term memory and active-reply request decoration boundaries",
+      "priority": 64,
+      "risk": "high",
+      "category": "long-term-memory-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-pipeline/src/stages/process.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-memory/src/lib.rs",
+        "crates/astrbot-memory/src/session_memory.rs",
+        "crates/astrbot-memory/src/active_reply.rs",
+        "crates/astrbot-memory/src/image_caption.rs",
+        "crates/astrbot-agent/src/memory/decorator.rs"
+      ],
+      "verification": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-065",
+      "title": "Define external agent runner connector and stream mapping boundaries",
+      "priority": 65,
+      "risk": "high",
+      "category": "external-agent-runner-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-provider/src",
+        "crates/astrbot-runtime/src/provider_config"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/external/mod.rs",
+        "crates/astrbot-agent/src/external/config.rs",
+        "crates/astrbot-agent/src/external/client.rs",
+        "crates/astrbot-agent/src/external/stream.rs",
+        "crates/astrbot-agent/src/external/connectors/{coze,dify,dashscope,deerflow}.rs"
+      ],
+      "verification": "cargo test -p astrbot-agent && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-066",
+      "title": "Implement MCP transport runtime and bridge registration boundaries",
+      "priority": 66,
+      "risk": "high",
+      "category": "mcp-transport-bridge-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-mcp/src",
+        "crates/astrbot-tool/src",
+        "crates/astrbot-plugin/src/tool",
+        "crates/astrbot-runtime/src"
+      ],
+      "suggested_modules": [
+        "transport/mod.rs",
+        "transport/stdio.rs",
+        "transport/http.rs",
+        "runtime.rs",
+        "bridge/tool_registry.rs",
+        "bridge/resource_tools.rs",
+        "bridge/prompt_tools.rs"
+      ],
+      "verification": "cargo test -p astrbot-mcp && cargo test -p astrbot-tool && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-067",
+      "title": "Separate backup upload, task progress, manifest, import, and export service boundaries",
+      "priority": 67,
+      "risk": "high",
+      "category": "backup-job-service-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-runtime/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-backup/src/lib.rs",
+        "crates/astrbot-backup/src/manifest.rs",
+        "crates/astrbot-backup/src/job.rs",
+        "crates/astrbot-backup/src/upload.rs",
+        "crates/astrbot-backup/src/import.rs",
+        "crates/astrbot-backup/src/export.rs",
+        "management/backup.rs"
+      ],
+      "verification": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-068",
+      "title": "Define platform outbound routing state and message binding boundaries",
+      "priority": 68,
+      "risk": "medium",
+      "category": "platform-outbound-routing-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-core/src/message/session.rs"
+      ],
+      "suggested_modules": [
+        "adapters/common/outbound.rs",
+        "adapters/common/session_binding.rs",
+        "adapters/common/message_binding.rs",
+        "crates/astrbot-storage/src/platform_binding.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-069",
+      "title": "Separate skill package install, sandbox cache, activation, and prompt inventory boundaries",
+      "priority": 69,
+      "risk": "medium",
+      "category": "skill-package-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-plugin/src",
+        "crates/astrbot-web/src/management"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-skill/src/lib.rs",
+        "crates/astrbot-skill/src/catalog.rs",
+        "crates/astrbot-skill/src/package.rs",
+        "crates/astrbot-skill/src/sandbox_cache.rs",
+        "crates/astrbot-skill/src/activation.rs",
+        "crates/astrbot-skill/src/prompt_inventory.rs"
+      ],
+      "verification": "cargo test -p astrbot-plugin && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-070",
+      "title": "Define pipeline preprocess stage for pre-ack reactions, path mapping, and STT normalization",
+      "priority": 70,
+      "risk": "high",
+      "category": "pipeline-preprocess-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-pipeline/src/stages",
+        "crates/astrbot-pipeline/src/registry",
+        "crates/astrbot-runtime/src/policy_config.rs",
+        "crates/astrbot-platform/src/adapters/common"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-pipeline/src/stages/preprocess.rs",
+        "crates/astrbot-pipeline/src/context/preprocess.rs",
+        "crates/astrbot-platform/src/adapters/common/path_mapping.rs",
+        "crates/astrbot-runtime/src/policy_config/preprocess.rs"
+      ],
+      "verification": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-071",
+      "title": "Define internal tool provider source, registration, and management boundaries",
+      "priority": 71,
+      "risk": "high",
+      "category": "internal-tool-provider-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-tool/src",
+        "crates/astrbot-plugin/src/tool",
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-runtime/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-tool/src/source.rs",
+        "crates/astrbot-tool/src/internal.rs",
+        "crates/astrbot-tool/src/provider.rs",
+        "crates/astrbot-runtime/src/tool_assembly.rs",
+        "crates/astrbot-web/src/management/tools.rs"
+      ],
+      "verification": "cargo test -p astrbot-tool && cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-072",
+      "title": "Introduce ChatUI project, session membership, and ownership boundaries",
+      "priority": 72,
+      "risk": "medium",
+      "category": "chatui-project-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-conversation/src"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-conversation/src/project.rs",
+        "crates/astrbot-conversation/src/session_membership.rs",
+        "crates/astrbot-storage/src/chat_project.rs",
+        "crates/astrbot-web/src/management/chat_projects.rs"
+      ],
+      "verification": "cargo test -p astrbot-storage && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-073",
+      "title": "Define provider TTS streaming audio queue and playback artifact boundaries",
+      "priority": 73,
+      "risk": "medium",
+      "category": "provider-tts-streaming-audio-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/tts.rs",
+        "crates/astrbot-provider/src/*_tts.rs",
+        "crates/astrbot-agent/src/feedback"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-provider/src/tts/stream.rs",
+        "crates/astrbot-provider/src/tts/audio_queue.rs",
+        "crates/astrbot-provider/src/tts/playback.rs",
+        "crates/astrbot-agent/src/feedback/tts_stream.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-074",
+      "title": "Split storage schema catalog into domain table groups and migration seed boundaries",
+      "priority": 74,
+      "risk": "medium",
+      "category": "storage-schema-catalog-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-storage/src/schema.rs",
+        "crates/astrbot-storage/src/migration.rs",
+        "crates/astrbot-storage/src/backup"
+      ],
+      "suggested_modules": [
+        "schema/mod.rs",
+        "schema/table.rs",
+        "schema/main.rs",
+        "schema/conversation.rs",
+        "schema/platform.rs",
+        "schema/provider.rs",
+        "schema/persona_skill.rs",
+        "schema/ops.rs"
+      ],
+      "verification": "cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-075",
+      "title": "Split MCP wire primitives, JSON values, pagination, and protocol errors",
+      "priority": 75,
+      "risk": "medium",
+      "category": "mcp-wire-types-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-mcp/src/types.rs",
+        "crates/astrbot-mcp/src/config.rs",
+        "crates/astrbot-mcp/src/client.rs"
+      ],
+      "suggested_modules": [
+        "types/mod.rs",
+        "types/error.rs",
+        "types/name.rs",
+        "types/json.rs",
+        "protocol/jsonrpc.rs",
+        "protocol/pagination.rs",
+        "protocol/schema.rs"
+      ],
+      "verification": "cargo test -p astrbot-mcp && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-076",
+      "title": "Introduce knowledge-base ingestion, document repository, indexing job, and vector persistence boundaries",
+      "priority": 76,
+      "risk": "high",
+      "category": "kb-ingestion-index-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-kb/src",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-agent/src"
+      ],
+      "suggested_modules": [
+        "ingestion.rs",
+        "repository.rs",
+        "index_job.rs",
+        "media_store.rs",
+        "lifecycle.rs",
+        "crates/astrbot-storage/src/kb_document.rs"
+      ],
+      "verification": "cargo test -p astrbot-kb && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-077",
+      "title": "Define agent hook, run-context, response event, and tool-image-cache boundaries",
+      "priority": 77,
+      "risk": "high",
+      "category": "agent-run-context-hook-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src",
+        "crates/astrbot-pipeline/src",
+        "crates/astrbot-plugin/src/tool"
+      ],
+      "suggested_modules": [
+        "hook/mod.rs",
+        "hook/event.rs",
+        "run_context.rs",
+        "response.rs",
+        "message.rs",
+        "tool_image_cache.rs"
+      ],
+      "verification": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-078",
+      "title": "Define provider response metadata, token usage, reasoning, and tool-call boundaries",
+      "priority": 78,
+      "risk": "high",
+      "category": "provider-response-metadata-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/chat.rs",
+        "crates/astrbot-provider/src/protocol/{openai_chat.rs,gemini_chat.rs,anthropic_chat.rs}",
+        "crates/astrbot-agent/src/runner.rs",
+        "crates/astrbot-core/src/message/result.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-provider/src/response/mod.rs",
+        "crates/astrbot-provider/src/response/token_usage.rs",
+        "crates/astrbot-provider/src/response/reasoning.rs",
+        "crates/astrbot-provider/src/response/tool_call.rs",
+        "crates/astrbot-provider/src/response/stream.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-079",
+      "title": "Introduce platform identity, member profile, group metadata, and permission resolution boundaries",
+      "priority": 79,
+      "risk": "high",
+      "category": "platform-identity-membership-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-core/src/message/session.rs",
+        "crates/astrbot-platform/src/adapters",
+        "crates/astrbot-plugin/src/filter/permission.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-core/src/message/identity.rs",
+        "crates/astrbot-platform/src/adapters/common/identity.rs",
+        "crates/astrbot-platform/src/adapters/common/group.rs",
+        "crates/astrbot-platform/src/adapters/common/permission.rs"
+      ],
+      "verification": "cargo test -p astrbot-core && cargo test -p astrbot-platform && cargo test -p astrbot-plugin && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-080",
+      "title": "Define session rule, scoped preference, and batch session management boundaries",
+      "priority": 80,
+      "risk": "high",
+      "category": "session-rule-preference-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-storage/src/provider_preference.rs",
+        "crates/astrbot-pipeline/src/context/session.rs",
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-runtime/src/policy_config.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-session/src/rule.rs",
+        "crates/astrbot-session/src/group.rs",
+        "crates/astrbot-storage/src/session_rule.rs",
+        "crates/astrbot-web/src/management/session_rules.rs"
+      ],
+      "verification": "cargo test -p astrbot-storage && cargo test -p astrbot-pipeline && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-081",
+      "title": "Introduce media input normalization, data URL conversion, and provider attachment resolver boundaries",
+      "priority": 81,
+      "risk": "high",
+      "category": "media-normalization-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/audio.rs",
+        "crates/astrbot-provider/src/protocol/{gemini_chat.rs,anthropic_chat.rs,openai_chat.rs}",
+        "crates/astrbot-platform/src/adapters/common/media.rs",
+        "crates/astrbot-web/src/attachment.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-media/src/lib.rs",
+        "crates/astrbot-media/src/resolver.rs",
+        "crates/astrbot-media/src/data_url.rs",
+        "crates/astrbot-media/src/download.rs",
+        "crates/astrbot-media/src/mime.rs"
+      ],
+      "verification": "cargo test -p astrbot-provider && cargo test -p astrbot-platform && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-082",
+      "title": "Separate runtime maintenance, release update, migration, and package install operation boundaries",
+      "priority": 82,
+      "risk": "high",
+      "category": "maintenance-operation-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-runtime/src/config/migration.rs",
+        "crates/astrbot-storage/src/migration.rs",
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-plugin/src/loader/dependency.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-maintenance/src/lib.rs",
+        "crates/astrbot-maintenance/src/update.rs",
+        "crates/astrbot-maintenance/src/migration.rs",
+        "crates/astrbot-maintenance/src/operation.rs",
+        "crates/astrbot-web/src/management/update.rs"
+      ],
+      "verification": "cargo test -p astrbot-runtime && cargo test -p astrbot-storage && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-083",
+      "title": "Separate concrete T2I network, local raster, markdown, font, and endpoint strategy boundaries",
+      "priority": 83,
+      "risk": "medium",
+      "category": "t2i-render-implementation-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-render/src/t2i.rs",
+        "crates/astrbot-render/src/template.rs",
+        "crates/astrbot-storage/src/temp_artifact.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-render/src/network.rs",
+        "crates/astrbot-render/src/local.rs",
+        "crates/astrbot-render/src/markdown.rs",
+        "crates/astrbot-render/src/font.rs"
+      ],
+      "verification": "cargo test -p astrbot-render && cargo clippy -p astrbot-render -- -D warnings && cargo test --workspace"
+    },
+    {
+      "id": "TASK-084",
+      "title": "Define shared network download, TLS, proxy, progress, and cache boundaries",
+      "priority": 84,
+      "risk": "high",
+      "category": "network-download-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/audio.rs",
+        "crates/astrbot-provider/src/http",
+        "crates/astrbot-web/src/attachment.rs",
+        "crates/astrbot-render/src/t2i.rs",
+        "crates/astrbot-runtime/src/path_config.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-net/src/lib.rs",
+        "crates/astrbot-net/src/download.rs",
+        "crates/astrbot-net/src/tls.rs",
+        "crates/astrbot-net/src/progress.rs"
+      ],
+      "verification": "cargo test -p astrbot-net && cargo test -p astrbot-provider && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-085",
+      "title": "Separate knowledge-base management API, provider preflight, upload task, and progress boundaries",
+      "priority": 85,
+      "risk": "high",
+      "category": "kb-management-api-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-kb/src",
+        "crates/astrbot-storage/src",
+        "crates/astrbot-web/src/management",
+        "crates/astrbot-provider/src/manager.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-kb/src/management.rs",
+        "crates/astrbot-kb/src/preflight.rs",
+        "crates/astrbot-kb/src/upload_task.rs",
+        "crates/astrbot-web/src/management/knowledge_base.rs"
+      ],
+      "verification": "cargo test -p astrbot-kb && cargo test -p astrbot-web && cargo test --workspace && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-086",
+      "title": "Introduce metrics, usage accounting, installation identity, and stats sink boundaries",
+      "priority": 86,
+      "risk": "high",
+      "category": "metrics-usage-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-storage/src/stats.rs",
+        "crates/astrbot-provider/src/chat.rs",
+        "crates/astrbot-agent/src/runner.rs",
+        "crates/astrbot-platform/src/manager.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-metrics/src/lib.rs",
+        "crates/astrbot-metrics/src/event.rs",
+        "crates/astrbot-metrics/src/usage.rs",
+        "crates/astrbot-metrics/src/sink.rs"
+      ],
+      "verification": "cargo test -p astrbot-metrics && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-087",
+      "title": "Define tool output reference, citation extraction, and route-independent refs boundaries",
+      "priority": 87,
+      "risk": "medium",
+      "category": "tool-reference-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-tool/src",
+        "crates/astrbot-agent/src/tool_loop.rs",
+        "crates/astrbot-web/src/routes.rs",
+        "crates/astrbot-storage/src/conversation.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-tool/src/reference.rs",
+        "crates/astrbot-agent/src/references.rs",
+        "crates/astrbot-storage/src/conversation_refs.rs",
+        "crates/astrbot-web/src/reference.rs"
+      ],
+      "verification": "cargo test -p astrbot-tool && cargo test -p astrbot-agent && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-088",
+      "title": "Split platform core contracts, build config, recording sink, and validation helpers",
+      "priority": 88,
+      "risk": "medium",
+      "category": "platform-core-contract-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/core.rs",
+        "crates/astrbot-platform/src/built.rs",
+        "crates/astrbot-platform/src/registry.rs",
+        "crates/astrbot-platform/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "core/mod.rs",
+        "core/adapter.rs",
+        "core/config.rs",
+        "core/build_context.rs",
+        "core/recording.rs",
+        "core/validation.rs"
+      ],
+      "verification": "cargo test -p astrbot-platform && cargo clippy -p astrbot-platform -- -D warnings && cargo test --workspace"
+    },
+    {
+      "id": "TASK-089",
+      "title": "Separate agent request envelope, decorator chain, and context source ports",
+      "priority": 89,
+      "risk": "medium",
+      "category": "agent-request-decoration-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src/request_decorator.rs",
+        "crates/astrbot-agent/src/runner.rs",
+        "crates/astrbot-agent/src/multimodal",
+        "crates/astrbot-pipeline/src/stages/process.rs"
+      ],
+      "suggested_modules": [
+        "request/mod.rs",
+        "request/envelope.rs",
+        "request/decorator.rs",
+        "request/ports.rs",
+        "request/context.rs",
+        "request/composer.rs"
+      ],
+      "verification": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
+    },
+    {
+      "id": "TASK-090",
+      "title": "Split agent, MCP, and tool crate tests by behavior boundary",
+      "priority": 90,
+      "risk": "low",
+      "category": "agent-mcp-tool-test-boundary",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src/tests.rs",
+        "crates/astrbot-mcp/src/tests.rs",
+        "crates/astrbot-tool/src/tests.rs"
+      ],
+      "suggested_modules": [
+        "crates/astrbot-agent/src/tests/{request_decorator,context,runner,multimodal}.rs",
+        "crates/astrbot-mcp/src/tests/{config,tools,resources,prompts,sampling,elicitation,roots}.rs",
+        "crates/astrbot-tool/src/tests/{catalog,schema,commands,conflicts}.rs"
+      ],
+      "verification": "cargo test -p astrbot-agent && cargo test -p astrbot-mcp && cargo test -p astrbot-tool && cargo clippy --workspace -- -D warnings"
+    }
+  ],
+  "must_preserve": [
+    "Public re-exports remain compatible during first split pass.",
+    "Runtime, CLI, Dashboard, and HTTP layers must keep entering providers/platforms through registry and manager boundaries.",
+    "No provider/platform parity feature should be added in the same commit as a broad module split.",
+    "Each split must be validated by package-level tests before the next split starts."
+  ]
+}

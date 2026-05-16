@@ -1,7 +1,7 @@
 {
   "id": "TASK-011",
   "title": "Split large integration test files by behavior area",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "testability",
   "description": "Reduce test-file coupling so future behavior changes can run targeted package tests without editing broad integration files.",
@@ -38,5 +38,30 @@
     ],
     "verification_command": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo test -p astrbot-runtime"
   },
-  "risk": "low"
+  "risk": "low",
+  "completed_at": "2026-05-17T00:47:00+08:00",
+  "files_modified": [
+    "crates/astrbot-pipeline/tests/process_stage.rs",
+    "crates/astrbot-pipeline/tests/process_stage/support.rs",
+    "crates/astrbot-pipeline/tests/process_stage/error_policy.rs",
+    "crates/astrbot-pipeline/tests/process_stage/fallback.rs",
+    "crates/astrbot-pipeline/tests/process_stage/plugin_provider_request.rs",
+    "crates/astrbot-pipeline/tests/process_stage/provider_preference.rs",
+    "crates/astrbot-pipeline/tests/process_stage/quote_context.rs",
+    "crates/astrbot-pipeline/tests/process_stage/session_context.rs",
+    "crates/astrbot-platform/src/tests.rs",
+    "crates/astrbot-platform/src/tests/mod.rs",
+    "crates/astrbot-platform/src/tests/registry.rs",
+    "crates/astrbot-platform/src/tests/manager.rs",
+    "crates/astrbot-platform/src/tests/webchat.rs",
+    "crates/astrbot-platform/src/tests/onebot.rs",
+    "crates/astrbot-platform/src/tests/console.rs",
+    "crates/astrbot-platform/src/tests/sink.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-runtime"
+  ]
 }

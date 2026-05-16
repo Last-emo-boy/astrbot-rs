@@ -7,16 +7,16 @@
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 39,
-    "pending_tasks": 51,
+    "completed_tasks": 40,
+    "pending_tasks": 50,
     "blocked_tasks": 0
   },
   "execution": {
     "reflection_rounds": 53,
-    "current_task_id": "M7-R36-event-bus-routing-boundary",
+    "current_task_id": "TASK-011",
     "next_task": "TASK-041"
   },
-  "latest_update": "Post-TASK-040 additional decoupling audit recorded TASK-088 through TASK-090 for platform core contracts, agent request decoration, and agent/MCP/tool test boundaries.",
+  "latest_update": "TASK-011 split large pipeline and platform test files by behavior area; runtime tests already used a module layout. Next pending task is TASK-041.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

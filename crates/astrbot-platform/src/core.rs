@@ -1,7 +1,7 @@
+use astrbot_conversation::{ConversationMessageRecord, PlatformMessageHistoryService};
 use astrbot_core::{
     AstrbotError, MessageChain, MessageEvent, MessageSession, MessageSink, MessageStream, Result,
 };
-use astrbot_storage::{ConversationHistoryRepository, ConversationMessageRecord};
 use async_trait::async_trait;
 use tokio::sync::{Mutex, mpsc};
 pub const CONSOLE_PLATFORM_TYPE: &str = "console";
@@ -140,7 +140,7 @@ impl MessageRecorder for RecordingSink {
 }
 
 #[async_trait]
-impl ConversationHistoryRepository for RecordingSink {
+impl PlatformMessageHistoryService for RecordingSink {
     async fn append_message(&self, record: ConversationMessageRecord) -> Result<()> {
         self.send(&record.session, record.chain).await
     }

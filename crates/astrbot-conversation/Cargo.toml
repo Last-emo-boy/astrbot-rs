@@ -1,13 +1,13 @@
 [package]
-name = "astrbot-platform"
+name = "astrbot-conversation"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-astrbot-conversation = { path = "../astrbot-conversation" }
 astrbot-core = { path = "../astrbot-core" }
-astrbot-observability = { path = "../astrbot-observability" }
+astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
-sha1.workspace = true
+
+[dev-dependencies]
 tokio.workspace = true

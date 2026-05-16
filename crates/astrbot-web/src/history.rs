@@ -1,4 +1,4 @@
-use astrbot_storage::ConversationMessageRecord;
+use astrbot_conversation::ConversationMessageRecord;
 
 use crate::WebChatMessagesResponse;
 use crate::message_parts::webchat_message_response_from_chain;

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use astrbot_conversation::PlatformMessageHistoryService;
 use astrbot_core::{AstrbotError, MessageChain, MessageEvent, Result};
-use astrbot_storage::ConversationHistoryRepository;
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
@@ -18,6 +18,7 @@ pub struct WebChatPlatform {
     name: String,
     event_sender: mpsc::Sender<MessageEvent>,
     sink: Arc<RecordingSink>,
+    history: Arc<dyn PlatformMessageHistoryService>,
     event_counter: AtomicU64,
 }
 
@@ -36,6 +37,7 @@ impl WebChatPlatform {
             id: id.into(),
             name: name.into(),
             event_sender,
+            history: sink.clone(),
             sink,
             event_counter: AtomicU64::new(1),
         }
@@ -98,8 +100,8 @@ impl WebChatPlatform {
         self.sink.clone()
     }
 
-    pub fn conversation_history(&self) -> Arc<dyn ConversationHistoryRepository> {
-        self.sink.clone()
+    pub fn conversation_history(&self) -> Arc<dyn PlatformMessageHistoryService> {
+        self.history.clone()
     }
 
     pub async fn sent_messages(&self) -> Vec<SentMessage> {

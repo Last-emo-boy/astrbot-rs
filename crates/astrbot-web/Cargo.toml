@@ -5,11 +5,11 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-conversation = { path = "../astrbot-conversation" }
 astrbot-core = { path = "../astrbot-core" }
 astrbot-platform = { path = "../astrbot-platform" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
-astrbot-storage = { path = "../astrbot-storage" }
 axum.workspace = true
 serde.workspace = true
 tokio.workspace = true

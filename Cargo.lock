@@ -34,6 +34,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "astrbot-conversation"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "astrbot-storage",
+ "async-trait",
+ "tokio",
+]
+
+[[package]]
 name = "astrbot-core"
 version = "0.1.0"
 dependencies = [
@@ -91,9 +101,9 @@ dependencies = [
 name = "astrbot-platform"
 version = "0.1.0"
 dependencies = [
+ "astrbot-conversation",
  "astrbot-core",
  "astrbot-observability",
- "astrbot-storage",
  "async-trait",
  "sha1",
  "tokio",
@@ -174,12 +184,12 @@ dependencies = [
 name = "astrbot-web"
 version = "0.1.0"
 dependencies = [
+ "astrbot-conversation",
  "astrbot-core",
  "astrbot-platform",
  "astrbot-plugin",
  "astrbot-provider",
  "astrbot-runtime",
- "astrbot-storage",
  "async-trait",
  "axum",
  "reqwest",

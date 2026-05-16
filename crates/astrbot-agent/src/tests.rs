@@ -8,9 +8,10 @@ use astrbot_provider::{ChatProvider, ChatRequest, ChatResponse};
 use async_trait::async_trait;
 
 use crate::{
-    AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy, AgentPersona,
-    AgentProviderPreferencePort, AgentQuoteContextPort, AgentRunner, AgentSessionContextPort,
-    AgentTokenCounter, ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
+    AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy, AgentFeedbackEvent,
+    AgentFeedbackEventKind, AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort,
+    AgentRunOutcome, AgentRunner, AgentSessionContextPort, AgentTokenCounter,
+    ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
     ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
     ContextWindowRequestDecorator, NoopContextCompressor, PersonaPromptDecorator,
     ProviderPreferenceRequestDecorator, ProviderRequestDecorator, QuoteContextRequestDecorator,
@@ -214,6 +215,24 @@ impl ChatProvider for CapturingProvider {
             request.session_id, request.prompt
         )))
     }
+}
+
+#[test]
+fn agent_run_outcome_can_carry_feedback_without_final_result() {
+    let outcome = AgentRunOutcome::continue_without_result()
+        .with_feedback_event(AgentFeedbackEvent::streaming_delta("partial"))
+        .with_feedback_events([AgentFeedbackEvent::tool_call("Calling tool: search")]);
+
+    assert!(outcome.result().is_none());
+    assert_eq!(outcome.feedback_events().len(), 2);
+    assert_eq!(
+        outcome.feedback_events()[0].kind,
+        AgentFeedbackEventKind::StreamingDelta
+    );
+
+    let (result, feedback_events) = outcome.into_parts();
+    assert!(result.is_none());
+    assert_eq!(feedback_events.len(), 2);
 }
 
 #[tokio::test]

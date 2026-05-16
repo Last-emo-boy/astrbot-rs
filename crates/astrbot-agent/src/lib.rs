@@ -1,5 +1,6 @@
 mod context;
 mod fallback;
+mod feedback;
 mod multimodal;
 mod persona;
 mod request_decorator;
@@ -13,6 +14,13 @@ pub use context::{
     ContextWindowRequestDecorator, NoopContextCompressor,
 };
 pub use fallback::AgentFallbackPolicy;
+pub use feedback::{
+    AgentFeedbackEvent, AgentFeedbackEventKind, AgentStopSignal, AgentStopSignalPolicy,
+    AgentStopSignalPort, AgentStopSignalReason, AgentStreamingFeedbackPolicy, EventStopSignalPort,
+    LiveVoiceFeedbackBridge, LiveVoiceFeedbackConfig, StaticStopSignalPort, ToolCallStatus,
+    ToolResultStatus, ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent,
+    VoiceFeedbackMode,
+};
 pub use multimodal::{
     ChatProviderImageCaptioner, ImageCaptionConfig, ImageCaptionRequest,
     ImageCaptionRequestDecorator, ImageCaptioner, ModalityFallbackPolicy, ModalityFilterOutcome,

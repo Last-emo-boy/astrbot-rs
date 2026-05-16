@@ -5,32 +5,62 @@ use astrbot_provider::{ChatProvider, ChatRequest};
 use async_trait::async_trait;
 
 use crate::{
-    AgentFallbackPolicy, NoopProviderRequestDecorator, ProviderRequestDecorator,
-    ProviderRequestEnvelope,
+    AgentFallbackPolicy, AgentFeedbackEvent, NoopProviderRequestDecorator,
+    ProviderRequestDecorator, ProviderRequestEnvelope,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AgentRunOutcome {
     result: Option<MessageEventResult>,
+    feedback_events: Vec<AgentFeedbackEvent>,
 }
 
 impl AgentRunOutcome {
     pub fn continue_without_result() -> Self {
-        Self { result: None }
+        Self {
+            result: None,
+            feedback_events: Vec::new(),
+        }
     }
 
     pub fn with_result(result: MessageEventResult) -> Self {
         Self {
             result: Some(result),
+            feedback_events: Vec::new(),
         }
+    }
+
+    pub fn with_feedback_event(mut self, event: AgentFeedbackEvent) -> Self {
+        self.feedback_events.push(event);
+        self
+    }
+
+    pub fn with_feedback_events<I>(mut self, events: I) -> Self
+    where
+        I: IntoIterator<Item = AgentFeedbackEvent>,
+    {
+        self.feedback_events.extend(events);
+        self
     }
 
     pub fn result(&self) -> Option<&MessageEventResult> {
         self.result.as_ref()
     }
 
+    pub fn feedback_events(&self) -> &[AgentFeedbackEvent] {
+        &self.feedback_events
+    }
+
     pub fn into_result(self) -> Option<MessageEventResult> {
         self.result
+    }
+
+    pub fn into_feedback_events(self) -> Vec<AgentFeedbackEvent> {
+        self.feedback_events
+    }
+
+    pub fn into_parts(self) -> (Option<MessageEventResult>, Vec<AgentFeedbackEvent>) {
+        (self.result, self.feedback_events)
     }
 }
 

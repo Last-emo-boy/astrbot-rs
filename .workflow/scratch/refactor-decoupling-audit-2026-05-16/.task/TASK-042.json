@@ -1,7 +1,7 @@
 {
   "id": "TASK-042",
   "title": "Define provider selection state and change notification boundary",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-selection-boundary",
   "description": "AstrBot ProviderManager owns selected/default provider state and change callbacks per capability. Rust currently has session provider preference and provider manager routing, but no explicit provider-selection state or change-event boundary for dashboard/runtime updates. Define it before provider management APIs mutate manager internals directly.",
@@ -42,5 +42,22 @@
     ],
     "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-runtime && cargo test --workspace"
   },
+  "completed_at": "2026-05-17T01:25:04+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/manager.rs",
+    "crates/astrbot-provider/src/manager/hooks.rs",
+    "crates/astrbot-provider/src/selection.rs",
+    "crates/astrbot-runtime/src/assembly.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/provider_selection.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-provider",
+    "cargo test -p astrbot-runtime",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "medium"
 }

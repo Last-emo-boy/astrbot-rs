@@ -8,6 +8,7 @@ mod platform_config;
 mod policy_config;
 mod ports;
 mod provider_config;
+mod provider_selection;
 
 pub use config::{
     ConfigFieldSchema, ConfigUiControl, ConfigUiField, ConfigUiGroup, ConfigUiMetadata,
@@ -31,6 +32,7 @@ pub use provider_config::{
     RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeRerankProviderConfig,
     RuntimeSpeechToTextProviderConfig, RuntimeTextToSpeechProviderConfig,
 };
+pub use provider_selection::RuntimeProviderSelectionSnapshot;
 
 #[cfg(test)]
 mod tests;

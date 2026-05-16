@@ -23,6 +23,7 @@ mod openai_tts;
 mod protocol;
 mod registry;
 mod rerank;
+mod selection;
 mod speech;
 mod streaming;
 mod tts;
@@ -62,7 +63,10 @@ pub use gemini::{GeminiConfig, GeminiProvider};
 pub use gemini_embedding::{GeminiEmbeddingConfig, GeminiEmbeddingProvider};
 pub use gemini_tts::{GeminiTextToSpeechConfig, GeminiTextToSpeechProvider};
 pub use gsvi_tts::{GsviTextToSpeechConfig, GsviTextToSpeechProvider};
-pub use manager::{ProviderManager, ProviderManagerConfigSet};
+pub use manager::{
+    NoopProviderSelectionHook, ProviderManager, ProviderManagerConfigSet, ProviderSelectionChanged,
+    ProviderSelectionHook,
+};
 pub use minimax_tts::{MiniMaxTextToSpeechConfig, MiniMaxTextToSpeechProvider};
 pub use mock::{
     MockChatProvider, MockEmbeddingProvider, MockRerankProvider, MockSpeechToTextProvider,
@@ -74,6 +78,7 @@ pub use openai_stt::{OpenAiSpeechToTextConfig, OpenAiSpeechToTextProvider};
 pub use openai_tts::{OpenAiTextToSpeechConfig, OpenAiTextToSpeechProvider};
 pub use registry::ProviderRegistry;
 pub use rerank::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
+pub use selection::{ProviderSelection, ProviderSelectionScope, ProviderSelectionState};
 pub use speech::{SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
 pub use tts::{TextToSpeechProvider, TextToSpeechRequest, TextToSpeechResponse};
 pub use vllm_rerank::{VllmRerankConfig, VllmRerankProvider};

@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-042","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-042 from the scratch refactor plan. Define provider selection state and change notification boundaries, keep ProviderManager routing compatible, add runtime provider selection wiring, update TASK-042 status and summary, run cargo test -p astrbot-provider && cargo test -p astrbot-runtime && cargo test --workspace. Do not stage or commit. Treat .workflow/state.json existing modification as unrelated and do not edit it."

@@ -6,14 +6,12 @@ use astrbot_plugin::{
     CommandFilter, HandlerMetadata, PluginControl, PluginEventType, PluginHandler, PluginRegistry,
     RegisteredHandler,
 };
-use astrbot_provider::{
-    ChatProviderConfig, EmbeddingProviderConfig, ProviderManager, ProviderManagerConfigSet,
-    ProviderRegistry, RerankProviderConfig, SpeechToTextProviderConfig, TextToSpeechProviderConfig,
-};
+use astrbot_provider::{ProviderManager, ProviderRegistry};
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
 use crate::RuntimeConfig;
+use crate::provider_selection::provider_manager_config_set;
 pub(crate) fn build_platform_manager(
     config: &RuntimeConfig,
     event_tx: mpsc::Sender<MessageEvent>,
@@ -35,46 +33,7 @@ pub(crate) fn build_platform_manager(
 pub(crate) fn build_provider_manager(config: &RuntimeConfig) -> Result<ProviderManager> {
     let registry = ProviderRegistry::with_builtin_providers();
 
-    ProviderManager::from_configs(
-        &registry,
-        ProviderManagerConfigSet {
-            chat_providers: config
-                .chat_providers
-                .clone()
-                .into_iter()
-                .map(ChatProviderConfig::from)
-                .collect(),
-            default_chat_provider_id: Some(config.default_chat_provider_id.clone()),
-            speech_to_text_providers: config
-                .speech_to_text_providers
-                .clone()
-                .into_iter()
-                .map(SpeechToTextProviderConfig::from)
-                .collect(),
-            default_speech_to_text_provider_id: config.default_speech_to_text_provider_id.clone(),
-            text_to_speech_providers: config
-                .text_to_speech_providers
-                .clone()
-                .into_iter()
-                .map(TextToSpeechProviderConfig::from)
-                .collect(),
-            default_text_to_speech_provider_id: config.default_text_to_speech_provider_id.clone(),
-            embedding_providers: config
-                .embedding_providers
-                .clone()
-                .into_iter()
-                .map(EmbeddingProviderConfig::from)
-                .collect(),
-            default_embedding_provider_id: config.default_embedding_provider_id.clone(),
-            rerank_providers: config
-                .rerank_providers
-                .clone()
-                .into_iter()
-                .map(RerankProviderConfig::from)
-                .collect(),
-            default_rerank_provider_id: config.default_rerank_provider_id.clone(),
-        },
-    )
+    ProviderManager::from_configs(&registry, provider_manager_config_set(config))
 }
 
 pub(crate) fn build_plugin_registry(config: &RuntimeConfig) -> Arc<PluginRegistry> {

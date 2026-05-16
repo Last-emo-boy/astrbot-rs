@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-058","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-058 from the scratch refactor plan. Define dashboard auth, OpenAPI API-key scope, API-key repository, and route middleware boundaries while preserving the existing default management router behavior; update TASK-058 status and summary; run cargo fmt --all, cargo test -p astrbot-storage, cargo test -p astrbot-web, cargo clippy --workspace -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

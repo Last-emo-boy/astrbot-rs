@@ -1,7 +1,7 @@
 {
   "id": "TASK-058",
   "title": "Define dashboard and OpenAPI auth, API-key scope, and route middleware boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "management-auth-api-key-boundary",
   "description": "AstrBot dashboard auth, JWT login, API key CRUD, OpenAPI scopes, and route middleware are separate concerns from dashboard status DTOs. Rust should add typed auth and API-key ports before management mutations or external OpenAPI routes grow.",
@@ -42,5 +42,31 @@
     ],
     "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T04:08:26+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-storage/src/api_key.rs",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/auth.rs",
+    "crates/astrbot-web/src/management/api_key.rs",
+    "crates/astrbot-web/src/server.rs",
+    "crates/astrbot-web/src/tests/management.rs",
+    "crates/astrbot-web/src/tests/support.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-058.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-058-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-058/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-storage",
+    "cargo test -p astrbot-web",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

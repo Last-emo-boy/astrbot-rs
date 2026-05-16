@@ -13,12 +13,53 @@ use async_trait::async_trait;
 use axum::http::StatusCode;
 use tokio::sync::mpsc;
 
-use crate::{ManagementApiState, ManagementStatusResponse, management_router};
+use crate::{
+    DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementStatusResponse,
+    management_router, management_router_with_auth,
+};
 
-use super::support::{get, response_json};
+use super::support::{get, get_with_bearer, response_json};
 
 #[tokio::test]
 async fn management_status_reads_provider_platform_and_plugin_facades() {
+    let router = management_router(management_state_fixture());
+
+    let response = get(router, "/api/management/status").await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: ManagementStatusResponse = response_json(response).await;
+    assert_eq!(payload.providers.chat_provider_count, 1);
+    assert_eq!(
+        payload.providers.default_chat_provider_id.as_deref(),
+        Some("mock-provider")
+    );
+    assert_eq!(payload.platforms.platform_count, 2);
+    assert_eq!(
+        payload.platforms.platform_ids,
+        vec!["mock-platform".to_string(), "webchat".to_string()]
+    );
+    assert_eq!(payload.plugins.handler_count, 1);
+    assert_eq!(payload.plugins.handlers[0].plugin_name, "builtin");
+    assert_eq!(payload.plugins.handlers[0].handler_name, "ping");
+}
+
+#[tokio::test]
+async fn management_router_with_auth_requires_bearer_token() {
+    let router = management_router_with_auth(
+        management_state_fixture(),
+        ManagementAuthState::new(DashboardAuthPolicy::new("secret")),
+    );
+
+    let unauthorized = get(router.clone(), "/api/management/status").await;
+    assert_eq!(unauthorized.status(), StatusCode::UNAUTHORIZED);
+
+    let authorized = get_with_bearer(router, "/api/management/status", "secret").await;
+    assert_eq!(authorized.status(), StatusCode::OK);
+    let payload: ManagementStatusResponse = response_json(authorized).await;
+    assert_eq!(payload.providers.chat_provider_count, 1);
+}
+
+fn management_state_fixture() -> ManagementApiState {
     let provider_manager = ProviderManager::from_configs(
         &ProviderRegistry::with_builtin_providers(),
         ProviderManagerConfigSet {
@@ -46,29 +87,7 @@ async fn management_status_reads_provider_platform_and_plugin_facades() {
         Arc::new(NoopPluginHandler),
     ));
 
-    let router = management_router(ManagementApiState::from_managers(
-        &provider_manager,
-        &platform_manager,
-        &plugin_registry,
-    ));
-
-    let response = get(router, "/api/management/status").await;
-
-    assert_eq!(response.status(), StatusCode::OK);
-    let payload: ManagementStatusResponse = response_json(response).await;
-    assert_eq!(payload.providers.chat_provider_count, 1);
-    assert_eq!(
-        payload.providers.default_chat_provider_id.as_deref(),
-        Some("mock-provider")
-    );
-    assert_eq!(payload.platforms.platform_count, 2);
-    assert_eq!(
-        payload.platforms.platform_ids,
-        vec!["mock-platform".to_string(), "webchat".to_string()]
-    );
-    assert_eq!(payload.plugins.handler_count, 1);
-    assert_eq!(payload.plugins.handlers[0].plugin_name, "builtin");
-    assert_eq!(payload.plugins.handlers[0].handler_name, "ping");
+    ManagementApiState::from_managers(&provider_manager, &platform_manager, &plugin_registry)
 }
 
 struct NoopPluginHandler;

@@ -1,3 +1,4 @@
+mod api_key;
 mod attachment;
 pub mod backup;
 mod config_snapshot;
@@ -10,6 +11,7 @@ mod sqlite;
 mod stats;
 mod temp_artifact;
 
+pub use api_key::{ApiKeyRecord, ApiKeyRepository, InMemoryApiKeyRepository};
 pub use attachment::{AttachmentRecord, AttachmentRepository, InMemoryAttachmentRepository};
 pub use backup::{
     BACKUP_MANIFEST_VERSION, BackupArchiveEntry, BackupDirectoryStat, BackupExportPackage,

@@ -1,3 +1,5 @@
+mod api_key;
+mod auth;
 mod platforms;
 mod plugins;
 mod providers;
@@ -6,8 +8,16 @@ mod status;
 use astrbot_platform::PlatformManager;
 use astrbot_plugin::PluginRegistry;
 use astrbot_provider::ProviderManager;
-use axum::{Json, Router, extract::State, routing::get};
+use axum::{Json, Router, extract::State, middleware, routing::get};
 
+pub use api_key::{
+    ApiKeyAuthDecision, ApiKeyIssuer, ApiKeyRejectionReason, IssuedApiKey, OpenApiScope,
+    OpenApiScopeSet, PresentedApiKey, authorize_api_key, extract_presented_api_key, hash_api_key,
+};
+pub use auth::{
+    AuthRejectionReason, DashboardAuthDecision, DashboardAuthPolicy, ManagementAuthState,
+    extract_bearer_token,
+};
 pub use platforms::PlatformManagementResponse;
 pub use plugins::{PluginHandlerManagementResponse, PluginManagementResponse};
 pub use providers::ProviderManagementResponse;
@@ -67,12 +77,24 @@ impl ManagementApiState {
 }
 
 pub fn management_router(state: ManagementApiState) -> Router {
+    management_routes().with_state(state)
+}
+
+pub fn management_router_with_auth(state: ManagementApiState, auth: ManagementAuthState) -> Router {
+    management_routes()
+        .route_layer(middleware::from_fn_with_state(
+            auth,
+            auth::require_management_auth,
+        ))
+        .with_state(state)
+}
+
+fn management_routes() -> Router<ManagementApiState> {
     Router::new()
         .route("/api/management/status", get(status))
         .route("/api/management/providers", get(providers))
         .route("/api/management/platforms", get(platforms))
         .route("/api/management/plugins", get(plugins))
-        .with_state(state)
 }
 
 async fn status(State(state): State<ManagementApiState>) -> Json<ManagementStatusResponse> {

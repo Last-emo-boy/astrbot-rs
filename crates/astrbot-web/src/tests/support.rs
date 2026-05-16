@@ -57,6 +57,20 @@ pub(super) async fn get(router: Router, uri: &str) -> Response<Body> {
         .expect("router should respond")
 }
 
+pub(super) async fn get_with_bearer(router: Router, uri: &str, token: &str) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(uri)
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
 pub(super) async fn response_json<T>(response: Response<Body>) -> T
 where
     T: DeserializeOwned,

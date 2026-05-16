@@ -139,6 +139,19 @@ impl StorageSchema {
                         StorageColumn::new("note", StorageColumnType::Text).nullable(),
                     ],
                 ),
+                StorageTable::new(
+                    "api_keys",
+                    vec![
+                        StorageColumn::new("key_id", StorageColumnType::Text).primary_key(),
+                        StorageColumn::new("name", StorageColumnType::Text),
+                        StorageColumn::new("key_hash", StorageColumnType::Text).unique(),
+                        StorageColumn::new("key_prefix", StorageColumnType::Text),
+                        StorageColumn::new("scopes", StorageColumnType::Json).nullable(),
+                        StorageColumn::new("created_by", StorageColumnType::Text),
+                        StorageColumn::new("expires_at", StorageColumnType::Timestamp).nullable(),
+                        StorageColumn::new("revoked_at", StorageColumnType::Timestamp).nullable(),
+                    ],
+                ),
             ],
         )
     }
@@ -352,6 +365,7 @@ mod tests {
         assert!(schema.table("provider_preferences").is_some());
         assert!(schema.table("attachments").is_some());
         assert!(schema.table("config_snapshots").is_some());
+        assert!(schema.table("api_keys").is_some());
     }
 
     #[test]

@@ -234,11 +234,13 @@ dependencies = [
  "astrbot-plugin",
  "astrbot-provider",
  "astrbot-runtime",
+ "astrbot-storage",
  "async-trait",
  "axum",
  "reqwest",
  "serde",
  "serde_json",
+ "sha1",
  "tokio",
  "tower",
 ]

@@ -30,6 +30,7 @@ mod dependency;
 mod filters;
 mod loader;
 mod manifest_sdk;
+mod market;
 mod registry;
 mod sandbox;
 mod tool;

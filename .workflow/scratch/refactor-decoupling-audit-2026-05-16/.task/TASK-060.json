@@ -1,7 +1,7 @@
 {
   "id": "TASK-060",
   "title": "Define plugin marketplace, update, package cache, and install source boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "plugin-market-update-boundary",
   "description": "AstrBot plugin routes and updater separate market sources, MD5/cache validation, package download/unzip, compatibility checks, install/update/uninstall, and readme/changelog serving. Rust has loader and dependency boundaries, but not marketplace/update source boundaries yet.",
@@ -42,5 +42,30 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T07:25:40+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-plugin/Cargo.toml",
+    "crates/astrbot-plugin/src/lib.rs",
+    "crates/astrbot-plugin/src/market/mod.rs",
+    "crates/astrbot-plugin/src/market/update.rs",
+    "crates/astrbot-plugin/src/tests/mod.rs",
+    "crates/astrbot-plugin/src/tests/market.rs",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/plugin_market.rs",
+    "crates/astrbot-web/src/tests/management.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-060.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-060-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-060/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-plugin",
+    "cargo test -p astrbot-web",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

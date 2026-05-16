@@ -3,7 +3,8 @@ use std::sync::Arc;
 use astrbot_core::{MessageChain, MessageEvent, Result};
 use astrbot_platform::{PlatformBuildContext, PlatformConfig, PlatformManager, PlatformRegistry};
 use astrbot_plugin::{
-    HandlerMetadata, PluginControl, PluginEventType, PluginHandler, PluginRegistry,
+    HandlerMetadata, PluginCompatibility, PluginControl, PluginEventType, PluginHandler,
+    PluginInstallSource, PluginMarketEntry, PluginPackageDescriptor, PluginRegistry,
     RegisteredHandler,
 };
 use astrbot_provider::{
@@ -17,7 +18,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementStatusResponse,
-    management_router, management_router_with_auth,
+    PluginMarketManagementState, management_router, management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -123,6 +124,63 @@ async fn management_config_apply_rejects_invalid_runtime_config() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
     let _ = std::fs::remove_file(path);
+}
+
+#[tokio::test]
+async fn management_plugin_market_routes_return_catalog_and_side_effect_free_plans() {
+    let market_entry = PluginMarketEntry::new("market-tools", "Market Tools", "0.3.0")
+        .with_package(
+            PluginPackageDescriptor::new(PluginInstallSource::archive(
+                "https://example.com/market-tools.zip",
+            ))
+            .with_checksum_md5("abc123"),
+        )
+        .with_compatibility(PluginCompatibility::compatible(">=0.1.0"));
+    let state = management_state_fixture()
+        .with_plugin_market(PluginMarketManagementState::new(vec![market_entry]));
+    let router = management_router(state);
+
+    let catalog_response = get(router.clone(), "/api/management/plugin-market").await;
+    assert_eq!(catalog_response.status(), StatusCode::OK);
+    let catalog: serde_json::Value = response_json(catalog_response).await;
+    assert_eq!(catalog["plugins"][0]["plugin_id"], "market_tools");
+    assert_eq!(catalog["plugins"][0]["package"]["checksum_md5"], "abc123");
+
+    let install_response = post_json(
+        router.clone(),
+        "/api/management/plugin-market/install-plan",
+        json!({ "plugin_id": "market_tools" }),
+    )
+    .await;
+    assert_eq!(install_response.status(), StatusCode::OK);
+    let install: serde_json::Value = response_json(install_response).await;
+    assert_eq!(install["plan"]["action"], "install");
+    assert_eq!(install["plan"]["requires_download"], true);
+    assert_eq!(install["plan"]["requires_unpack"], true);
+    assert_eq!(install["plan"]["requires_loader_reload"], true);
+
+    let update_response = post_json(
+        router.clone(),
+        "/api/management/plugin-market/update-plan",
+        json!({ "plugin_id": "market_tools" }),
+    )
+    .await;
+    assert_eq!(update_response.status(), StatusCode::OK);
+    let update: serde_json::Value = response_json(update_response).await;
+    assert_eq!(update["plan"]["action"], "update");
+    assert_eq!(update["plan"]["package"]["checksum_md5"], "abc123");
+
+    let uninstall_response = post_json(
+        router,
+        "/api/management/plugin-market/uninstall-plan",
+        json!({ "plugin_id": "market_tools", "delete_config": true }),
+    )
+    .await;
+    assert_eq!(uninstall_response.status(), StatusCode::OK);
+    let uninstall: serde_json::Value = response_json(uninstall_response).await;
+    assert_eq!(uninstall["plan"]["action"], "uninstall");
+    assert_eq!(uninstall["plan"]["requires_download"], false);
+    assert_eq!(uninstall["plan"]["delete_config"], true);
 }
 
 fn management_state_fixture() -> ManagementApiState {

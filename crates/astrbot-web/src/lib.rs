@@ -18,8 +18,10 @@ pub use management::{
     ManagementAuthState, ManagementConfigMutationRequest, ManagementConfigMutationResponse,
     ManagementConfigSchemaResponse, ManagementStatusResponse, OpenApiScope, OpenApiScopeSet,
     PlatformManagementResponse, PluginHandlerManagementResponse, PluginManagementResponse,
-    PresentedApiKey, ProviderManagementResponse, authorize_api_key, extract_bearer_token,
-    extract_presented_api_key, hash_api_key, management_router, management_router_with_auth,
+    PluginMarketCatalogResponse, PluginMarketManagementState, PluginMarketPlanRequest,
+    PluginMarketPlanResponse, PresentedApiKey, ProviderManagementResponse, authorize_api_key,
+    extract_bearer_token, extract_presented_api_key, hash_api_key, management_router,
+    management_router_with_auth,
 };
 pub use routes::webchat_router;
 pub use server::{

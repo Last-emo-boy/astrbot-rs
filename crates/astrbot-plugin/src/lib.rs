@@ -5,6 +5,7 @@ pub mod filter;
 mod handler;
 pub mod loader;
 pub mod manifest;
+pub mod market;
 mod registry;
 pub mod sandbox;
 pub mod sdk;
@@ -34,6 +35,12 @@ pub use loader::{
     plan_hot_reload,
 };
 pub use manifest::{PluginCapability, PluginManifest};
+pub use market::{
+    PluginCompatibility, PluginDocument, PluginDocumentFormat, PluginInstallPlan,
+    PluginInstallSource, PluginMarketAction, PluginMarketCache, PluginMarketEntry,
+    PluginMarketOperationPlan, PluginPackageDescriptor, PluginRegistrySource, PluginUninstallPlan,
+    PluginUpdatePlan,
+};
 pub use registry::PluginRegistry;
 pub use sandbox::{PluginPermission, SandboxProfile, SandboxRuntime, ToolCapability};
 pub use sdk::{PLUGIN_SDK_VERSION, PluginContext, PluginModule, PluginTestHarness};

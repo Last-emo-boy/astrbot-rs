@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-060","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-060 from the scratch refactor plan. Define plugin marketplace, update planning, package cache, install source, compatibility, readme/changelog, and dashboard plugin market DTO boundaries; update TASK-060 status and summary; run cargo fmt --all, cargo test -p astrbot-plugin, cargo test -p astrbot-web, cargo clippy --workspace -- -D warnings, and cargo fmt --all --check. Do not stage or commit .workflow/state.json."

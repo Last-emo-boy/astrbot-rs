@@ -1,5 +1,7 @@
 mod config_io;
+mod config_route;
 mod config_schema;
+mod config_service;
 mod lifecycle;
 mod message_loop;
 mod platform;

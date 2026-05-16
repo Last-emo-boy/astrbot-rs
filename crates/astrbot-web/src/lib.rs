@@ -15,7 +15,8 @@ pub use dto::{
 pub use management::{
     ApiKeyAuthDecision, ApiKeyIssuer, ApiKeyRejectionReason, AuthRejectionReason,
     DashboardAuthDecision, DashboardAuthPolicy, IssuedApiKey, ManagementApiState,
-    ManagementAuthState, ManagementStatusResponse, OpenApiScope, OpenApiScopeSet,
+    ManagementAuthState, ManagementConfigMutationRequest, ManagementConfigMutationResponse,
+    ManagementConfigSchemaResponse, ManagementStatusResponse, OpenApiScope, OpenApiScopeSet,
     PlatformManagementResponse, PluginHandlerManagementResponse, PluginManagementResponse,
     PresentedApiKey, ProviderManagementResponse, authorize_api_key, extract_bearer_token,
     extract_presented_api_key, hash_api_key, management_router, management_router_with_auth,

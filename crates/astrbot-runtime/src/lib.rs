@@ -1,6 +1,8 @@
 mod assembly;
 mod config;
 mod config_io;
+mod config_route;
+mod config_service;
 mod defaults;
 mod handle;
 mod path_config;
@@ -16,6 +18,11 @@ pub use config::{
     RuntimeConfigMigrationPlan, RuntimeConfigSchema, RuntimeEnvConfigSource, SecretValue,
     redact_optional_secret, runtime_config_from_env, runtime_config_migration_plan,
     runtime_config_schema, runtime_config_ui_metadata,
+};
+pub use config_route::{UmopConfigRoute, UmopConfigRoutePattern, UmopConfigRouter};
+pub use config_service::{
+    RuntimeConfigMutationPlan, RuntimeConfigReloadAction, RuntimeConfigService,
+    RuntimeConfigUpdatePreview, validate_runtime_config_value,
 };
 pub use handle::{AstrbotRuntime, RuntimeHandle};
 pub use path_config::{RuntimePathConfig, RuntimePathLayout};

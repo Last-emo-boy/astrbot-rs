@@ -1,10 +1,11 @@
+use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::RuntimeConfig;
 
 pub const RUNTIME_CONFIG_SCHEMA_VERSION: u16 = 1;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct RuntimeConfigSchema {
     pub version: u16,
     pub fields: Vec<ConfigFieldSchema>,
@@ -16,7 +17,7 @@ impl RuntimeConfigSchema {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct ConfigFieldSchema {
     pub path: &'static str,
     pub value_type: ConfigValueType,
@@ -24,7 +25,8 @@ pub struct ConfigFieldSchema {
     pub secret: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ConfigValueType {
     Bool,
     Integer,

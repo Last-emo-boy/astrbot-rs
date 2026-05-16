@@ -1,7 +1,7 @@
 {
   "id": "TASK-059",
   "title": "Separate dashboard config mutation, validation, UMOP routing, and restart/reload boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "management-config-mutation-boundary",
   "description": "AstrBot dashboard config APIs combine schema validation, file upload paths, provider/platform CRUD, multi-config routing, and lifecycle reload. Rust should add a management config service boundary before exposing mutable dashboard config APIs.",
@@ -42,5 +42,31 @@
     ],
     "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T04:22:10+08:00",
+  "files_modified": [
+    "crates/astrbot-runtime/src/config_route.rs",
+    "crates/astrbot-runtime/src/config_service.rs",
+    "crates/astrbot-runtime/src/config/schema.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/tests.rs",
+    "crates/astrbot-runtime/src/tests/config_route.rs",
+    "crates/astrbot-runtime/src/tests/config_service.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/config.rs",
+    "crates/astrbot-web/src/tests/management.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-059.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-059-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-059/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-runtime",
+    "cargo test -p astrbot-web",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

@@ -1,0 +1,2 @@
+id,skill_call,topic
+"TASK-049","$maestro-execute -y ""--dir .workflow/scratch/refactor-decoupling-audit-2026-05-16 --method cli""","Execute only TASK-049 from the scratch refactor plan. Define platform API client, retry/rate-limit, and rich-event normalization boundaries; keep adapter transport, API clients, and event normalization independently testable; update TASK-049 status and summary; run cargo fmt --all --check, cargo test -p astrbot-platform, cargo test --workspace, and cargo clippy --workspace -- -D warnings. Do not stage or commit .workflow/state.json."

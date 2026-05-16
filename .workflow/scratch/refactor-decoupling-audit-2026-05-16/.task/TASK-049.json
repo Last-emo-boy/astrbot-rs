@@ -1,7 +1,7 @@
 {
   "id": "TASK-049",
   "title": "Define platform API client, retry, rate-limit, and rich-event normalization boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "platform-api-client-boundary",
   "description": "TASK-023 covers transport/session/media lifecycle, but AstrBot's richer platform adapters also carry API clients, retry wrappers, rate-limit handling, WebSocket client errors, and platform-specific rich event normalization. Rust should keep those concerns separate from adapter transport and unified MessageEvent conversion.",
@@ -44,5 +44,22 @@
     ],
     "verification_command": "cargo test -p astrbot-platform && cargo test --workspace && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T02:40:13+08:00",
+  "files_modified": [
+    "crates/astrbot-platform/src/adapters/common/api_client.rs",
+    "crates/astrbot-platform/src/adapters/common/retry.rs",
+    "crates/astrbot-platform/src/adapters/common/rich_event.rs",
+    "crates/astrbot-platform/src/adapters/common/mod.rs",
+    "crates/astrbot-platform/src/adapters/mod.rs",
+    "crates/astrbot-platform/src/lib.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-049.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-platform",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "medium"
 }

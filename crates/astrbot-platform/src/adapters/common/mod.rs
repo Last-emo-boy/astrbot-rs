@@ -1,10 +1,17 @@
+mod api_client;
 mod long_connection;
 mod media;
 mod queue;
+mod retry;
+mod rich_event;
 mod security;
 mod transport;
 mod webhook;
 
+pub use api_client::{
+    PlatformApiClient, PlatformApiError, PlatformApiErrorKind, PlatformApiMethod,
+    PlatformApiRequest, PlatformApiResponse,
+};
 pub use long_connection::{
     LongConnectionClient, LongConnectionCommand, LongConnectionEndpoint, LongConnectionFrame,
     LongConnectionReconnectPolicy, LongConnectionState, LongConnectionWaiters,
@@ -16,6 +23,12 @@ pub use media::{
 pub use queue::{
     InMemoryPlatformQueueStore, PendingWebhookResponse, PlatformCallbackQueue,
     PlatformQueueDirection, PlatformQueueItem, PlatformQueueStats,
+};
+pub use retry::{
+    PlatformRateLimit, PlatformRetryDecision, PlatformRetryPolicy, PlatformRetryReason,
+};
+pub use rich_event::{
+    RichEventMedia, RichEventPart, RichEventReaction, RichEventThread, RichPlatformEvent,
 };
 pub use security::{
     DecodedWebhookPayload, EncryptedWebhookEnvelope, PlainWebhookPayloadCodec,

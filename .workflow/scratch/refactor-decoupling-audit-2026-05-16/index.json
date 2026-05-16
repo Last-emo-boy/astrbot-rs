@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T01:35:36+08:00",
+  "updated_at": "2026-05-17T01:45:16+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 43,
-    "pending_tasks": 47,
+    "completed_tasks": 44,
+    "pending_tasks": 46,
     "blocked_tasks": 0
   },
   "execution": {
     "reflection_rounds": 53,
-    "current_task_id": "TASK-043",
-    "next_task": "TASK-044"
+    "current_task_id": "TASK-044",
+    "next_task": "TASK-045"
   },
-  "latest_update": "TASK-043 introduced the astrbot-conversation crate and routed WebChat history through a conversation-domain history service while preserving pipeline session context boundaries. Next pending task is TASK-044.",
+  "latest_update": "TASK-044 introduced astrbot-persona and astrbot-skill crates for persona resolution, skill activation, and prompt rendering boundaries while keeping ProcessStage and plugin SDK free of persona/skill prompt policy. Next pending task is TASK-045.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

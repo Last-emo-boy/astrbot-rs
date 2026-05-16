@@ -1,7 +1,7 @@
 {
   "id": "TASK-044",
   "title": "Define persona, skill catalog, and prompt composition boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "persona-skill-boundary",
   "description": "AstrBot has dedicated PersonaManager and SkillManager surfaces that feed main-agent prompt composition. Rust should avoid embedding persona resolution, skill activation, and prompt rendering directly into ProcessStage or plugin SDK code when main-agent parity starts.",
@@ -43,5 +43,26 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-pipeline && cargo test --workspace"
   },
+  "completed_at": "2026-05-17T01:45:16+08:00",
+  "files_modified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/astrbot-persona/Cargo.toml",
+    "crates/astrbot-persona/src/lib.rs",
+    "crates/astrbot-persona/src/manager.rs",
+    "crates/astrbot-skill/Cargo.toml",
+    "crates/astrbot-skill/src/lib.rs",
+    "crates/astrbot-skill/src/catalog.rs",
+    "crates/astrbot-skill/src/prompt.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-persona",
+    "cargo test -p astrbot-skill",
+    "cargo test -p astrbot-plugin",
+    "cargo test -p astrbot-pipeline",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "high"
 }

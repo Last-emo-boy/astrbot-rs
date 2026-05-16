@@ -1,0 +1,12 @@
+[package]
+name = "astrbot-persona"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+astrbot-core = { path = "../astrbot-core" }
+async-trait.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

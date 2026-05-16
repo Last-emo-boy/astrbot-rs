@@ -8,7 +8,10 @@ rust-version.workspace = true
 astrbot-core = { path = "../astrbot-core" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

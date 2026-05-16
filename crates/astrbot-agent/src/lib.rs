@@ -4,6 +4,7 @@ mod multimodal;
 mod persona;
 mod request_decorator;
 mod runner;
+mod subagent;
 mod tool_loop;
 
 pub use context::{
@@ -26,6 +27,11 @@ pub use request_decorator::{
     QuoteContextRequestDecorator, SessionContextRequestDecorator,
 };
 pub use runner::{AgentRunOutcome, AgentRunner, ChatAgentRunner};
+pub use subagent::{
+    HandoffRegistration, HandoffToolBridge, HandoffToolSpec, InMemoryHandoffRegistry,
+    ResolvedSubagent, StaticSubagentResolver, SubagentConfig, SubagentConfigSource,
+    SubagentOrchestrator, SubagentPersonaProfile, SubagentResolver,
+};
 pub use tool_loop::{
     ToolLoopOutcome, ToolLoopPolicy, ToolLoopState, ToolLoopStep, ToolLoopStrategy,
 };

@@ -1,7 +1,7 @@
 {
   "id": "TASK-046",
   "title": "Define subagent orchestration and handoff registry boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "subagent-handoff-boundary",
   "description": "AstrBot keeps subagent config loading lightweight and registers HandoffTool entries into the tool manager without executing subagents itself. Rust should keep subagent config, handoff registration, provider override, and tool bridge logic separate from generic tool execution and plugin sandbox code.",
@@ -44,5 +44,22 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test --workspace && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T02:04:47+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-agent/Cargo.toml",
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/subagent/mod.rs",
+    "crates/astrbot-agent/src/subagent/config.rs",
+    "crates/astrbot-agent/src/subagent/orchestrator.rs",
+    "crates/astrbot-agent/src/subagent/tool_bridge.rs"
+  ],
+  "verification": [
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-plugin",
+    "cargo test --workspace",
+    "cargo clippy --workspace -- -D warnings"
+  ],
   "risk": "high"
 }

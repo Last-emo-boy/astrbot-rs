@@ -18,7 +18,10 @@ dependencies = [
  "astrbot-core",
  "astrbot-plugin",
  "astrbot-provider",
+ "astrbot-tool",
  "async-trait",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

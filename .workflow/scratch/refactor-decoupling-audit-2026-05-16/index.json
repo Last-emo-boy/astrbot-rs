@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T01:56:24+08:00",
+  "updated_at": "2026-05-17T02:04:47+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 45,
-    "pending_tasks": 45,
+    "completed_tasks": 46,
+    "pending_tasks": 44,
     "blocked_tasks": 0
   },
   "execution": {
     "reflection_rounds": 53,
-    "current_task_id": "TASK-045",
-    "next_task": "TASK-046"
+    "current_task_id": "TASK-046",
+    "next_task": "TASK-047"
   },
-  "latest_update": "TASK-045 introduced the astrbot-cron crate with typed cron job metadata, scheduler repository/driver/handler ports, and proactive active-agent wake events that enter the pipeline through the existing MessageEvent boundary. Next pending task is TASK-046.",
+  "latest_update": "TASK-046 introduced subagent config resolution, handoff registration, and handoff tool-catalog bridge modules in astrbot-agent without executing subagent loops directly. Next pending task is TASK-047.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

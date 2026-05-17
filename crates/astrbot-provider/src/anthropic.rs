@@ -7,7 +7,7 @@ use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
 
 use crate::http::{build_http_client, extract_error_message, insert_custom_headers};
 use crate::protocol::anthropic_chat::{
-    AnthropicMessageRequest, build_anthropic_message_request, extract_anthropic_message_content,
+    AnthropicMessageRequest, build_anthropic_message_request, extract_anthropic_response,
 };
 use crate::streaming::reject_unsupported_streaming;
 use crate::{ChatProvider, ChatRequest, ChatResponse};
@@ -109,14 +109,17 @@ impl ChatProvider for AnthropicProvider {
             )));
         }
 
-        let content = extract_anthropic_message_content(&body)?;
-        if content.trim().is_empty() {
+        let response = extract_anthropic_response(&body)?;
+        if response.chain.plain_text().trim().is_empty() {
             return Err(AstrbotError::Provider(
                 "provider response did not contain assistant content".to_string(),
             ));
         }
 
-        Ok(ChatResponse::text(content))
+        Ok(ChatResponse {
+            chain: response.chain,
+            metadata: response.metadata,
+        })
     }
 }
 

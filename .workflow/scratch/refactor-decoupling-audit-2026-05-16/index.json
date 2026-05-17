@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T14:04:14+08:00",
+  "updated_at": "2026-05-17T14:15:49+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 77,
-    "pending_tasks": 13,
+    "completed_tasks": 78,
+    "pending_tasks": 12,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 77,
-    "current_task_id": "TASK-077",
-    "next_task": "TASK-078"
+    "reflection_rounds": 78,
+    "current_task_id": "TASK-078",
+    "next_task": "TASK-079"
   },
-  "latest_update": "TASK-077 defined agent lifecycle side-channel boundaries for run context, hook events, response events, message wrappers, and tool image cache ports. Pipeline provider fallback now forwards lifecycle observation through a typed agent hook port instead of embedding agent side effects. Next pending task is TASK-078.",
+  "latest_update": "TASK-078 introduced provider response metadata, token usage, reasoning, tool-call, raw response, and stream event boundaries. OpenAI-compatible, Gemini, and Anthropic adapters now preserve typed metadata on ChatResponse while AgentRunner forwards provider reasoning through lifecycle hooks without coupling to provider DTOs. Next pending task is TASK-079.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

@@ -24,6 +24,7 @@ mod openai_tts;
 mod protocol;
 mod registry;
 mod rerank;
+mod response;
 mod selection;
 mod speech;
 mod streaming;
@@ -79,6 +80,11 @@ pub use openai_stt::{OpenAiSpeechToTextConfig, OpenAiSpeechToTextProvider};
 pub use openai_tts::{OpenAiTextToSpeechConfig, OpenAiTextToSpeechProvider};
 pub use registry::ProviderRegistry;
 pub use rerank::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
+pub use response::{
+    ProviderRawResponse, ProviderReasoningMetadata, ProviderResponse, ProviderResponseMetadata,
+    ProviderStreamEvent, ProviderStreamEventKind, ProviderTokenUsage, ProviderToolCall,
+    ProviderToolCallArguments,
+};
 pub use selection::{ProviderSelection, ProviderSelectionScope, ProviderSelectionState};
 pub use speech::{SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
 pub use tts::{

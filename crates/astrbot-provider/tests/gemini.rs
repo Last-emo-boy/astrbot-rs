@@ -17,7 +17,7 @@ async fn sends_gemini_generate_content_request_and_parses_text_response() {
     let base_url = serve_once(
         "200 OK",
         "application/json",
-        r#"{"candidates":[{"content":{"parts":[{"text":"hello from gemini"}],"role":"model"},"finishReason":"STOP"}]}"#,
+        r#"{"candidates":[{"content":{"parts":[{"text":"hidden thought","thought":true,"thoughtSignature":"sig-1"},{"text":"hello from gemini"},{"functionCall":{"name":"search","args":{"q":"rust"}}}],"role":"model"},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":5,"cachedContentTokenCount":2,"candidatesTokenCount":7}}"#,
         captured.clone(),
     )
     .await;
@@ -42,6 +42,20 @@ async fn sends_gemini_generate_content_request_and_parses_text_response() {
         .expect("Gemini provider should parse response");
 
     assert_eq!(response.chain.plain_text(), "hello from gemini");
+    assert_eq!(response.metadata.finish_reason.as_deref(), Some("STOP"));
+    let usage = response.metadata.usage.as_ref().expect("usage");
+    assert_eq!(usage.input_other, 5);
+    assert_eq!(usage.input_cached, 2);
+    assert_eq!(usage.output, 7);
+    let reasoning = response.metadata.reasoning.as_ref().expect("reasoning");
+    assert_eq!(reasoning.content, "hidden thought");
+    assert_eq!(reasoning.signature.as_deref(), Some("sig-1"));
+    assert_eq!(response.metadata.tool_calls.len(), 1);
+    assert_eq!(response.metadata.tool_calls[0].name, "search");
+    assert_eq!(
+        response.metadata.tool_calls[0].arguments_json(),
+        r#"{"q":"rust"}"#
+    );
 
     let request = captured.lock().await.clone();
     assert!(request.starts_with("POST /v1beta/models/gemini-test:generateContent HTTP/1.1"));

@@ -1,8 +1,12 @@
-use astrbot_core::{AstrbotError, ProviderContentPart, Result};
+use astrbot_core::{AstrbotError, MessageChain, ProviderContentPart, Result};
 use serde::Serialize;
 use serde_json::Value;
 
 use crate::ChatRequest;
+use crate::{
+    ProviderRawResponse, ProviderReasoningMetadata, ProviderResponse, ProviderResponseMetadata,
+    ProviderTokenUsage, ProviderToolCall, ProviderToolCallArguments,
+};
 
 #[derive(Debug, Serialize)]
 pub(crate) struct AnthropicMessageRequest {
@@ -78,11 +82,11 @@ pub(crate) fn build_anthropic_message_request(
     })
 }
 
-pub(crate) fn extract_anthropic_message_content(body: &str) -> Result<String> {
+pub(crate) fn extract_anthropic_response(body: &str) -> Result<ProviderResponse> {
     let payload: Value = serde_json::from_str(body).map_err(|err| {
         AstrbotError::Provider(format!("failed to parse provider response JSON: {err}"))
     })?;
-    Ok(payload
+    let content = payload
         .get("content")
         .and_then(Value::as_array)
         .map(|content| {
@@ -93,7 +97,12 @@ pub(crate) fn extract_anthropic_message_content(body: &str) -> Result<String> {
                 .collect::<Vec<_>>()
                 .join("")
         })
-        .unwrap_or_default())
+        .unwrap_or_default();
+    let metadata = extract_response_metadata(&payload);
+    Ok(ProviderResponse::new(
+        MessageChain::plain(content),
+        metadata,
+    ))
 }
 
 fn normalize_anthropic_role(role: &str) -> String {
@@ -189,6 +198,90 @@ fn image_block_from_data_url(url: &str) -> Result<AnthropicContentBlock> {
             data: data.to_string(),
         },
     })
+}
+
+fn extract_response_metadata(payload: &Value) -> ProviderResponseMetadata {
+    let mut metadata = ProviderResponseMetadata::default()
+        .with_raw_response(ProviderRawResponse::new("anthropic", payload.clone()));
+
+    if let Some(id) = payload.get("id").and_then(Value::as_str) {
+        metadata = metadata.with_response_id(id);
+    }
+    if let Some(model) = payload.get("model").and_then(Value::as_str) {
+        metadata = metadata.with_model(model);
+    }
+    if let Some(stop_reason) = payload.get("stop_reason").and_then(Value::as_str) {
+        metadata = metadata.with_stop_reason(stop_reason);
+    }
+    if let Some(usage) = payload.get("usage").and_then(extract_usage) {
+        metadata = metadata.with_usage(usage);
+    }
+    if let Some(content) = payload.get("content").and_then(Value::as_array) {
+        if let Some(reasoning) = extract_reasoning(content) {
+            metadata = metadata.with_reasoning(reasoning);
+        }
+        for tool_call in content.iter().filter_map(extract_tool_call) {
+            metadata = metadata.with_tool_call(tool_call);
+        }
+    }
+
+    metadata
+}
+
+fn extract_usage(value: &Value) -> Option<ProviderTokenUsage> {
+    let usage = ProviderTokenUsage::new(
+        value
+            .get("input_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or(0),
+        value
+            .get("cache_read_input_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or(0),
+        value
+            .get("output_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or(0),
+    );
+    (!usage.is_empty()).then_some(usage)
+}
+
+fn extract_reasoning(content: &[Value]) -> Option<ProviderReasoningMetadata> {
+    let reasoning_text = content
+        .iter()
+        .filter(|block| block.get("type").and_then(Value::as_str) == Some("thinking"))
+        .filter_map(|block| block.get("thinking").and_then(Value::as_str))
+        .collect::<Vec<_>>()
+        .join("");
+    let signature = content
+        .iter()
+        .find_map(|block| block.get("signature").and_then(Value::as_str));
+
+    let mut reasoning = ProviderReasoningMetadata::new(reasoning_text.trim());
+    if let Some(signature) = signature {
+        reasoning = reasoning.with_signature(signature);
+    }
+    (!reasoning.is_empty()).then_some(reasoning)
+}
+
+fn extract_tool_call(block: &Value) -> Option<ProviderToolCall> {
+    if block.get("type").and_then(Value::as_str) != Some("tool_use") {
+        return None;
+    }
+    let id = block.get("id").and_then(Value::as_str).unwrap_or_default();
+    let name = block
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if id.trim().is_empty() || name.trim().is_empty() {
+        return None;
+    }
+    let arguments = block
+        .get("input")
+        .cloned()
+        .map(ProviderToolCallArguments::Json)
+        .unwrap_or(ProviderToolCallArguments::Empty);
+    Some(ProviderToolCall::new(id, name, arguments))
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 {
   "id": "TASK-078",
   "title": "Define provider response metadata, token usage, reasoning, and tool-call boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "provider-response-metadata-boundary",
   "description": "Rust ChatResponse currently only carries a MessageChain, while AstrBot LLMResponse keeps token usage, reasoning content/signatures, raw completion identity, finish/stop data, and tool-call payloads. Define this response metadata boundary before provider parity, tool orchestration, dashboard trace, and live feedback push those fields into concrete provider adapters or agent runner code.",
@@ -52,5 +52,33 @@
     ],
     "verification_command": "cargo test -p astrbot-provider && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "high"
+  "risk": "high",
+  "completed_at": "2026-05-17T14:15:49+08:00",
+  "files_modified": [
+    "crates/astrbot-provider/src/lib.rs",
+    "crates/astrbot-provider/src/chat.rs",
+    "crates/astrbot-provider/src/response/mod.rs",
+    "crates/astrbot-provider/src/response/metadata.rs",
+    "crates/astrbot-provider/src/response/token_usage.rs",
+    "crates/astrbot-provider/src/response/reasoning.rs",
+    "crates/astrbot-provider/src/response/tool_call.rs",
+    "crates/astrbot-provider/src/response/stream.rs",
+    "crates/astrbot-provider/src/protocol/openai_chat.rs",
+    "crates/astrbot-provider/src/protocol/gemini_chat.rs",
+    "crates/astrbot-provider/src/protocol/anthropic_chat.rs",
+    "crates/astrbot-provider/src/openai_compatible.rs",
+    "crates/astrbot-provider/src/gemini.rs",
+    "crates/astrbot-provider/src/anthropic.rs",
+    "crates/astrbot-provider/tests/openai_compatible.rs",
+    "crates/astrbot-provider/tests/gemini.rs",
+    "crates/astrbot-provider/tests/anthropic.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-agent/src/tests.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-provider",
+    "cargo test -p astrbot-agent",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

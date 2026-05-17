@@ -15,7 +15,7 @@ async fn sends_openai_chat_completion_request_and_parses_text_response() {
     let base_url = serve_once(
         "200 OK",
         "application/json",
-        r#"{"choices":[{"message":{"role":"assistant","content":"hello from api"}}]}"#,
+        r#"{"id":"chatcmpl-1","model":"gpt-test","choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"<think>hidden</think>\nhello from api","reasoning_content":"hidden from field","tool_calls":[{"id":"call-1","type":"function","function":{"name":"search","arguments":"{\"q\":\"rust\"}"},"extra_content":{"provider":"openai"}}]}}],"usage":{"prompt_tokens":10,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":4}}}"#,
         captured.clone(),
     )
     .await;
@@ -30,6 +30,23 @@ async fn sends_openai_chat_completion_request_and_parses_text_response() {
         .expect("provider should parse response");
 
     assert_eq!(response.chain.plain_text(), "hello from api");
+    assert_eq!(response.metadata.response_id.as_deref(), Some("chatcmpl-1"));
+    assert_eq!(response.metadata.model.as_deref(), Some("gpt-test"));
+    assert_eq!(response.metadata.finish_reason.as_deref(), Some("stop"));
+    let usage = response.metadata.usage.as_ref().expect("usage");
+    assert_eq!(usage.input_other, 6);
+    assert_eq!(usage.input_cached, 4);
+    assert_eq!(usage.output, 3);
+    assert_eq!(usage.total(), 13);
+    let reasoning = response.metadata.reasoning.as_ref().expect("reasoning");
+    assert_eq!(reasoning.content, "hidden from field");
+    assert_eq!(response.metadata.tool_calls.len(), 1);
+    assert_eq!(response.metadata.tool_calls[0].id, "call-1");
+    assert_eq!(response.metadata.tool_calls[0].name, "search");
+    assert_eq!(
+        response.metadata.tool_calls[0].arguments_json(),
+        r#"{"q":"rust"}"#
+    );
 
     let request = captured.lock().await.clone();
     assert!(request.starts_with("POST /chat/completions HTTP/1.1"));
@@ -164,8 +181,8 @@ async fn streams_openai_chat_completion_request_and_collects_chunks() {
         "text/event-stream",
         concat!(
             "data: {\"choices\":[{\"delta\":{\"role\":\"assistant\"}}]}\n\n",
-            "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n",
-            "data: {\"choices\":[{\"delta\":{\"content\":\" world\"}}]}\n\n",
+            "data: {\"id\":\"chunk-1\",\"model\":\"gpt-stream\",\"choices\":[{\"delta\":{\"content\":\"hello\",\"reasoning_content\":\"r1\"}}],\"usage\":{\"prompt_tokens\":2,\"completion_tokens\":1}}\n\n",
+            "data: {\"choices\":[{\"finish_reason\":\"stop\",\"delta\":{\"content\":\" world\"}}]}\n\n",
             "data: [DONE]\n\n"
         ),
         captured.clone(),
@@ -182,6 +199,18 @@ async fn streams_openai_chat_completion_request_and_collects_chunks() {
         .expect("provider should parse streaming response");
 
     assert_eq!(response.chain.plain_text(), "hello world");
+    assert_eq!(response.metadata.response_id.as_deref(), Some("chunk-1"));
+    assert_eq!(response.metadata.model.as_deref(), Some("gpt-stream"));
+    assert_eq!(response.metadata.finish_reason.as_deref(), Some("stop"));
+    assert_eq!(
+        response
+            .metadata
+            .reasoning
+            .as_ref()
+            .expect("reasoning")
+            .content,
+        "r1"
+    );
 
     let request = captured.lock().await.clone();
     assert!(request.starts_with("POST /chat/completions HTTP/1.1"));

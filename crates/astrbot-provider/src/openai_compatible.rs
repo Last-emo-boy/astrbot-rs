@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use crate::http::{build_http_client, extract_error_message, join_api_path, json_bearer_headers};
 use crate::protocol::openai_chat::{
     OpenAiChatCompletionRequest, build_openai_chat_completion_request,
-    collect_openai_streaming_content, extract_openai_message_content,
+    collect_openai_streaming_response, extract_openai_response,
 };
 use crate::{ChatProvider, ChatRequest, ChatResponse};
 
@@ -102,23 +102,29 @@ impl ChatProvider for OpenAiCompatibleProvider {
         }
 
         if request.stream {
-            let content = collect_openai_streaming_content(body.as_str())?;
-            if content.trim().is_empty() {
+            let response = collect_openai_streaming_response(body.as_str())?;
+            if response.chain.plain_text().trim().is_empty() {
                 return Err(AstrbotError::Provider(
                     "provider stream did not contain assistant content".to_string(),
                 ));
             }
-            return Ok(ChatResponse::text(content));
+            return Ok(ChatResponse {
+                chain: response.chain,
+                metadata: response.metadata,
+            });
         }
 
-        let content = extract_openai_message_content(&body)?;
+        let response = extract_openai_response(&body)?;
 
-        if content.trim().is_empty() {
+        if response.chain.plain_text().trim().is_empty() {
             return Err(AstrbotError::Provider(
                 "provider response did not contain assistant content".to_string(),
             ));
         }
 
-        Ok(ChatResponse::text(content))
+        Ok(ChatResponse {
+            chain: response.chain,
+            metadata: response.metadata,
+        })
     }
 }

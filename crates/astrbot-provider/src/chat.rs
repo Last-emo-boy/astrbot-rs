@@ -4,6 +4,8 @@ use astrbot_core::{
     Result,
 };
 use async_trait::async_trait;
+
+use crate::ProviderResponseMetadata;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChatRequest {
     pub provider_id: Option<String>,
@@ -126,13 +128,20 @@ pub(crate) fn non_empty_option(value: impl Into<String>) -> Option<String> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChatResponse {
     pub chain: MessageChain,
+    pub metadata: ProviderResponseMetadata,
 }
 
 impl ChatResponse {
     pub fn text(text: impl Into<String>) -> Self {
         Self {
             chain: MessageChain::plain(text),
+            metadata: ProviderResponseMetadata::default(),
         }
+    }
+
+    pub fn with_metadata(mut self, metadata: ProviderResponseMetadata) -> Self {
+        self.metadata = metadata;
+        self
     }
 }
 

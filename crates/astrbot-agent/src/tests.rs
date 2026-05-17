@@ -29,6 +29,7 @@ use crate::{
     ToolImageCacheRequest, ToolLoopPolicy,
 };
 use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
+use astrbot_provider::{ProviderReasoningMetadata, ProviderResponseMetadata};
 
 struct NoopSink;
 
@@ -390,6 +391,7 @@ async fn noop_context_compressor_keeps_window_shape() {
 #[derive(Default)]
 struct CapturingProvider {
     fail: bool,
+    reasoning_content: Option<String>,
 }
 
 #[async_trait]
@@ -399,10 +401,15 @@ impl ChatProvider for CapturingProvider {
             return Err(AstrbotError::Provider("upstream failed".to_string()));
         }
 
-        Ok(ChatResponse::text(format!(
-            "{}:{}",
-            request.session_id, request.prompt
-        )))
+        let response = ChatResponse::text(format!("{}:{}", request.session_id, request.prompt));
+        if let Some(reasoning) = &self.reasoning_content {
+            return Ok(response.with_metadata(
+                ProviderResponseMetadata::default()
+                    .with_reasoning(ProviderReasoningMetadata::new(reasoning.clone())),
+            ));
+        }
+
+        Ok(response)
     }
 }
 
@@ -563,9 +570,30 @@ async fn chat_agent_runner_dispatches_begin_and_done_hooks_around_provider_call(
 }
 
 #[tokio::test]
+async fn chat_agent_runner_forwards_provider_reasoning_to_agent_done_hook() {
+    let hook = Arc::new(CapturingHook::default());
+    let runner = ChatAgentRunner::new(Arc::new(CapturingProvider {
+        fail: false,
+        reasoning_content: Some("hidden reasoning".to_string()),
+    }))
+    .with_hook(hook.clone());
+
+    runner.run(&event("hello")).await.expect("agent should run");
+
+    let events = hook.events();
+    let AgentHookEvent::AgentDone(done) = &events[1] else {
+        panic!("second hook should be agent done");
+    };
+    assert_eq!(done.reasoning_content.as_deref(), Some("hidden reasoning"));
+}
+
+#[tokio::test]
 async fn chat_agent_runner_maps_provider_error_to_fallback_message() {
-    let runner = ChatAgentRunner::new(Arc::new(CapturingProvider { fail: true }))
-        .with_fallback_policy(AgentFallbackPolicy::default().with_error_message("try later"));
+    let runner = ChatAgentRunner::new(Arc::new(CapturingProvider {
+        fail: true,
+        reasoning_content: None,
+    }))
+    .with_fallback_policy(AgentFallbackPolicy::default().with_error_message("try later"));
 
     let outcome = runner
         .run(&event("hello"))

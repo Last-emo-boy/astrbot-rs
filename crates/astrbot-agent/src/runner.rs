@@ -151,11 +151,17 @@ impl AgentRunner for ChatAgentRunner {
                 )));
             }
         };
+        let mut done_event = AgentDoneEvent::new(lifecycle, response.chain.clone());
+        if let Some(reasoning) = response
+            .metadata
+            .reasoning
+            .as_ref()
+            .filter(|reasoning| !reasoning.content.trim().is_empty())
+        {
+            done_event = done_event.with_reasoning_content(reasoning.content.clone());
+        }
         self.hook
-            .on_event(AgentHookEvent::AgentDone(AgentDoneEvent::new(
-                lifecycle,
-                response.chain.clone(),
-            )))
+            .on_event(AgentHookEvent::AgentDone(done_event))
             .await?;
 
         Ok(AgentRunOutcome::with_result(MessageEventResult::llm(

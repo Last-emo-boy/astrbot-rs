@@ -7,8 +7,7 @@ use reqwest::header::HeaderName;
 
 use crate::http::{build_http_client, extract_error_message, json_api_key_headers};
 use crate::protocol::gemini_chat::{
-    GeminiGenerateContentRequest, build_gemini_generate_content_request,
-    extract_gemini_message_content,
+    GeminiGenerateContentRequest, build_gemini_generate_content_request, extract_gemini_response,
 };
 use crate::streaming::reject_unsupported_streaming;
 use crate::{ChatProvider, ChatRequest, ChatResponse};
@@ -106,14 +105,17 @@ impl ChatProvider for GeminiProvider {
             )));
         }
 
-        let content = extract_gemini_message_content(&body)?;
-        if content.trim().is_empty() {
+        let response = extract_gemini_response(&body)?;
+        if response.chain.plain_text().trim().is_empty() {
             return Err(AstrbotError::Provider(
                 "provider response did not contain assistant content".to_string(),
             ));
         }
 
-        Ok(ChatResponse::text(content))
+        Ok(ChatResponse {
+            chain: response.chain,
+            metadata: response.metadata,
+        })
     }
 }
 

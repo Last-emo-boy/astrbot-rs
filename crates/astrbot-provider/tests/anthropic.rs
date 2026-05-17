@@ -17,7 +17,7 @@ async fn sends_anthropic_message_request_and_parses_text_response() {
     let base_url = serve_once(
         "200 OK",
         "application/json",
-        r#"{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"hello from claude"}],"model":"claude-test","stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":2}}"#,
+        r#"{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"internal","signature":"sig-a"},{"type":"text","text":"hello from claude"},{"type":"tool_use","id":"toolu_1","name":"search","input":{"q":"rust"}}],"model":"claude-test","stop_reason":"tool_use","usage":{"input_tokens":1,"cache_read_input_tokens":3,"output_tokens":2}}"#,
         captured.clone(),
     )
     .await;
@@ -42,6 +42,23 @@ async fn sends_anthropic_message_request_and_parses_text_response() {
         .expect("Anthropic provider should parse response");
 
     assert_eq!(response.chain.plain_text(), "hello from claude");
+    assert_eq!(response.metadata.response_id.as_deref(), Some("msg_1"));
+    assert_eq!(response.metadata.model.as_deref(), Some("claude-test"));
+    assert_eq!(response.metadata.stop_reason.as_deref(), Some("tool_use"));
+    let usage = response.metadata.usage.as_ref().expect("usage");
+    assert_eq!(usage.input_other, 1);
+    assert_eq!(usage.input_cached, 3);
+    assert_eq!(usage.output, 2);
+    let reasoning = response.metadata.reasoning.as_ref().expect("reasoning");
+    assert_eq!(reasoning.content, "internal");
+    assert_eq!(reasoning.signature.as_deref(), Some("sig-a"));
+    assert_eq!(response.metadata.tool_calls.len(), 1);
+    assert_eq!(response.metadata.tool_calls[0].id, "toolu_1");
+    assert_eq!(response.metadata.tool_calls[0].name, "search");
+    assert_eq!(
+        response.metadata.tool_calls[0].arguments_json(),
+        r#"{"q":"rust"}"#
+    );
 
     let request = captured.lock().await.clone();
     assert!(request.starts_with("POST /v1/messages HTTP/1.1"));

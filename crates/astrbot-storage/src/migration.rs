@@ -4,6 +4,8 @@ use std::sync::RwLock;
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 
+use crate::schema::StorageSchema;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MigrationOperation {
     CreateTable(String),
@@ -121,6 +123,17 @@ impl DeclarativeMigration {
         self.checksum = Some(checksum.into());
         self
     }
+
+    pub fn create_schema(id: impl Into<String>, schema: &StorageSchema) -> Self {
+        Self::new(
+            id,
+            schema
+                .tables
+                .iter()
+                .map(|table| MigrationOperation::CreateTable(table.name.clone()))
+                .collect(),
+        )
+    }
 }
 
 #[async_trait]
@@ -192,7 +205,7 @@ impl<'a> MigrationRunner<'a> {
 mod tests {
     use super::{
         DeclarativeMigration, InMemoryMigrationStateRepository, MigrationOperation,
-        MigrationRunner, MigrationStateRepository,
+        MigrationRunner, MigrationStateRepository, StorageMigration,
     };
 
     #[tokio::test]
@@ -225,6 +238,20 @@ mod tests {
                 .expect("state should load")
                 .len(),
             1
+        );
+    }
+
+    #[tokio::test]
+    async fn declarative_schema_seed_consumes_schema_descriptors() {
+        let schema = crate::StorageSchema::repository_port_schema();
+        let migration = DeclarativeMigration::create_schema("001-repository-ports", &schema);
+
+        assert_eq!(migration.id(), "001-repository-ports");
+        assert_eq!(migration.operations().len(), schema.tables.len());
+        assert!(
+            migration
+                .operations()
+                .contains(&MigrationOperation::CreateTable("api_keys".to_string()))
         );
     }
 }

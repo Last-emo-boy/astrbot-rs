@@ -1,7 +1,7 @@
 {
   "id": "TASK-074",
   "title": "Split storage schema catalog into domain table groups and migration seed boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "storage-schema-catalog-boundary",
   "description": "TASK-032 created the persistence boundary, but `schema.rs` is already a broad catalog for conversations, platform state, providers, personas, projects, API keys, cron jobs, and command metadata. Keep schema primitives, table-family builders, migration seeds, and backup manifest consumers separate before concrete SQL backends grow.",
@@ -34,5 +34,24 @@
     ],
     "verification_command": "cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "medium"
+  "risk": "medium",
+  "completed_at": "2026-05-17T13:28:58+08:00",
+  "files_modified": [
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-storage/src/schema/mod.rs",
+    "crates/astrbot-storage/src/schema/table.rs",
+    "crates/astrbot-storage/src/schema/main.rs",
+    "crates/astrbot-storage/src/schema/repository_ports.rs",
+    "crates/astrbot-storage/src/schema/conversation.rs",
+    "crates/astrbot-storage/src/schema/platform.rs",
+    "crates/astrbot-storage/src/schema/provider.rs",
+    "crates/astrbot-storage/src/schema/persona_skill.rs",
+    "crates/astrbot-storage/src/schema/ops.rs",
+    "crates/astrbot-storage/src/migration.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-storage",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

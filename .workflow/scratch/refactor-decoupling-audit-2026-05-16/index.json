@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T08:12:03+08:00",
+  "updated_at": "2026-05-17T08:20:57+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 65,
-    "pending_tasks": 25,
+    "completed_tasks": 66,
+    "pending_tasks": 24,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 65,
-    "current_task_id": "TASK-065",
-    "next_task": "TASK-066"
+    "reflection_rounds": 66,
+    "current_task_id": "TASK-066",
+    "next_task": "TASK-067"
   },
-  "latest_update": "TASK-065 defined external agent runner connector, lifecycle, stream mapping, final response, and runtime config boundaries. Next pending task is TASK-066.",
+  "latest_update": "TASK-066 added MCP transport runtime ports, process supervision plans, tolerant JSON-RPC stdout parsing, reconnect decisions, and bridge registration into astrbot-tool descriptors. Next pending task is TASK-067.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

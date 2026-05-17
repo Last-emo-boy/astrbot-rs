@@ -1,7 +1,7 @@
 {
   "id": "TASK-066",
   "title": "Implement MCP transport runtime and bridge registration boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "mcp-transport-bridge-boundary",
   "description": "TASK-029 created typed MCP models, but real MCP parity still needs stdio/SSE/streamable HTTP transport runtime, process supervision, noisy-stdout tolerant JSON-RPC parsing, reconnect, and registration of resource/prompt/tools into the tool catalog.",
@@ -36,5 +36,24 @@
     ],
     "verification_command": "cargo test -p astrbot-mcp && cargo test -p astrbot-tool && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T08:20:57+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-mcp/Cargo.toml",
+    "crates/astrbot-mcp/src/lib.rs",
+    "crates/astrbot-mcp/src/transport/mod.rs",
+    "crates/astrbot-mcp/src/bridge/mod.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-066.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-066-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-066/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-mcp",
+    "cargo test -p astrbot-tool",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

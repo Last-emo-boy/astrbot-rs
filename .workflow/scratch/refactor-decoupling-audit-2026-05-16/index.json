@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T15:29:07+08:00",
+  "updated_at": "2026-05-17T15:41:21+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 82,
-    "pending_tasks": 8,
+    "completed_tasks": 83,
+    "pending_tasks": 7,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 82,
-    "current_task_id": "TASK-082",
-    "next_task": "TASK-083"
+    "reflection_rounds": 83,
+    "current_task_id": "TASK-083",
+    "next_task": "TASK-084"
   },
-  "latest_update": "TASK-082 introduced the astrbot-maintenance boundary for release checks, project/dashboard update plans, migration checks, package install plans, and operation progress. Dashboard management routes now delegate update/migration/package-install APIs to typed maintenance services instead of reaching into runtime, storage, or plugin internals. Next pending task is TASK-083.",
+  "latest_update": "TASK-083 split concrete T2I render implementation boundaries inside astrbot-render. Network endpoint normalization/fallback, local artifact writing, Markdown block/inline modeling, and font/text measurement now live outside the T2iRenderer facade while generated render files use the storage temp artifact boundary. Next pending task is TASK-084.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

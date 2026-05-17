@@ -3,7 +3,7 @@
   "status": "in_progress",
   "strategy": "incremental, facade-preserving module splits; do not change public behavior in the first pass",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T15:29:07+08:00",
+  "updated_at": "2026-05-17T15:41:21+08:00",
   "total_tasks": 90,
   "ordering_rationale": "Split runtime and provider first because new parity work currently lands there. Then split web/core/pipeline boundaries that feed dashboard and platform work.",
   "tasks": [
@@ -1961,7 +1961,7 @@
       "priority": 89,
       "risk": "medium",
       "category": "agent-request-decoration-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src/request_decorator.rs",
         "crates/astrbot-agent/src/runner.rs",

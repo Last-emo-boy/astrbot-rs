@@ -232,6 +232,7 @@ name = "astrbot-render"
 version = "0.1.0"
 dependencies = [
  "astrbot-core",
+ "astrbot-storage",
  "async-trait",
  "serde",
  "serde_json",

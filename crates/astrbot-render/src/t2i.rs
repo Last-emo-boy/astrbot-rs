@@ -1,12 +1,11 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use astrbot_core::{AstrbotError, Result};
+use crate::template::TemplateName;
+use astrbot_core::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-use crate::template::{TemplateCatalog, TemplateName};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RenderStrategy {
@@ -160,72 +159,7 @@ pub trait T2iRenderer: Send + Sync {
     async fn render(&self, request: T2iRenderRequest) -> Result<T2iRenderResult>;
 }
 
-#[derive(Clone, Debug)]
-pub struct TemplateRenderer {
-    catalog: TemplateCatalog,
-    output_dir: PathBuf,
-}
-
-impl TemplateRenderer {
-    pub fn new(catalog: TemplateCatalog, output_dir: impl Into<PathBuf>) -> Self {
-        Self {
-            catalog,
-            output_dir: output_dir.into(),
-        }
-    }
-
-    pub fn catalog(&self) -> &TemplateCatalog {
-        &self.catalog
-    }
-
-    fn artifact_path(&self, request: &T2iRenderRequest) -> PathBuf {
-        self.output_dir.join(format!(
-            "{}.{}",
-            request.options.template_name.as_str(),
-            request.options.format.extension()
-        ))
-    }
-}
-
-#[async_trait]
-impl T2iRenderer for TemplateRenderer {
-    async fn render(&self, request: T2iRenderRequest) -> Result<T2iRenderResult> {
-        if matches!(request.options.mode, RenderMode::Url) {
-            return Err(AstrbotError::Pipeline(
-                "template renderer only supports file artifacts".to_string(),
-            ));
-        }
-        if matches!(request.options.strategy, RenderStrategy::NetworkOnly) {
-            return Err(AstrbotError::Pipeline(
-                "template renderer cannot satisfy network-only T2I requests".to_string(),
-            ));
-        }
-
-        let template = self.catalog.get_template(&request.options.template_name)?;
-        let rendered = render_template_string(&template, &request.template_data);
-        std::fs::create_dir_all(&self.output_dir).map_err(|err| {
-            AstrbotError::Pipeline(format!(
-                "create T2I render output directory {}: {err}",
-                self.output_dir.display()
-            ))
-        })?;
-        let path = self.artifact_path(&request);
-        std::fs::write(&path, rendered).map_err(|err| {
-            AstrbotError::Pipeline(format!(
-                "write T2I render artifact {}: {err}",
-                path.display()
-            ))
-        })?;
-
-        Ok(T2iRenderResult {
-            artifact: RenderArtifact::file(path, request.options.format),
-            template_name: request.options.template_name,
-            strategy_used: RenderStrategy::LocalOnly,
-        })
-    }
-}
-
-fn render_template_string(template: &str, data: &BTreeMap<String, Value>) -> String {
+pub(crate) fn render_template_string(template: &str, data: &BTreeMap<String, Value>) -> String {
     let mut rendered = template.to_string();
     for (key, value) in data {
         let placeholder = format!("{{{{ {key} }}}}");
@@ -240,20 +174,15 @@ fn render_template_string(template: &str, data: &BTreeMap<String, Value>) -> Str
     rendered
 }
 
-fn escape_template_text(text: &str) -> String {
+pub(crate) fn escape_template_text(text: &str) -> String {
     text.replace('`', "\\`")
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-
     use serde_json::Value;
 
-    use crate::{
-        RenderMode, RenderOptions, RenderStrategy, T2iRenderRequest, T2iRenderer, TemplateCatalog,
-        TemplateName, TemplateRenderer,
-    };
+    use crate::T2iRenderRequest;
 
     #[test]
     fn default_request_escapes_backticks_and_uses_base_template() {
@@ -264,54 +193,5 @@ mod tests {
             request.template_data.get("text"),
             Some(&Value::String("\\`code\\`".to_string()))
         );
-    }
-
-    #[tokio::test]
-    async fn template_renderer_writes_transport_neutral_artifact() {
-        let root = std::env::temp_dir().join(format!("astrbot_render_{}", std::process::id()));
-        let template_dir = root.join("templates");
-        let output_dir = root.join("output");
-        let _ = fs::remove_dir_all(&root);
-
-        let catalog = TemplateCatalog::new(&template_dir);
-        let template = TemplateName::new("plain").unwrap();
-        catalog
-            .put_user_template(&template, "hello {{ text }} {{ version }}")
-            .unwrap();
-
-        let renderer = TemplateRenderer::new(catalog, &output_dir);
-        let request = T2iRenderRequest::from_text("world").with_options(RenderOptions {
-            strategy: RenderStrategy::LocalOnly,
-            mode: RenderMode::File,
-            template_name: template.clone(),
-            ..RenderOptions::default()
-        });
-
-        let result = renderer.render(request).await.unwrap();
-
-        assert_eq!(result.template_name, template);
-        assert_eq!(result.strategy_used, RenderStrategy::LocalOnly);
-        assert_eq!(
-            fs::read_to_string(result.artifact.value).unwrap(),
-            "hello world v0.1.0"
-        );
-
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[tokio::test]
-    async fn local_renderer_rejects_network_only_requests() {
-        let root = std::env::temp_dir().join(format!(
-            "astrbot_render_network_only_{}",
-            std::process::id()
-        ));
-        let renderer = TemplateRenderer::new(TemplateCatalog::without_user_dir(), &root);
-        let request = T2iRenderRequest::from_text("hello").with_options(RenderOptions {
-            strategy: RenderStrategy::NetworkOnly,
-            ..RenderOptions::default()
-        });
-
-        assert!(renderer.render(request).await.is_err());
-        let _ = fs::remove_dir_all(&root);
     }
 }

@@ -492,3 +492,12 @@
 - AstrBot reference: `dashboard/routes/update.py`, `core/star/updator.py`, `core/utils/pip_installer.py`, and `core/db/migration/helper.py`.
 - Adjustment: next implementation pointer moves to `TASK-083`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-runtime`, `cargo test -p astrbot-storage`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 83 - TASK-083 T2I Render Implementation Boundary
+
+- Scope: `astrbot-render` T2I concrete implementation boundaries.
+- Strategy: follow AstrBot's split between `renderer.py`, `network_strategy.py`, `local_strategy.py`, and `template_manager.py`, but keep Rust's public `T2iRenderer` facade thin while concrete network/local/markdown/font concerns live behind dedicated modules.
+- Result: added network endpoint normalization and fallback catalog/client, local template and markdown renderers, temp artifact writer using `TempArtifactRoot`, markdown document/span model, and font/text layout boundaries.
+- AstrBot reference: `core/utils/t2i/renderer.py`, `network_strategy.py`, `local_strategy.py`, and `template_manager.py`.
+- Adjustment: next implementation pointer moves to `TASK-084`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-render`, `cargo clippy -p astrbot-render -- -D warnings`, and `cargo test --workspace` passed.

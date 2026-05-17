@@ -1,7 +1,7 @@
 {
   "id": "TASK-083",
   "title": "Separate concrete T2I network, local raster, markdown, font, and endpoint strategy boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "t2i-render-implementation-boundary",
   "description": "TASK-039 created the renderer trait and template catalog boundary. AstrBot's real T2I implementation still has separate network endpoint discovery, endpoint fallback, local markdown parsing, font loading, text measuring, image loading, raster output, and temp image saving concerns. Keep those concrete render strategies behind astrbot-render instead of letting RespondStage, WebChat routes, or shared IO helpers own rendering details.",

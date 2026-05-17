@@ -12,7 +12,11 @@ use astrbot_provider::{
 };
 use astrbot_runtime::{RuntimeConfig, RuntimeConfigService};
 use astrbot_storage::{
-    FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
+    BACKUP_UPLOAD_CHUNK_SIZE, BackupExportJobRequest, BackupExportPackage, BackupExportPort,
+    BackupExportRequest, BackupImportJobRequest, BackupImportMode, BackupImportPort,
+    BackupImportPrecheck, BackupImportResult, BackupJobService, BackupManifest,
+    BackupRepositoryPort, BackupTableDump, FileTokenRecord, FileTokenRepository, FileTokenScope,
+    InMemoryFileTokenRepository,
 };
 use async_trait::async_trait;
 use axum::{
@@ -23,9 +27,9 @@ use serde_json::json;
 use tokio::sync::mpsc;
 
 use crate::{
-    DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementFileDownloadState,
-    ManagementStatusResponse, PluginMarketManagementState, management_router,
-    management_router_with_auth,
+    DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
+    ManagementFileDownloadState, ManagementStatusResponse, PluginMarketManagementState,
+    management_router, management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -229,6 +233,139 @@ async fn management_file_download_route_consumes_scoped_file_token() {
     let _ = fs::remove_file(path);
 }
 
+#[tokio::test]
+async fn management_backup_precheck_route_delegates_to_backup_state() {
+    let manifest = BackupManifest::new("4.9.1", "2026-05-16T00:00:00Z")
+        .with_table_group("main_db", ["conversations"]);
+    let state = management_state_fixture().with_backup(backup_management_state("4.9.2"));
+    let router = management_router(state);
+
+    let response = post_json(
+        router,
+        "/api/management/backup/precheck",
+        json!({ "manifest": manifest }),
+    )
+    .await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: serde_json::Value = response_json(response).await;
+    assert_eq!(payload["precheck"]["valid"], true);
+    assert_eq!(payload["precheck"]["can_import"], true);
+    assert_eq!(payload["precheck"]["version_status"], "MinorDiff");
+    assert_eq!(payload["precheck"]["backup_summary"]["table_groups"], 1);
+}
+
+#[tokio::test]
+async fn management_backup_job_routes_delegate_to_service_progress() {
+    let state = management_state_fixture().with_backup(backup_management_state("4.9.1"));
+    let router = management_router(state);
+
+    let export_response = post_json(
+        router.clone(),
+        "/api/management/backup/export",
+        json!({
+            "task_id": "export-route",
+            "astrbot_version": "4.9.1",
+            "exported_at": "2026-05-16T00:00:00Z"
+        }),
+    )
+    .await;
+    assert_eq!(export_response.status(), StatusCode::OK);
+    let export_payload: serde_json::Value = response_json(export_response).await;
+    assert_eq!(export_payload["task"]["progress"]["status"], "Completed");
+
+    let progress_response = get(
+        router.clone(),
+        "/api/management/backup/progress/export-route",
+    )
+    .await;
+    assert_eq!(progress_response.status(), StatusCode::OK);
+    let progress_payload: serde_json::Value = response_json(progress_response).await;
+    assert_eq!(progress_payload["task"]["task_id"], "export-route");
+    assert_eq!(progress_payload["task"]["kind"], "Export");
+
+    let import_response = post_json(
+        router,
+        "/api/management/backup/import",
+        json!({
+            "task_id": "import-route",
+            "source_id": "backup.zip",
+            "mode": "Replace",
+            "confirmed": true
+        }),
+    )
+    .await;
+    assert_eq!(import_response.status(), StatusCode::OK);
+    let import_payload: serde_json::Value = response_json(import_response).await;
+    assert_eq!(import_payload["task"]["kind"], "Import");
+    assert_eq!(import_payload["task"]["progress"]["status"], "Completed");
+}
+
+#[tokio::test]
+async fn management_backup_upload_routes_delegate_to_upload_manager() {
+    let state = management_state_fixture().with_backup(backup_management_state("4.9.1"));
+    let router = management_router(state);
+
+    let start_response = post_json(
+        router.clone(),
+        "/api/management/backup/upload/start",
+        json!({
+            "upload_id": "upload-route",
+            "filename": "../backup.zip",
+            "total_size": BACKUP_UPLOAD_CHUNK_SIZE + 10,
+            "now_unix": 100
+        }),
+    )
+    .await;
+    assert_eq!(start_response.status(), StatusCode::OK);
+    let start_payload: serde_json::Value = response_json(start_response).await;
+    assert_eq!(start_payload["session"]["filename"], "backup.zip");
+    assert_eq!(start_payload["session"]["total_chunks"], 2);
+
+    for (chunk_index, bytes_len) in [(0, BACKUP_UPLOAD_CHUNK_SIZE), (1, 10)] {
+        let chunk_response = post_json(
+            router.clone(),
+            "/api/management/backup/upload/chunk",
+            json!({
+                "upload_id": "upload-route",
+                "chunk_index": chunk_index,
+                "bytes_len": bytes_len,
+                "now_unix": 110 + chunk_index
+            }),
+        )
+        .await;
+        assert_eq!(chunk_response.status(), StatusCode::OK);
+    }
+
+    let complete_response = post_json(
+        router,
+        "/api/management/backup/upload/complete",
+        json!({ "upload_id": "upload-route" }),
+    )
+    .await;
+    assert_eq!(complete_response.status(), StatusCode::OK);
+    let complete_payload: serde_json::Value = response_json(complete_response).await;
+    assert_eq!(complete_payload["plan"]["filename"], "backup.zip");
+    assert_eq!(
+        complete_payload["plan"]["ordered_chunk_indexes"],
+        json!([0, 1])
+    );
+}
+
+#[tokio::test]
+async fn management_backup_precheck_route_requires_configured_backup_state() {
+    let router = management_router(management_state_fixture());
+
+    let response = post_json(
+        router,
+        "/api/management/backup/precheck",
+        json!({ "manifest": BackupManifest::new("4.9.1", "2026-05-16T00:00:00Z") }),
+    )
+    .await;
+
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+}
+
 fn management_state_fixture() -> ManagementApiState {
     let provider_manager = ProviderManager::from_configs(
         &ProviderRegistry::with_builtin_providers(),
@@ -276,6 +413,65 @@ fn temp_management_file_path(suffix: &str) -> std::path::PathBuf {
     ))
 }
 
+fn temp_management_backup_chunk_path(suffix: &str) -> std::path::PathBuf {
+    std::env::temp_dir().join(format!(
+        "astrbot-web-management-backup-chunks-{}-{}",
+        std::process::id(),
+        suffix
+    ))
+}
+
+fn backup_management_state(current_version: &str) -> ManagementBackupState {
+    ManagementBackupState::new(
+        Arc::new(BackupJobService::new(
+            Arc::new(ManagementBackupRepository {
+                manifest: BackupManifest::new("4.9.1", "2026-05-16T00:00:00Z")
+                    .with_table_group("main_db", ["conversations"]),
+            }),
+            Arc::new(ManagementBackupExporter),
+            Arc::new(PrecheckBackupImportPort::new(current_version)),
+        )),
+        temp_management_backup_chunk_path(current_version),
+    )
+}
+
+struct ManagementBackupRepository {
+    manifest: BackupManifest,
+}
+
+#[async_trait]
+impl BackupRepositoryPort for ManagementBackupRepository {
+    async fn collect_export(
+        &self,
+        request: &BackupExportJobRequest,
+    ) -> Result<BackupExportRequest> {
+        Ok(
+            BackupExportRequest::new(&request.astrbot_version, &request.exported_at)
+                .with_table_dump(BackupTableDump::new(
+                    "main_db",
+                    "conversations",
+                    vec![json!({ "task_id": request.task_id })],
+                )),
+        )
+    }
+
+    async fn load_import_manifest(
+        &self,
+        _request: &BackupImportJobRequest,
+    ) -> Result<BackupManifest> {
+        Ok(self.manifest.clone())
+    }
+}
+
+struct ManagementBackupExporter;
+
+#[async_trait]
+impl BackupExportPort for ManagementBackupExporter {
+    async fn export_backup(&self, request: BackupExportRequest) -> Result<BackupExportPackage> {
+        Ok(BackupExportPackage::from_request(request))
+    }
+}
+
 struct NoopPluginHandler;
 
 #[async_trait]
@@ -285,5 +481,35 @@ impl PluginHandler for NoopPluginHandler {
             MessageChain::plain("ok"),
         ));
         Ok(PluginControl::Continue)
+    }
+}
+
+struct PrecheckBackupImportPort {
+    current_version: String,
+}
+
+impl PrecheckBackupImportPort {
+    fn new(current_version: impl Into<String>) -> Self {
+        Self {
+            current_version: current_version.into(),
+        }
+    }
+}
+
+#[async_trait]
+impl BackupImportPort for PrecheckBackupImportPort {
+    async fn precheck_backup(&self, manifest: &BackupManifest) -> Result<BackupImportPrecheck> {
+        Ok(BackupImportPrecheck::from_manifest(
+            manifest,
+            self.current_version.clone(),
+        ))
+    }
+
+    async fn import_backup(
+        &self,
+        _manifest: BackupManifest,
+        _mode: BackupImportMode,
+    ) -> Result<BackupImportResult> {
+        Ok(BackupImportResult::success())
     }
 }

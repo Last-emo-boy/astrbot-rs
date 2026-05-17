@@ -2,16 +2,17 @@ use std::collections::BTreeMap;
 
 use astrbot_core::Result;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-use super::manifest::{BackupManifest, BackupVersionStatus};
+use super::manifest::{BackupManifest, BackupVersionCompatibility, BackupVersionStatus};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BackupImportMode {
     Replace,
     Merge,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupImportPrecheck {
     pub valid: bool,
     pub can_import: bool,
@@ -27,25 +28,33 @@ pub struct BackupImportPrecheck {
 impl BackupImportPrecheck {
     pub fn from_manifest(manifest: &BackupManifest, current_version: impl Into<String>) -> Self {
         let current_version = current_version.into();
-        let version_status = compare_major_minor(&manifest.astrbot_version, &current_version);
-        let can_import = !matches!(
-            version_status,
-            BackupVersionStatus::MajorDiff | BackupVersionStatus::Missing
-        );
+        let compatibility =
+            BackupVersionCompatibility::compare(&manifest.astrbot_version, &current_version);
         let mut backup_summary = BTreeMap::new();
         backup_summary.insert("table_groups".to_string(), manifest.tables.len());
         backup_summary.insert("directories".to_string(), manifest.directories.len());
         backup_summary.insert("checksums".to_string(), manifest.checksums.len());
 
+        let warnings = compatibility
+            .message
+            .clone()
+            .filter(|_| compatibility.status == BackupVersionStatus::MinorDiff)
+            .into_iter()
+            .collect();
+        let error = compatibility
+            .message
+            .clone()
+            .filter(|_| !compatibility.can_import());
+
         Self {
             valid: true,
-            can_import,
-            version_status,
+            can_import: compatibility.can_import(),
+            version_status: compatibility.status,
             backup_version: manifest.astrbot_version.clone(),
             current_version,
             backup_time: manifest.exported_at.clone(),
-            warnings: Vec::new(),
-            error: None,
+            warnings,
+            error,
             backup_summary,
         }
     }
@@ -65,7 +74,7 @@ impl BackupImportPrecheck {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupImportResult {
     pub success: bool,
     pub imported_tables: BTreeMap<String, usize>,
@@ -104,40 +113,10 @@ pub trait BackupImportPort: Send + Sync {
     ) -> Result<BackupImportResult>;
 }
 
-fn compare_major_minor(backup_version: &str, current_version: &str) -> BackupVersionStatus {
-    if backup_version.trim().is_empty() || current_version.trim().is_empty() {
-        return BackupVersionStatus::Missing;
-    }
-
-    let backup_major = major_minor(backup_version);
-    let current_major = major_minor(current_version);
-    if backup_major != current_major {
-        return BackupVersionStatus::MajorDiff;
-    }
-    if backup_version == current_version {
-        BackupVersionStatus::Match
-    } else {
-        BackupVersionStatus::MinorDiff
-    }
-}
-
-fn major_minor(version: &str) -> String {
-    let normalized = version
-        .trim()
-        .trim_start_matches('v')
-        .split(['-', '+'])
-        .next()
-        .unwrap_or_default();
-    let mut parts = normalized.split('.').filter(|part| !part.is_empty());
-    let major = parts.next().unwrap_or("0");
-    let minor = parts.next().unwrap_or("0");
-    format!("{major}.{minor}")
-}
-
 #[cfg(test)]
 mod tests {
     use super::{BackupImportPrecheck, BackupVersionStatus};
-    use crate::backup::BackupManifest;
+    use crate::BackupManifest;
 
     #[test]
     fn import_precheck_allows_minor_patch_difference_only() {
@@ -146,9 +125,11 @@ mod tests {
 
         assert!(precheck.can_import);
         assert_eq!(precheck.version_status, BackupVersionStatus::MinorDiff);
+        assert_eq!(precheck.warnings.len(), 1);
 
         let rejected = BackupImportPrecheck::from_manifest(&manifest, "4.10.0");
         assert!(!rejected.can_import);
         assert_eq!(rejected.version_status, BackupVersionStatus::MajorDiff);
+        assert!(rejected.error.is_some());
     }
 }

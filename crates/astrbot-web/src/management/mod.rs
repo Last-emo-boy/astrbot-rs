@@ -1,5 +1,6 @@
 mod api_key;
 mod auth;
+mod backup;
 mod config;
 mod files;
 mod platforms;
@@ -27,6 +28,14 @@ pub use auth::{
     AuthRejectionReason, DashboardAuthDecision, DashboardAuthPolicy, ManagementAuthState,
     extract_bearer_token,
 };
+pub use backup::{
+    ManagementBackupAbortRequest, ManagementBackupAbortResponse, ManagementBackupChunkRequest,
+    ManagementBackupChunkResponse, ManagementBackupCompleteRequest,
+    ManagementBackupCompleteResponse, ManagementBackupExportRequest, ManagementBackupImportRequest,
+    ManagementBackupJobResponse, ManagementBackupPrecheckRequest, ManagementBackupPrecheckResponse,
+    ManagementBackupProgressResponse, ManagementBackupState, ManagementBackupUploadStartRequest,
+    ManagementBackupUploadStartResponse,
+};
 pub use config::{
     ManagementConfigMutationRequest, ManagementConfigMutationResponse,
     ManagementConfigSchemaResponse,
@@ -49,6 +58,7 @@ pub struct ManagementApiState {
     config_service: Option<RuntimeConfigService>,
     plugin_market: Option<PluginMarketManagementState>,
     file_downloads: Option<ManagementFileDownloadState>,
+    backup: Option<ManagementBackupState>,
 }
 
 impl ManagementApiState {
@@ -64,6 +74,7 @@ impl ManagementApiState {
             config_service: None,
             plugin_market: None,
             file_downloads: None,
+            backup: None,
         }
     }
 
@@ -79,6 +90,11 @@ impl ManagementApiState {
 
     pub fn with_file_downloads(mut self, file_downloads: ManagementFileDownloadState) -> Self {
         self.file_downloads = Some(file_downloads);
+        self
+    }
+
+    pub fn with_backup(mut self, backup: ManagementBackupState) -> Self {
+        self.backup = Some(backup);
         self
     }
 
@@ -118,6 +134,10 @@ impl ManagementApiState {
         self.file_downloads.as_ref()
     }
 
+    pub fn backup(&self) -> Option<&ManagementBackupState> {
+        self.backup.as_ref()
+    }
+
     pub fn status(&self) -> ManagementStatusResponse {
         ManagementStatusResponse::new(
             self.providers.clone(),
@@ -154,6 +174,29 @@ fn management_routes() -> Router<ManagementApiState> {
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
         .route("/api/management/files/{token}", get(files::download))
+        .route("/api/management/backup/precheck", post(backup::precheck))
+        .route("/api/management/backup/export", post(backup::export))
+        .route("/api/management/backup/import", post(backup::import))
+        .route(
+            "/api/management/backup/progress/{task_id}",
+            get(backup::progress),
+        )
+        .route(
+            "/api/management/backup/upload/start",
+            post(backup::upload_start),
+        )
+        .route(
+            "/api/management/backup/upload/chunk",
+            post(backup::upload_chunk),
+        )
+        .route(
+            "/api/management/backup/upload/complete",
+            post(backup::upload_complete),
+        )
+        .route(
+            "/api/management/backup/upload/abort",
+            post(backup::upload_abort),
+        )
         .route(
             "/api/management/plugin-market/install-plan",
             post(plugin_market::install_plan),

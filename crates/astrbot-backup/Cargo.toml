@@ -1,13 +1,11 @@
 [package]
-name = "astrbot-storage"
+name = "astrbot-backup"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-astrbot-backup = { path = "../astrbot-backup" }
 astrbot-core = { path = "../astrbot-core" }
-astrbot-memory = { path = "../astrbot-memory" }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -2,11 +2,12 @@ use std::collections::BTreeMap;
 
 use astrbot_core::Result;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::manifest::{BackupDirectoryStat, BackupManifest};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupTableDump {
     pub group: String,
     pub table: String,
@@ -23,20 +24,20 @@ impl BackupTableDump {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupFileEntry {
     pub archive_path: String,
     pub source_path: String,
     pub size_bytes: u64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupArchiveEntry {
     pub archive_path: String,
     pub bytes: Vec<u8>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupExportRequest {
     pub astrbot_version: String,
     pub exported_at: String,
@@ -60,9 +61,19 @@ impl BackupExportRequest {
         self.table_dumps.push(dump);
         self
     }
+
+    pub fn with_file(mut self, file: BackupFileEntry) -> Self {
+        self.files.push(file);
+        self
+    }
+
+    pub fn with_directory(mut self, name: impl Into<String>, stat: BackupDirectoryStat) -> Self {
+        self.directories.insert(name.into(), stat);
+        self
+    }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupExportPackage {
     pub manifest: BackupManifest,
     pub tables: Vec<BackupTableDump>,

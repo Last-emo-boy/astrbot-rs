@@ -27,6 +27,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "astrbot-backup"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "async-trait",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "astrbot-cli"
 version = "0.1.0"
 dependencies = [
@@ -232,6 +243,7 @@ dependencies = [
 name = "astrbot-storage"
 version = "0.1.0"
 dependencies = [
+ "astrbot-backup",
  "astrbot-core",
  "astrbot-memory",
  "async-trait",

@@ -1,7 +1,7 @@
 {
   "id": "TASK-067",
   "title": "Separate backup upload, task progress, manifest, import, and export service boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "backup-job-service-boundary",
   "description": "AstrBot backup routes combine chunked upload sessions, background task progress, JWT-gated downloads, manifest inspection, import/export orchestration, version compatibility, database restore, KB restore, and directory restore. Rust should split backup job services from web route handlers and persistence repositories.",
@@ -36,5 +36,38 @@
     ],
     "verification_command": "cargo test -p astrbot-web && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T11:03:16+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates/astrbot-backup/Cargo.toml",
+    "crates/astrbot-backup/src/lib.rs",
+    "crates/astrbot-backup/src/manifest.rs",
+    "crates/astrbot-backup/src/job.rs",
+    "crates/astrbot-backup/src/upload.rs",
+    "crates/astrbot-backup/src/import.rs",
+    "crates/astrbot-backup/src/export.rs",
+    "crates/astrbot-backup/src/service.rs",
+    "crates/astrbot-storage/Cargo.toml",
+    "crates/astrbot-storage/src/backup.rs",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/backup.rs",
+    "crates/astrbot-web/src/tests/management.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-067.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-067-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/plan.json"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo check --tests -p astrbot-backup",
+    "cargo check --tests -p astrbot-storage",
+    "cargo check --tests -p astrbot-web",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-backup / -p astrbot-storage / -p astrbot-web attempted but blocked by missing MSVC link.exe in this shell"
+  ],
   "risk": "high"
 }

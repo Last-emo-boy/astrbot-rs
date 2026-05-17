@@ -3,26 +3,30 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T08:20:57+08:00",
+  "updated_at": "2026-05-17T11:03:16+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 66,
-    "pending_tasks": 24,
+    "completed_tasks": 67,
+    "pending_tasks": 23,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 66,
-    "current_task_id": "TASK-066",
-    "next_task": "TASK-067"
+    "reflection_rounds": 67,
+    "current_task_id": "TASK-067",
+    "next_task": "TASK-068"
   },
-  "latest_update": "TASK-066 added MCP transport runtime ports, process supervision plans, tolerant JSON-RPC stdout parsing, reconnect decisions, and bridge registration into astrbot-tool descriptors. Next pending task is TASK-067.",
+  "latest_update": "TASK-067 introduced astrbot-backup domain boundaries for manifest compatibility, import/export jobs, upload sessions, progress snapshots, and web management DTO adapters. Next pending task is TASK-068.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",
     "E:/Playground/Astrbot/astrbot/core/platform/manager.py",
     "E:/Playground/Astrbot/astrbot/core/astr_main_agent.py",
     "E:/Playground/Astrbot/astrbot/core/pipeline/process_stage/method/agent_request.py",
-    "E:/Playground/Astrbot/astrbot/core/agent/mcp_client.py"
+    "E:/Playground/Astrbot/astrbot/core/agent/mcp_client.py",
+    "E:/Playground/Astrbot/astrbot/dashboard/routes/backup.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/exporter.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/importer.py",
+    "E:/Playground/Astrbot/astrbot/core/backup/constants.py"
   ]
 }

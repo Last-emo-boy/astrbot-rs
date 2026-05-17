@@ -1,9 +1,9 @@
-use std::fmt;
 use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
+use astrbot_net::{DownloadRequest, DownloadService, HttpClientPolicy, ReqwestDownloadService};
 use async_trait::async_trait;
-use reqwest::header::{AUTHORIZATION, HeaderMap, PROXY_AUTHORIZATION};
+use reqwest::header::HeaderMap;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MediaDownloadPolicy {
@@ -52,101 +52,60 @@ pub trait MediaDownloadService: Send + Sync {
     async fn download(&self, request: MediaDownloadRequest) -> Result<DownloadedMedia>;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ReqwestMediaDownloadService {
-    client: reqwest::Client,
-}
-
-impl fmt::Debug for ReqwestMediaDownloadService {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ReqwestMediaDownloadService")
-            .finish_non_exhaustive()
-    }
+    inner: ReqwestDownloadService,
+    client_policy: HttpClientPolicy,
 }
 
 impl ReqwestMediaDownloadService {
     pub fn new(policy: MediaDownloadPolicy) -> Result<Self> {
-        let client = reqwest::Client::builder()
-            .timeout(policy.timeout)
-            .no_gzip()
-            .build()
-            .map_err(|err| {
-                AstrbotError::Provider(format!("failed to build media download client: {err}"))
-            })?;
-        Ok(Self { client })
+        let client_policy = HttpClientPolicy::default().with_timeout(policy.timeout);
+        client_policy.build_client().map_err(|err| {
+            AstrbotError::Provider(format!("failed to build media download client: {err}"))
+        })?;
+        Ok(Self {
+            inner: ReqwestDownloadService::default(),
+            client_policy,
+        })
     }
 }
 
 #[async_trait]
 impl MediaDownloadService for ReqwestMediaDownloadService {
     async fn download(&self, request: MediaDownloadRequest) -> Result<DownloadedMedia> {
-        if !is_http_url(&request.url) {
+        if !astrbot_net::is_http_url(&request.url) {
             return Err(AstrbotError::Provider(
                 "media download requires an HTTP or HTTPS URL".to_string(),
             ));
         }
 
-        let download_request = self.client.get(&request.url).build().map_err(|err| {
-            AstrbotError::Provider(format!(
-                "failed to build media download request for {}: {err}",
-                request.url
-            ))
-        })?;
-        assert_no_sensitive_download_headers(download_request.headers())?;
-
-        let response = self.client.execute(download_request).await.map_err(|err| {
-            AstrbotError::Provider(format!("media download failed for {}: {err}", request.url))
-        })?;
-
-        let status = response.status();
-        let content_type = response
-            .headers()
-            .get(reqwest::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok())
-            .map(|value| value.split(';').next().unwrap_or(value).trim().to_string())
-            .filter(|value| !value.is_empty());
-        let bytes = response.bytes().await.map_err(|err| {
-            AstrbotError::Provider(format!("failed to read media download response: {err}"))
-        })?;
-
-        if !status.is_success() {
-            return Err(AstrbotError::Provider(format!(
-                "media download returned {status} for {}",
-                request.url
-            )));
-        }
-        if bytes.is_empty() {
-            return Err(AstrbotError::Provider(
-                "downloaded media was empty".to_string(),
-            ));
-        }
-        if let Some(limit) = request.policy.max_bytes
-            && bytes.len() > limit
-        {
-            return Err(AstrbotError::Provider(format!(
-                "downloaded media exceeded size limit of {limit} bytes"
-            )));
-        }
+        let response = self
+            .inner
+            .download(
+                DownloadRequest::get(request.url.clone())
+                    .with_client_policy(
+                        self.client_policy
+                            .clone()
+                            .with_timeout(request.policy.timeout),
+                    )
+                    .with_max_bytes(request.policy.max_bytes),
+            )
+            .await
+            .map_err(|err| {
+                AstrbotError::Provider(format!("media download failed for {}: {err}", request.url))
+            })?;
 
         Ok(DownloadedMedia {
             url: request.url,
-            content_type,
-            bytes: bytes.to_vec(),
+            content_type: response.content_type,
+            bytes: response.bytes,
         })
     }
 }
 
 pub fn assert_no_sensitive_download_headers(headers: &HeaderMap) -> Result<()> {
-    if headers.contains_key(AUTHORIZATION) || headers.contains_key(PROXY_AUTHORIZATION) {
-        return Err(AstrbotError::Provider(
-            "media downloads must not reuse provider authorization headers".to_string(),
-        ));
-    }
-    Ok(())
-}
-
-fn is_http_url(value: &str) -> bool {
-    value.starts_with("http://") || value.starts_with("https://")
+    astrbot_net::assert_no_sensitive_download_headers(headers)
 }
 
 #[cfg(test)]

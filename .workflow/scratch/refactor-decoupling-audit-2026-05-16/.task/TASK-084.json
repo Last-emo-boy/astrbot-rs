@@ -1,7 +1,7 @@
 {
   "id": "TASK-084",
   "title": "Define shared network download, TLS, proxy, progress, and cache boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "network-download-boundary",
   "description": "AstrBot centralizes HTTP download, cert fallback, proxy/trust-env behavior, public IP lookup, dashboard zip download/cache, and temp image saving in utils/io.py and http_ssl.py. Rust currently has provider HTTP helpers and media normalization plans, but no shared network-file boundary for platform media downloads, provider attachments, dashboard updates, T2I network artifacts, or future plugin/package downloads.",

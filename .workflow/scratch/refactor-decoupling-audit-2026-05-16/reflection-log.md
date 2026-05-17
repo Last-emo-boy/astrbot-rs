@@ -501,3 +501,12 @@
 - AstrBot reference: `core/utils/t2i/renderer.py`, `network_strategy.py`, `local_strategy.py`, and `template_manager.py`.
 - Adjustment: next implementation pointer moves to `TASK-084`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-render`, `cargo clippy -p astrbot-render -- -D warnings`, and `cargo test --workspace` passed.
+
+## Round 84 - TASK-084 Network Download Boundary
+
+- Scope: new `astrbot-net` crate plus media/provider integration.
+- Strategy: follow AstrBot `io.py` and `http_ssl.py` by separating generic network transfer, TLS/proxy policy, progress snapshots, cache keys, and temp/file destinations from media normalization and dashboard route code.
+- Result: added download, TLS, progress, and cache modules; `astrbot-media` now delegates HTTP media transfer to `astrbot-net`; provider HTTP client construction now enters through `HttpClientPolicy`.
+- AstrBot reference: `core/utils/io.py`, `core/utils/http_ssl.py`, and `core/utils/t2i/network_strategy.py`.
+- Adjustment: next implementation pointer moves to `TASK-085`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-net`, `cargo test -p astrbot-media`, `cargo test -p astrbot-provider`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.

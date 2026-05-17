@@ -6,6 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 astrbot-core = { path = "../astrbot-core" }
+astrbot-net = { path = "../astrbot-net" }
 async-trait.workspace = true
 base64.workspace = true
 reqwest.workspace = true

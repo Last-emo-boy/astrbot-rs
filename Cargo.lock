@@ -135,6 +135,7 @@ name = "astrbot-media"
 version = "0.1.0"
 dependencies = [
  "astrbot-core",
+ "astrbot-net",
  "async-trait",
  "base64",
  "reqwest",
@@ -150,6 +151,19 @@ dependencies = [
  "astrbot-core",
  "async-trait",
  "serde",
+ "tokio",
+]
+
+[[package]]
+name = "astrbot-net"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "astrbot-storage",
+ "async-trait",
+ "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
@@ -217,6 +231,7 @@ version = "0.1.0"
 dependencies = [
  "astrbot-core",
  "astrbot-media",
+ "astrbot-net",
  "astrbot-observability",
  "astrbot-storage",
  "async-trait",

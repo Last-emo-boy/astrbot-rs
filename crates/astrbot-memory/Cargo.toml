@@ -1,18 +1,13 @@
 [package]
-name = "astrbot-agent"
+name = "astrbot-memory"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
 astrbot-core = { path = "../astrbot-core" }
-astrbot-memory = { path = "../astrbot-memory" }
-astrbot-plugin = { path = "../astrbot-plugin" }
-astrbot-provider = { path = "../astrbot-provider" }
-astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

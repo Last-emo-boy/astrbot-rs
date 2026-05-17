@@ -16,6 +16,7 @@ name = "astrbot-agent"
 version = "0.1.0"
 dependencies = [
  "astrbot-core",
+ "astrbot-memory",
  "astrbot-plugin",
  "astrbot-provider",
  "astrbot-tool",
@@ -100,6 +101,16 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "astrbot-memory"
+version = "0.1.0"
+dependencies = [
+ "astrbot-core",
+ "async-trait",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -220,6 +231,7 @@ name = "astrbot-storage"
 version = "0.1.0"
 dependencies = [
  "astrbot-core",
+ "astrbot-memory",
  "async-trait",
  "serde",
  "serde_json",

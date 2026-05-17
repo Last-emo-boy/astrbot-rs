@@ -8,15 +8,17 @@ use astrbot_provider::{ChatProvider, ChatRequest, ChatResponse};
 use async_trait::async_trait;
 
 use crate::{
-    AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy, AgentFeedbackEvent,
-    AgentFeedbackEventKind, AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort,
-    AgentRunOutcome, AgentRunner, AgentSessionContextPort, AgentTokenCounter,
-    ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
-    ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
-    ContextWindowRequestDecorator, NoopContextCompressor, PersonaPromptDecorator,
-    ProviderPreferenceRequestDecorator, ProviderRequestDecorator, QuoteContextRequestDecorator,
-    SessionContextRequestDecorator, ToolLoopPolicy,
+    AgentActiveReplyDecider, AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy,
+    AgentFeedbackEvent, AgentFeedbackEventKind, AgentMemoryContextPort, AgentPersona,
+    AgentProviderPreferencePort, AgentQuoteContextPort, AgentRunOutcome, AgentRunner,
+    AgentSessionContextPort, AgentTokenCounter, ApproximateTokenCounter, ChatAgentRunner,
+    CompositeProviderRequestDecorator, ContextTokenBudget, ContextTruncationPolicy,
+    ContextWindowManager, ContextWindowRequestDecorator, MemoryRequestDecorator,
+    NoopContextCompressor, PersonaPromptDecorator, ProviderPreferenceRequestDecorator,
+    ProviderRequestDecorator, QuoteContextRequestDecorator, SessionContextRequestDecorator,
+    ToolLoopPolicy,
 };
+use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
 
 struct NoopSink;
 
@@ -34,6 +36,18 @@ fn event(text: impl Into<String>) -> MessageEvent {
         "WebChat",
         MessageSession::new("webchat", "conversation-1"),
         MessageSender::new("user-1", None),
+        MessageChain::plain(text),
+        Arc::new(NoopSink),
+    )
+}
+
+fn group_event(text: impl Into<String>) -> MessageEvent {
+    MessageEvent::new(
+        "event-1",
+        "webchat",
+        "WebChat",
+        MessageSession::group("webchat", "room-1"),
+        MessageSender::new("user-1", Some("Alice".to_string())),
         MessageChain::plain(text),
         Arc::new(NoopSink),
     )
@@ -63,6 +77,19 @@ struct StaticQuoteContext;
 impl AgentQuoteContextPort for StaticQuoteContext {
     async fn quote_content_parts(&self, _event: &MessageEvent) -> Result<Vec<ProviderContentPart>> {
         Ok(vec![ProviderContentPart::text("quoted")])
+    }
+}
+
+struct StaticMemoryContext;
+
+#[async_trait]
+impl AgentMemoryContextPort for StaticMemoryContext {
+    async fn memory_records(&self, event: &MessageEvent) -> Result<Vec<MemoryTranscriptRecord>> {
+        Ok(vec![MemoryTranscriptRecord::new(
+            MemorySessionKey::from_session(&event.session),
+            "Alice",
+            "[Alice/12:00:00]: hello",
+        )])
     }
 }
 
@@ -178,6 +205,59 @@ async fn context_window_decorator_rewrites_only_contexts() {
         request.contexts,
         vec![ProviderContextMessage::text("user", "new user")]
     );
+}
+
+#[tokio::test]
+async fn memory_request_decorator_appends_history_to_system_prompt() {
+    let decorator = MemoryRequestDecorator::new(Arc::new(StaticMemoryContext));
+    let mut request = ProviderRequest::new("what happened", "room-1")
+        .with_system_prompt("persona")
+        .with_context(ProviderContextMessage::text("assistant", "old"));
+
+    decorator
+        .decorate(&group_event("what happened"), &mut request)
+        .await
+        .expect("memory decorator should run");
+
+    let system_prompt = request
+        .system_prompt
+        .as_deref()
+        .expect("system prompt should exist");
+    assert!(system_prompt.contains("persona"));
+    assert!(system_prompt.contains("[Alice/12:00:00]: hello"));
+    assert_eq!(request.contexts.len(), 1);
+}
+
+#[tokio::test]
+async fn memory_request_decorator_can_rewrite_active_reply_prompt() {
+    let decorator = MemoryRequestDecorator::new(Arc::new(StaticMemoryContext)).active_reply();
+    let mut request = ProviderRequest::new("new message", "room-1")
+        .with_context(ProviderContextMessage::text("assistant", "old"));
+
+    decorator
+        .decorate(&group_event("new message"), &mut request)
+        .await
+        .expect("memory decorator should run");
+
+    assert!(request.contexts.is_empty());
+    let prompt = request.prompt.as_deref().expect("prompt should exist");
+    assert!(prompt.contains("[Alice/12:00:00]: hello"));
+    assert!(prompt.contains("new message"));
+}
+
+#[test]
+fn active_reply_decider_uses_memory_policy_without_platform_adapter() {
+    let decider = AgentActiveReplyDecider::new(
+        ActiveReplyPolicy::probability(0.5).with_whitelist(["room-1"]),
+    );
+
+    assert!(decider.should_reply(&group_event("hello"), 0.25));
+    assert!(!decider.should_reply(&group_event("hello"), 0.75));
+
+    let mut wake_event = group_event("hello");
+    wake_event.mark_wake(true);
+    assert!(!decider.should_reply(&wake_event, 0.25));
+    assert!(!decider.should_reply(&event("direct"), 0.25));
 }
 
 #[tokio::test]

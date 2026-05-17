@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T07:53:16+08:00",
+  "updated_at": "2026-05-17T08:03:21+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 63,
-    "pending_tasks": 27,
+    "completed_tasks": 64,
+    "pending_tasks": 26,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 63,
-    "current_task_id": "TASK-063",
-    "next_task": "TASK-064"
+    "reflection_rounds": 64,
+    "current_task_id": "TASK-064",
+    "next_task": "TASK-065"
   },
-  "latest_update": "TASK-063 added scoped file-token storage, dashboard static asset policy, and management file download route boundaries. Next pending task is TASK-064.",
+  "latest_update": "TASK-064 introduced astrbot-memory with transcript, active-reply, image-caption, and request-decoration boundaries plus storage and agent ports. Next pending task is TASK-065.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

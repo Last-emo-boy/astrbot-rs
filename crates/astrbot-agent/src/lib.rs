@@ -1,6 +1,7 @@
 mod context;
 mod fallback;
 mod feedback;
+mod memory;
 mod multimodal;
 mod persona;
 mod request_decorator;
@@ -21,6 +22,7 @@ pub use feedback::{
     ToolResultStatus, ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent,
     VoiceFeedbackMode,
 };
+pub use memory::{AgentActiveReplyDecider, AgentMemoryContextPort, MemoryRequestDecorator};
 pub use multimodal::{
     ChatProviderImageCaptioner, ImageCaptionConfig, ImageCaptionRequest,
     ImageCaptionRequestDecorator, ImageCaptioner, ModalityFallbackPolicy, ModalityFilterOutcome,

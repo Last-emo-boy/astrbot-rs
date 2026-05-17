@@ -4,6 +4,7 @@ pub mod backup;
 mod config_snapshot;
 mod conversation;
 mod file_token;
+mod memory;
 mod migration;
 mod provider_preference;
 mod repository;
@@ -29,6 +30,7 @@ pub use conversation::{
 pub use file_token::{
     FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
 };
+pub use memory::{InMemoryMemoryRepository, MemoryRepository};
 pub use migration::{
     DeclarativeMigration, InMemoryMigrationStateRepository, MigrationOperation, MigrationOutcome,
     MigrationRecord, MigrationRunner, MigrationStateRepository, StorageMigration,

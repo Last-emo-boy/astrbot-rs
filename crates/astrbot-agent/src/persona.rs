@@ -1,4 +1,5 @@
 use astrbot_core::{MessageEvent, ProviderRequest, Result};
+use astrbot_skill::SkillActivationPolicy;
 use async_trait::async_trait;
 
 use crate::ProviderRequestDecorator;
@@ -7,6 +8,7 @@ use crate::ProviderRequestDecorator;
 pub struct AgentPersona {
     pub id: String,
     pub system_prompt: Option<String>,
+    pub skills: Option<Vec<String>>,
 }
 
 impl AgentPersona {
@@ -14,6 +16,7 @@ impl AgentPersona {
         Self {
             id: id.into(),
             system_prompt: None,
+            skills: None,
         }
     }
 
@@ -21,6 +24,18 @@ impl AgentPersona {
         let system_prompt = system_prompt.into();
         self.system_prompt = (!system_prompt.trim().is_empty()).then_some(system_prompt);
         self
+    }
+
+    pub fn with_skills(mut self, skills: Option<Vec<String>>) -> Self {
+        self.skills = skills;
+        self
+    }
+
+    pub fn skill_activation_policy(&self) -> SkillActivationPolicy {
+        match self.skills.as_ref().filter(|skills| !skills.is_empty()) {
+            Some(skills) => SkillActivationPolicy::all_enabled().allow_only(skills.clone()),
+            None => SkillActivationPolicy::all_enabled(),
+        }
     }
 }
 

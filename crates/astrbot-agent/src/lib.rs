@@ -7,6 +7,7 @@ mod multimodal;
 mod persona;
 mod request_decorator;
 mod runner;
+mod skill_prompt;
 mod subagent;
 mod tool_loop;
 
@@ -43,6 +44,7 @@ pub use request_decorator::{
     QuoteContextRequestDecorator, SessionContextRequestDecorator,
 };
 pub use runner::{AgentRunOutcome, AgentRunner, ChatAgentRunner};
+pub use skill_prompt::SkillPromptInventoryRequestDecorator;
 pub use subagent::{
     HandoffRegistration, HandoffToolBridge, HandoffToolSpec, InMemoryHandoffRegistry,
     ResolvedSubagent, StaticSubagentResolver, SubagentConfig, SubagentConfigSource,

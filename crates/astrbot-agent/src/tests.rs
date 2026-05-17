@@ -5,6 +5,9 @@ use astrbot_core::{
     ProviderContentPart, ProviderContextMessage, ProviderRequest, Result,
 };
 use astrbot_provider::{ChatProvider, ChatRequest, ChatResponse};
+use astrbot_skill::{
+    SkillActivationPolicy, SkillCatalog, SkillDescriptor, SkillPromptInventory, SkillSource,
+};
 use async_trait::async_trait;
 
 use crate::{
@@ -16,7 +19,7 @@ use crate::{
     ContextWindowManager, ContextWindowRequestDecorator, MemoryRequestDecorator,
     NoopContextCompressor, PersonaPromptDecorator, ProviderPreferenceRequestDecorator,
     ProviderRequestDecorator, QuoteContextRequestDecorator, SessionContextRequestDecorator,
-    ToolLoopPolicy,
+    SkillPromptInventoryRequestDecorator, ToolLoopPolicy,
 };
 use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
 
@@ -135,6 +138,45 @@ async fn composite_decorator_applies_preference_context_quote_and_persona() {
         vec![ProviderContentPart::text("quoted")]
     );
     assert_eq!(request.system_prompt.as_deref(), Some("persona prompt"));
+}
+
+#[tokio::test]
+async fn skill_prompt_inventory_decorator_appends_active_skill_prompt_without_package_logic() {
+    let mut catalog = SkillCatalog::new();
+    catalog.add_skill(
+        SkillDescriptor::new("writer", "C:\\skills\\writer\\SKILL.md")
+            .with_description("Draft clean text"),
+    );
+    catalog.add_skill(
+        SkillDescriptor::new("preset", "/workspace/skills/preset/SKILL.md")
+            .with_description("Sandbox preset")
+            .with_source(SkillSource::Sandbox),
+    );
+    let inventory = SkillPromptInventory::from_catalog(
+        &catalog,
+        &SkillActivationPolicy::all_enabled().disable("preset"),
+    );
+    let persona = AgentPersona::new("default")
+        .with_system_prompt("persona prompt")
+        .with_skills(Some(vec!["writer".to_string()]));
+    let decorator = CompositeProviderRequestDecorator::new()
+        .with_decorator(Arc::new(PersonaPromptDecorator::new(persona.clone())))
+        .with_decorator(Arc::new(SkillPromptInventoryRequestDecorator::for_persona(
+            inventory, &persona,
+        )));
+    let mut request = ProviderRequest::new("hello", "conversation-1");
+
+    decorator
+        .decorate(&event("hello"), &mut request)
+        .await
+        .expect("request should decorate with skill inventory");
+
+    let system_prompt = request.system_prompt.expect("system prompt should exist");
+    assert!(system_prompt.contains("persona prompt"));
+    assert!(system_prompt.contains("## Skills"));
+    assert!(system_prompt.contains("**writer**"));
+    assert!(!system_prompt.contains("**preset**"));
+    assert!(system_prompt.contains("C:/skills/writer/SKILL.md"));
 }
 
 #[test]

@@ -7,6 +7,7 @@ mod platforms;
 mod plugin_market;
 mod plugins;
 mod providers;
+mod skills;
 mod status;
 
 use astrbot_platform::PlatformManager;
@@ -48,6 +49,12 @@ pub use plugin_market::{
 };
 pub use plugins::{PluginHandlerManagementResponse, PluginManagementResponse};
 pub use providers::ProviderManagementResponse;
+pub use skills::{
+    ManagementSkillActivationRequest, ManagementSkillActivationResponse,
+    ManagementSkillCatalogResponse, ManagementSkillDeletePlanRequest,
+    ManagementSkillDeletePlanResponse, ManagementSkillDescriptor,
+    ManagementSkillInstallPlanRequest, ManagementSkillInstallPlanResponse, ManagementSkillState,
+};
 pub use status::ManagementStatusResponse;
 
 #[derive(Clone, Debug)]
@@ -59,6 +66,7 @@ pub struct ManagementApiState {
     plugin_market: Option<PluginMarketManagementState>,
     file_downloads: Option<ManagementFileDownloadState>,
     backup: Option<ManagementBackupState>,
+    skills: Option<ManagementSkillState>,
 }
 
 impl ManagementApiState {
@@ -75,6 +83,7 @@ impl ManagementApiState {
             plugin_market: None,
             file_downloads: None,
             backup: None,
+            skills: None,
         }
     }
 
@@ -95,6 +104,11 @@ impl ManagementApiState {
 
     pub fn with_backup(mut self, backup: ManagementBackupState) -> Self {
         self.backup = Some(backup);
+        self
+    }
+
+    pub fn with_skills(mut self, skills: ManagementSkillState) -> Self {
+        self.skills = Some(skills);
         self
     }
 
@@ -138,6 +152,10 @@ impl ManagementApiState {
         self.backup.as_ref()
     }
 
+    pub fn skills(&self) -> Option<&ManagementSkillState> {
+        self.skills.as_ref()
+    }
+
     pub fn status(&self) -> ManagementStatusResponse {
         ManagementStatusResponse::new(
             self.providers.clone(),
@@ -173,6 +191,19 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
+        .route("/api/management/skills", get(skills::catalog))
+        .route(
+            "/api/management/skills/activation",
+            post(skills::set_active),
+        )
+        .route(
+            "/api/management/skills/install-plan",
+            post(skills::install_plan),
+        )
+        .route(
+            "/api/management/skills/delete-plan",
+            post(skills::delete_plan),
+        )
         .route("/api/management/files/{token}", get(files::download))
         .route("/api/management/backup/precheck", post(backup::precheck))
         .route("/api/management/backup/export", post(backup::export))

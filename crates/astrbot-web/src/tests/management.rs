@@ -11,6 +11,9 @@ use astrbot_provider::{
     ChatProviderConfig, ProviderManager, ProviderManagerConfigSet, ProviderRegistry,
 };
 use astrbot_runtime::{RuntimeConfig, RuntimeConfigService};
+use astrbot_skill::{
+    SkillCatalog, SkillDescriptor, SkillSandboxCache, SkillSandboxEntry, SkillSource,
+};
 use astrbot_storage::{
     BACKUP_UPLOAD_CHUNK_SIZE, BackupExportJobRequest, BackupExportPackage, BackupExportPort,
     BackupExportRequest, BackupImportJobRequest, BackupImportMode, BackupImportPort,
@@ -28,8 +31,8 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
-    ManagementFileDownloadState, ManagementStatusResponse, PluginMarketManagementState,
-    management_router, management_router_with_auth,
+    ManagementFileDownloadState, ManagementSkillState, ManagementStatusResponse,
+    PluginMarketManagementState, management_router, management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -192,6 +195,68 @@ async fn management_plugin_market_routes_return_catalog_and_side_effect_free_pla
     assert_eq!(uninstall["plan"]["action"], "uninstall");
     assert_eq!(uninstall["plan"]["requires_download"], false);
     assert_eq!(uninstall["plan"]["delete_config"], true);
+}
+
+#[tokio::test]
+async fn management_skill_routes_expose_catalog_cache_and_side_effect_free_plans() {
+    let state = management_state_fixture().with_skills(skill_management_state_fixture());
+    let router = management_router(state);
+
+    let catalog_response = get(router.clone(), "/api/management/skills").await;
+    assert_eq!(catalog_response.status(), StatusCode::OK);
+    let catalog: serde_json::Value = response_json(catalog_response).await;
+    assert_eq!(catalog["sandbox_cache"]["ready"], true);
+    assert_eq!(catalog["skills"][0]["name"], "local_writer");
+    assert_eq!(catalog["skills"][0]["source_type"], "local_only");
+    assert_eq!(catalog["skills"][1]["name"], "preset");
+    assert_eq!(catalog["skills"][1]["source_type"], "sandbox_only");
+
+    let install_response = post_json(
+        router.clone(),
+        "/api/management/skills/install-plan",
+        json!({
+            "entries": ["writer/SKILL.md", "writer/assets/template.txt"],
+            "overwrite": true
+        }),
+    )
+    .await;
+    assert_eq!(install_response.status(), StatusCode::OK);
+    let install: serde_json::Value = response_json(install_response).await;
+    assert_eq!(install["plan"]["skill_name"], "writer");
+    assert_eq!(install["plan"]["requires_unpack"], true);
+
+    let delete_response = post_json(
+        router,
+        "/api/management/skills/delete-plan",
+        json!({ "name": "local_writer" }),
+    )
+    .await;
+    assert_eq!(delete_response.status(), StatusCode::OK);
+    let delete: serde_json::Value = response_json(delete_response).await;
+    assert_eq!(delete["plan"]["skill_name"], "local_writer");
+    assert_eq!(delete["plan"]["remove_local_dir"], true);
+}
+
+#[tokio::test]
+async fn management_skill_routes_reject_sandbox_only_local_mutations() {
+    let state = management_state_fixture().with_skills(skill_management_state_fixture());
+    let router = management_router(state);
+
+    let activation_response = post_json(
+        router.clone(),
+        "/api/management/skills/activation",
+        json!({ "name": "preset", "active": false }),
+    )
+    .await;
+    assert_eq!(activation_response.status(), StatusCode::FORBIDDEN);
+
+    let delete_response = post_json(
+        router,
+        "/api/management/skills/delete-plan",
+        json!({ "name": "preset" }),
+    )
+    .await;
+    assert_eq!(delete_response.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]
@@ -395,6 +460,22 @@ fn management_state_fixture() -> ManagementApiState {
     ));
 
     ManagementApiState::from_managers(&provider_manager, &platform_manager, &plugin_registry)
+}
+
+fn skill_management_state_fixture() -> ManagementSkillState {
+    let catalog = SkillCatalog::from_skills([
+        SkillDescriptor::new("local_writer", "C:/skills/local_writer/SKILL.md")
+            .with_description("Local writer"),
+        SkillDescriptor::new("synced", "C:/skills/synced/SKILL.md")
+            .with_description("Local synced")
+            .with_source(SkillSource::Local),
+    ]);
+    let sandbox_cache = SkillSandboxCache::from_entries([
+        SkillSandboxEntry::new("preset").with_description("Sandbox preset"),
+        SkillSandboxEntry::new("synced").with_description("Synced preset"),
+    ]);
+
+    ManagementSkillState::new(catalog).with_sandbox_cache(sandbox_cache, true)
 }
 
 fn temp_management_config_path(suffix: &str) -> std::path::PathBuf {

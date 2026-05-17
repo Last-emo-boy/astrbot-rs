@@ -1,7 +1,7 @@
 {
   "id": "TASK-069",
   "title": "Separate skill package install, sandbox cache, activation, and prompt inventory boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "skill-package-boundary",
   "description": "AstrBot SkillManager combines skill discovery, SKILL.md frontmatter parsing, prompt inventory rendering, local activation, sandbox-only cache, zip install/delete, and path sanitization. Rust should keep these package lifecycle concerns separate from persona prompt composition and plugin loading.",
@@ -35,5 +35,35 @@
     ],
     "verification_command": "cargo test -p astrbot-plugin && cargo test -p astrbot-agent && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "medium"
+  "risk": "medium",
+  "completed_at": "2026-05-17T11:43:31+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-agent/Cargo.toml",
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/persona.rs",
+    "crates/astrbot-agent/src/skill_prompt.rs",
+    "crates/astrbot-agent/src/tests.rs",
+    "crates/astrbot-skill/src/activation.rs",
+    "crates/astrbot-skill/src/catalog.rs",
+    "crates/astrbot-skill/src/frontmatter.rs",
+    "crates/astrbot-skill/src/lib.rs",
+    "crates/astrbot-skill/src/package.rs",
+    "crates/astrbot-skill/src/prompt.rs",
+    "crates/astrbot-skill/src/prompt_inventory.rs",
+    "crates/astrbot-skill/src/sandbox_cache.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/skills.rs",
+    "crates/astrbot-web/src/tests/management.rs"
+  ],
+  "verification": [
+    "cargo test -p astrbot-skill",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-plugin",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ]
 }

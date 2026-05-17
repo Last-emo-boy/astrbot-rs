@@ -326,12 +326,18 @@ fn management_routes() -> Router<ManagementApiState> {
         .route("/api/management/tools/toggle", post(tools::toggle))
         .route("/api/management/update/check", get(update::check))
         .route("/api/management/update/releases", get(update::releases))
-        .route("/api/management/update/project-plan", post(update::project_plan))
+        .route(
+            "/api/management/update/project-plan",
+            post(update::project_plan),
+        )
         .route(
             "/api/management/update/dashboard-plan",
             post(update::dashboard_plan),
         )
-        .route("/api/management/update/package-plan", post(update::package_plan))
+        .route(
+            "/api/management/update/package-plan",
+            post(update::package_plan),
+        )
         .route(
             "/api/management/update/migration-check",
             get(update::migration_check),

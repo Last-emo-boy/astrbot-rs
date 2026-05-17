@@ -36,10 +36,10 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
-    ManagementChatProjectState, ManagementFileDownloadState, ManagementSessionRuleState,
-    ManagementSkillState, ManagementStatusResponse, ManagementToolState,
-    ManagementMaintenanceState,
-    PluginMarketManagementState, management_router, management_router_with_auth,
+    ManagementChatProjectState, ManagementFileDownloadState, ManagementMaintenanceState,
+    ManagementSessionRuleState, ManagementSkillState, ManagementStatusResponse,
+    ManagementToolState, PluginMarketManagementState, management_router,
+    management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -373,20 +373,23 @@ async fn management_update_routes_delegate_to_typed_maintenance_state() {
     assert_eq!(package_response.status(), StatusCode::OK);
     let package: serde_json::Value = response_json(package_response).await;
     assert_eq!(package["plan"]["global_runtime_install"], true);
-    assert_eq!(package["plan"]["plugin_dependency_plan"], serde_json::Value::Null);
+    assert_eq!(
+        package["plan"]["plugin_dependency_plan"],
+        serde_json::Value::Null
+    );
 
-    let migration_check_response = get(
-        router.clone(),
-        "/api/management/update/migration-check",
-    )
-    .await;
+    let migration_check_response =
+        get(router.clone(), "/api/management/update/migration-check").await;
     assert_eq!(migration_check_response.status(), StatusCode::OK);
     let migration_check: serde_json::Value = response_json(migration_check_response).await;
     assert_eq!(
         migration_check["check"]["pending_storage_migrations"],
         json!(["001-main-schema"])
     );
-    assert_eq!(migration_check["check"]["legacy_data_migration_needed"], true);
+    assert_eq!(
+        migration_check["check"]["legacy_data_migration_needed"],
+        true
+    );
 
     let migration_response = post_json(
         router,

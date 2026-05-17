@@ -127,7 +127,9 @@ impl MaintenanceMigrationService for PlannedMigrationService<'_> {
         if !request.confirmed {
             progress = progress.failed("migration requires explicit confirmation");
         } else {
-            progress = progress.running("migration planned").completed("migration completed");
+            progress = progress
+                .running("migration planned")
+                .completed("migration completed");
         }
         let summary =
             MaintenanceOperationSummary::new(operation_id, MaintenanceOperationKind::Migration)
@@ -148,7 +150,9 @@ pub fn migration_records_to_outcome(records: Vec<MigrationRecord>) -> MigrationO
 mod tests {
     use astrbot_runtime::RuntimeConfigMigrationPlan;
 
-    use super::{MaintenanceMigrationRequest, MaintenanceMigrationService, PlannedMigrationService};
+    use super::{
+        MaintenanceMigrationRequest, MaintenanceMigrationService, PlannedMigrationService,
+    };
     use crate::operation::{InMemoryMaintenanceOperationStore, MaintenanceOperationStatus};
 
     #[tokio::test]

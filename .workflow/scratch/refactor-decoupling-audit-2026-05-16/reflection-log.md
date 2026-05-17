@@ -483,3 +483,12 @@
 - AstrBot reference: `core/platform/{platform.py,platform_metadata.py,register.py,manager.py}`, `astr_main_agent.py`, `pipeline/process_stage/method/agent_request.py`, `agent/context/manager.py`, `agent/mcp_client.py`, and `provider/func_tool_manager.py`.
 - Adjustment: immediate implementation pointer remains `M7-R36-event-bus-routing-boundary` / `TASK-041`; the new items are follow-up guardrails after event routing.
 - Verification: workflow records only; JSON validity and task-count consistency should be checked after writes.
+
+## Round 82 - TASK-082 Maintenance Operation Boundary
+
+- Scope: new `astrbot-maintenance` crate plus dashboard management update routes.
+- Strategy: follow AstrBot dashboard `update.py` orchestration shape, but keep release checks, project/dashboard update plans, package install plans, migration checks, and operation progress behind typed Rust maintenance services instead of embedding orchestration inside HTTP handlers.
+- Result: added update, migration, package, and operation modules; management routes now expose check/releases/project-plan/dashboard-plan/package-plan/migration-check/migration-plan/operation endpoints through `ManagementMaintenanceState`.
+- AstrBot reference: `dashboard/routes/update.py`, `core/star/updator.py`, `core/utils/pip_installer.py`, and `core/db/migration/helper.py`.
+- Adjustment: next implementation pointer moves to `TASK-083`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-runtime`, `cargo test -p astrbot-storage`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.

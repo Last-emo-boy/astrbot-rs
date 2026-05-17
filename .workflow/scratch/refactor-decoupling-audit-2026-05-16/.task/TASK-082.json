@@ -1,7 +1,7 @@
 {
   "id": "TASK-082",
   "title": "Separate runtime maintenance, release update, migration, and package install operation boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "maintenance-operation-boundary",
   "description": "AstrBot dashboard update routes combine release checks, project/dashboard update, pip install, and DB migration triggering. Rust already has config/storage migration and plugin dependency planning, but no operation boundary for user-triggered maintenance tasks. Define this before dashboard update/migration/install APIs grow inside web handlers, runtime config code, or plugin loader dependencies.",

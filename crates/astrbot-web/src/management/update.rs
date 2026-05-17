@@ -87,7 +87,9 @@ impl ManagementMaintenanceState {
 
     fn migration_service(&self) -> PlannedMigrationService<'_> {
         PlannedMigrationService::new(self.operations.as_ref())
-            .with_pending_storage_migrations(self.migration_check.pending_storage_migrations.clone())
+            .with_pending_storage_migrations(
+                self.migration_check.pending_storage_migrations.clone(),
+            )
             .with_legacy_data_migration_needed(self.migration_check.legacy_data_migration_needed)
             .with_runtime_config_plan(astrbot_runtime::RuntimeConfigMigrationPlan {
                 missing_default_keys: self
@@ -180,7 +182,14 @@ pub async fn project_plan(
     Json(request): Json<ProjectUpdatePlanRequest>,
 ) -> Result<Json<MaintenanceOperationResponse>, (StatusCode, Json<ErrorResponse>)> {
     let maintenance = state.maintenance().ok_or_else(maintenance_unavailable)?;
-    let mut plan = if request.latest || request.version.as_deref().unwrap_or_default().trim().is_empty() {
+    let mut plan = if request.latest
+        || request
+            .version
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+    {
         ProjectUpdatePlan::latest()
     } else {
         ProjectUpdatePlan::version(request.version.unwrap_or_default())
@@ -203,7 +212,14 @@ pub async fn dashboard_plan(
     Json(request): Json<DashboardUpdatePlanRequest>,
 ) -> Result<Json<MaintenanceOperationResponse>, (StatusCode, Json<ErrorResponse>)> {
     let maintenance = state.maintenance().ok_or_else(maintenance_unavailable)?;
-    let mut plan = if request.latest || request.version.as_deref().unwrap_or_default().trim().is_empty() {
+    let mut plan = if request.latest
+        || request
+            .version
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+    {
         DashboardUpdatePlan::latest()
     } else {
         DashboardUpdatePlan::for_runtime_version(request.version.unwrap_or_default())
@@ -297,11 +313,17 @@ fn maintenance_unavailable() -> (StatusCode, Json<ErrorResponse>) {
 }
 
 fn maintenance_bad_request(message: String) -> (StatusCode, Json<ErrorResponse>) {
-    (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: message }))
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ErrorResponse { error: message }),
+    )
 }
 
 fn maintenance_not_found(message: String) -> (StatusCode, Json<ErrorResponse>) {
-    (StatusCode::NOT_FOUND, Json(ErrorResponse { error: message }))
+    (
+        StatusCode::NOT_FOUND,
+        Json(ErrorResponse { error: message }),
+    )
 }
 
 fn map_maintenance_error(error: astrbot_core::AstrbotError) -> (StatusCode, Json<ErrorResponse>) {

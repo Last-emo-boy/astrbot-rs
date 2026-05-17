@@ -212,7 +212,10 @@ mod tests {
             .expect("operation should load")
             .expect("operation");
 
-        assert_eq!(loaded.progress.status, MaintenanceOperationStatus::Completed);
+        assert_eq!(
+            loaded.progress.status,
+            MaintenanceOperationStatus::Completed
+        );
         assert!(loaded.progress.is_terminal());
     }
 }

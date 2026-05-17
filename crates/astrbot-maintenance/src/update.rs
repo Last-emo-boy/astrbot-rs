@@ -53,7 +53,8 @@ impl ReleaseUpdateCheck {
 
     pub fn with_latest_version(mut self, latest_version: impl Into<String>) -> Self {
         let latest_version = latest_version.into();
-        self.has_new_version = normalize_version(&latest_version) != normalize_version(&self.current_version);
+        self.has_new_version =
+            normalize_version(&latest_version) != normalize_version(&self.current_version);
         self.latest_version = Some(latest_version);
         self
     }
@@ -142,7 +143,10 @@ pub trait ReleaseUpdateService: Send + Sync {
 
     async fn releases(&self) -> Result<Vec<ReleaseMetadata>>;
 
-    async fn plan_project_update(&self, plan: ProjectUpdatePlan) -> Result<MaintenanceOperationSummary>;
+    async fn plan_project_update(
+        &self,
+        plan: ProjectUpdatePlan,
+    ) -> Result<MaintenanceOperationSummary>;
 
     async fn plan_dashboard_update(
         &self,
@@ -203,15 +207,16 @@ impl ReleaseUpdateService for PlannedReleaseUpdateService<'_> {
             .collect())
     }
 
-    async fn plan_project_update(&self, plan: ProjectUpdatePlan) -> Result<MaintenanceOperationSummary> {
-        let version_label = plan
-            .version
-            .clone()
-            .unwrap_or_else(|| "latest".to_string());
+    async fn plan_project_update(
+        &self,
+        plan: ProjectUpdatePlan,
+    ) -> Result<MaintenanceOperationSummary> {
+        let version_label = plan.version.clone().unwrap_or_else(|| "latest".to_string());
         let operation_id = MaintenanceOperationId::new(format!("project-update-{version_label}"))
-            .ok_or_else(|| AstrbotError::Pipeline("invalid project update operation id".to_string()))?;
-        let mut progress = MaintenanceOperationProgress::queued()
-            .running("project update planned");
+            .ok_or_else(|| {
+            AstrbotError::Pipeline("invalid project update operation id".to_string())
+        })?;
+        let mut progress = MaintenanceOperationProgress::queued().running("project update planned");
         if plan.update_dashboard {
             progress = progress.running("dashboard update planned");
         }
@@ -221,11 +226,9 @@ impl ReleaseUpdateService for PlannedReleaseUpdateService<'_> {
         if plan.reboot {
             progress = progress.running("runtime reboot required");
         }
-        let summary = MaintenanceOperationSummary::new(
-            operation_id,
-            MaintenanceOperationKind::ProjectUpdate,
-        )
-        .with_progress(progress);
+        let summary =
+            MaintenanceOperationSummary::new(operation_id, MaintenanceOperationKind::ProjectUpdate)
+                .with_progress(progress);
         self.operations.put_operation(summary.clone()).await?;
         Ok(summary)
     }
@@ -240,7 +243,9 @@ impl ReleaseUpdateService for PlannedReleaseUpdateService<'_> {
             plan.version.clone()
         };
         let operation_id = MaintenanceOperationId::new(format!("dashboard-update-{version_label}"))
-            .ok_or_else(|| AstrbotError::Pipeline("invalid dashboard update operation id".to_string()))?;
+            .ok_or_else(|| {
+                AstrbotError::Pipeline("invalid dashboard update operation id".to_string())
+            })?;
         let summary = MaintenanceOperationSummary::new(
             operation_id,
             MaintenanceOperationKind::DashboardUpdate,

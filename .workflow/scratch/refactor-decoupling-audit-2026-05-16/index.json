@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T13:36:02+08:00",
+  "updated_at": "2026-05-17T13:46:14+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 75,
-    "pending_tasks": 15,
+    "completed_tasks": 76,
+    "pending_tasks": 14,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 75,
-    "current_task_id": "TASK-075",
-    "next_task": "TASK-076"
+    "reflection_rounds": 76,
+    "current_task_id": "TASK-076",
+    "next_task": "TASK-077"
   },
-  "latest_update": "TASK-075 split MCP wire primitives into focused type modules for errors, names/URIs, JSON values, schemas, pagination, and JSON-RPC protocol primitives. Domain and client modules continue to consume these through the `types` facade while transport framing can attach without expanding a catch-all file. Next pending task is TASK-076.",
+  "latest_update": "TASK-076 introduced knowledge-base ingestion, document repository, media store, indexing progress, and vector persistence ports. Agent request decoration now consumes formatted KB context through a narrow port without owning ingestion or vector persistence. Next pending task is TASK-077.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

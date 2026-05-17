@@ -5,6 +5,7 @@ mod chat_project;
 mod config_snapshot;
 mod conversation;
 mod file_token;
+mod kb_document;
 mod memory;
 mod migration;
 mod platform_binding;
@@ -41,6 +42,10 @@ pub use conversation::{
 };
 pub use file_token::{
     FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
+};
+pub use kb_document::{
+    InMemoryKbDocumentRepository, KbDocumentRecord, KbDocumentRepository, KbMediaRecord,
+    KbProfileRecord,
 };
 pub use memory::{InMemoryMemoryRepository, MemoryRepository};
 pub use migration::{

@@ -12,14 +12,14 @@ use async_trait::async_trait;
 
 use crate::{
     AgentActiveReplyDecider, AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy,
-    AgentFeedbackEvent, AgentFeedbackEventKind, AgentMemoryContextPort, AgentPersona,
-    AgentProviderPreferencePort, AgentQuoteContextPort, AgentRunOutcome, AgentRunner,
+    AgentFeedbackEvent, AgentFeedbackEventKind, AgentKnowledgeContextPort, AgentMemoryContextPort,
+    AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort, AgentRunOutcome, AgentRunner,
     AgentSessionContextPort, AgentTokenCounter, ApproximateTokenCounter, ChatAgentRunner,
     CompositeProviderRequestDecorator, ContextTokenBudget, ContextTruncationPolicy,
-    ContextWindowManager, ContextWindowRequestDecorator, MemoryRequestDecorator,
-    NoopContextCompressor, PersonaPromptDecorator, ProviderPreferenceRequestDecorator,
-    ProviderRequestDecorator, QuoteContextRequestDecorator, SessionContextRequestDecorator,
-    SkillPromptInventoryRequestDecorator, ToolLoopPolicy,
+    ContextWindowManager, ContextWindowRequestDecorator, KnowledgeContextRequestDecorator,
+    MemoryRequestDecorator, NoopContextCompressor, PersonaPromptDecorator,
+    ProviderPreferenceRequestDecorator, ProviderRequestDecorator, QuoteContextRequestDecorator,
+    SessionContextRequestDecorator, SkillPromptInventoryRequestDecorator, ToolLoopPolicy,
 };
 use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
 
@@ -93,6 +93,15 @@ impl AgentMemoryContextPort for StaticMemoryContext {
             "Alice",
             "[Alice/12:00:00]: hello",
         )])
+    }
+}
+
+struct StaticKnowledgeContext;
+
+#[async_trait]
+impl AgentKnowledgeContextPort for StaticKnowledgeContext {
+    async fn formatted_knowledge_context(&self, _event: &MessageEvent) -> Result<Option<String>> {
+        Ok(Some("【知识 1】\n内容: Rust boundary".to_string()))
     }
 }
 
@@ -285,6 +294,26 @@ async fn memory_request_decorator_can_rewrite_active_reply_prompt() {
     let prompt = request.prompt.as_deref().expect("prompt should exist");
     assert!(prompt.contains("[Alice/12:00:00]: hello"));
     assert!(prompt.contains("new message"));
+}
+
+#[tokio::test]
+async fn knowledge_context_decorator_consumes_formatted_context_without_ingestion_ports() {
+    let decorator = KnowledgeContextRequestDecorator::new(Arc::new(StaticKnowledgeContext));
+    let mut request =
+        ProviderRequest::new("question", "conversation-1").with_system_prompt("persona prompt");
+
+    decorator
+        .decorate(&event("question"), &mut request)
+        .await
+        .expect("knowledge context should decorate");
+
+    let prompt = request
+        .system_prompt
+        .as_deref()
+        .expect("system prompt should exist");
+    assert!(prompt.contains("persona prompt"));
+    assert!(prompt.contains("【知识 1】"));
+    assert!(prompt.contains("Rust boundary"));
 }
 
 #[test]

@@ -4,9 +4,13 @@ use astrbot_provider::{MockEmbeddingProvider, MockRerankProvider};
 
 use crate::{
     ChunkId, ChunkingOptions, DocumentChunker, DocumentId, EmbeddedKnowledgeChunk,
-    HybridKnowledgeRetriever, InMemorySparseRetriever, InMemoryVectorStore, KnowledgeBaseId,
-    KnowledgeChunk, KnowledgeContextFormatter, KnowledgeRetrievalRequest, KnowledgeRetriever,
-    RecursiveCharacterChunker, RetrievalContextFormatter, VectorStore, embed_chunks,
+    HybridKnowledgeRetriever, InMemoryKnowledgeDocumentRepository, InMemoryKnowledgeMediaStore,
+    InMemorySparseRetriever, InMemoryVectorStore, KnowledgeBaseId, KnowledgeChunk,
+    KnowledgeContextFormatter, KnowledgeDocumentRepository, KnowledgeIndexStage,
+    KnowledgeIngestionRequest, KnowledgeIngestionService, KnowledgeRetrievalRequest,
+    KnowledgeRetriever, PlainTextParser, RecordingKnowledgeIndexProgressSink,
+    RecursiveCharacterChunker, RetrievalContextFormatter, VectorStore, VectorStorePersistencePort,
+    embed_chunks,
 };
 
 fn chunk(id: &str, index: usize, content: &str, embedding: Vec<f32>) -> EmbeddedKnowledgeChunk {
@@ -107,4 +111,67 @@ fn context_formatter_matches_astrbot_knowledge_prompt_shape() {
     assert!(context.contains("【知识 1】"));
     assert!(context.contains("来源: docs / intro.md"));
     assert!(context.contains("相关度: 0.42"));
+}
+
+#[tokio::test]
+async fn ingestion_service_orchestrates_parse_chunk_embed_vector_and_metadata_ports() {
+    let repository = Arc::new(InMemoryKnowledgeDocumentRepository::new());
+    let media_store = Arc::new(InMemoryKnowledgeMediaStore::new());
+    let vector_store = Arc::new(InMemoryVectorStore::default());
+    let progress = Arc::new(RecordingKnowledgeIndexProgressSink::new());
+    let service = KnowledgeIngestionService::new(
+        Arc::new(PlainTextParser),
+        Arc::new(RecursiveCharacterChunker::with_separators([""])),
+        Arc::new(MockEmbeddingProvider::new(vec![0.5, 0.5])),
+        Arc::new(VectorStorePersistencePort::new(vector_store.clone())),
+        repository.clone(),
+        media_store,
+    )
+    .with_progress_sink(progress.clone());
+    let kb_id = KnowledgeBaseId::new("kb-1").expect("kb id");
+    let doc_id = DocumentId::new("doc-1").expect("doc id");
+
+    let outcome = service
+        .ingest(
+            KnowledgeIngestionRequest::new(
+                kb_id.clone(),
+                doc_id.clone(),
+                "intro.txt",
+                "txt",
+                "abcdefghij",
+            )
+            .with_embedding_provider_id("embedding-1"),
+        )
+        .await
+        .expect("ingestion should succeed");
+
+    assert_eq!(outcome.document.name, "intro.txt");
+    assert_eq!(outcome.chunk_count, 1);
+    assert_eq!(
+        repository
+            .list_documents(&kb_id)
+            .await
+            .expect("documents should list")
+            .len(),
+        1
+    );
+    assert_eq!(
+        vector_store
+            .count_chunks(&kb_id)
+            .await
+            .expect("vectors should persist"),
+        1
+    );
+    assert!(
+        progress
+            .events()
+            .iter()
+            .any(|event| event.stage == KnowledgeIndexStage::VectorUpsert)
+    );
+    assert!(
+        progress
+            .events()
+            .iter()
+            .any(|event| event.stage == KnowledgeIndexStage::Completed)
+    );
 }

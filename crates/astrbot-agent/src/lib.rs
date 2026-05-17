@@ -2,6 +2,7 @@ mod context;
 mod external;
 mod fallback;
 mod feedback;
+mod knowledge;
 mod memory;
 mod multimodal;
 mod persona;
@@ -29,6 +30,7 @@ pub use feedback::{
     LiveVoiceFeedbackConfig, StaticStopSignalPort, ToolCallStatus, ToolResultStatus,
     ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent, VoiceFeedbackMode,
 };
+pub use knowledge::{AgentKnowledgeContextPort, KnowledgeContextRequestDecorator};
 pub use memory::{AgentActiveReplyDecider, AgentMemoryContextPort, MemoryRequestDecorator};
 pub use multimodal::{
     ChatProviderImageCaptioner, ImageCaptionConfig, ImageCaptionRequest,

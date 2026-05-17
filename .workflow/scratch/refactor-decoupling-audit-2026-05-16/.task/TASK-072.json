@@ -1,7 +1,7 @@
 {
   "id": "TASK-072",
   "title": "Introduce ChatUI project, session membership, and ownership boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "chatui-project-boundary",
   "description": "AstrBot dashboard has ChatUI project routes for project CRUD, session membership, and per-user ownership checks. Existing Rust conversation/storage tasks cover history, but do not capture project membership and ownership as a separate domain.",
@@ -39,5 +39,24 @@
     ],
     "verification_command": "cargo test -p astrbot-storage && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "medium"
+  "risk": "medium",
+  "completed_at": "2026-05-17T13:05:52+08:00",
+  "files_modified": [
+    "crates/astrbot-conversation/src/lib.rs",
+    "crates/astrbot-conversation/src/project.rs",
+    "crates/astrbot-storage/src/lib.rs",
+    "crates/astrbot-storage/src/chat_project.rs",
+    "crates/astrbot-storage/src/schema.rs",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/chat_projects.rs",
+    "crates/astrbot-web/src/tests/management.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-storage",
+    "cargo test -p astrbot-conversation",
+    "cargo test -p astrbot-web",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

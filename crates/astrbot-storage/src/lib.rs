@@ -1,6 +1,7 @@
 mod api_key;
 mod attachment;
 pub mod backup;
+mod chat_project;
 mod config_snapshot;
 mod conversation;
 mod file_token;
@@ -25,6 +26,12 @@ pub use backup::{
     BackupJobStore, BackupManifest, BackupProgressReader, BackupProgressSnapshot,
     BackupRepositoryPort, BackupSchemaVersion, BackupTableDump, BackupUploadCompletePlan,
     BackupUploadManager, BackupUploadSession, BackupUploadStart, BackupVersionStatus,
+};
+pub use chat_project::{
+    ChatProjectCreateRecord, ChatProjectRecord, ChatProjectRepository, ChatProjectUpdateRecord,
+    ChatUiProjectRecord, ChatUiProjectRepository, ChatUiSessionRecord,
+    DEFAULT_CHAT_UI_PROJECT_EMOJI, InMemoryChatProjectRepository, InMemoryChatUiProjectRepository,
+    PlatformSessionRecord, SessionProjectMembershipRecord,
 };
 pub use config_snapshot::{
     ConfigSnapshotRecord, ConfigSnapshotRepository, InMemoryConfigSnapshotRepository,

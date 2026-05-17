@@ -311,8 +311,13 @@ impl StorageSchema {
                     vec![
                         StorageColumn::new("project_id", StorageColumnType::Text).primary_key(),
                         StorageColumn::new("creator", StorageColumnType::Text),
+                        StorageColumn::new("emoji", StorageColumnType::Text).nullable(),
                         StorageColumn::new("title", StorageColumnType::Text),
                         StorageColumn::new("description", StorageColumnType::Text).nullable(),
+                        StorageColumn::new("created_at", StorageColumnType::Timestamp)
+                            .default_value("CURRENT_TIMESTAMP"),
+                        StorageColumn::new("updated_at", StorageColumnType::Timestamp)
+                            .default_value("CURRENT_TIMESTAMP"),
                     ],
                 ),
                 StorageTable::new(

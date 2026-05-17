@@ -1,5 +1,6 @@
 use std::{fs, sync::Arc};
 
+use astrbot_conversation::ChatProjectService;
 use astrbot_core::{MessageChain, MessageEvent, Result};
 use astrbot_platform::{PlatformBuildContext, PlatformConfig, PlatformManager, PlatformRegistry};
 use astrbot_plugin::{
@@ -18,8 +19,9 @@ use astrbot_storage::{
     BACKUP_UPLOAD_CHUNK_SIZE, BackupExportJobRequest, BackupExportPackage, BackupExportPort,
     BackupExportRequest, BackupImportJobRequest, BackupImportMode, BackupImportPort,
     BackupImportPrecheck, BackupImportResult, BackupJobService, BackupManifest,
-    BackupRepositoryPort, BackupTableDump, FileTokenRecord, FileTokenRepository, FileTokenScope,
-    InMemoryFileTokenRepository,
+    BackupRepositoryPort, BackupTableDump, ChatProjectRepository, FileTokenRecord,
+    FileTokenRepository, FileTokenScope, InMemoryChatProjectRepository,
+    InMemoryFileTokenRepository, PlatformSessionRecord,
 };
 use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSource, ToolSourceMetadata};
 use async_trait::async_trait;
@@ -32,8 +34,8 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
-    ManagementFileDownloadState, ManagementSkillState, ManagementStatusResponse,
-    ManagementToolState, PluginMarketManagementState, management_router,
+    ManagementChatProjectState, ManagementFileDownloadState, ManagementSkillState,
+    ManagementStatusResponse, ManagementToolState, PluginMarketManagementState, management_router,
     management_router_with_auth,
 };
 
@@ -298,6 +300,94 @@ async fn management_tool_routes_expose_sources_and_reject_internal_toggle() {
     let catalog_response = get(router, "/api/management/tools").await;
     let catalog: serde_json::Value = response_json(catalog_response).await;
     assert_eq!(catalog["tools"][1]["active"], false);
+}
+
+#[tokio::test]
+async fn management_chat_project_routes_enforce_creator_ownership() {
+    let repository = Arc::new(InMemoryChatProjectRepository::new());
+    repository
+        .upsert_platform_session(
+            PlatformSessionRecord::new("session-alice", "webchat", "alice", "2026-05-17T00:00:01Z")
+                .with_updated_at("2026-05-17T00:00:01Z")
+                .with_display_name("Alice chat"),
+        )
+        .await
+        .expect("session should store");
+    repository
+        .upsert_platform_session(PlatformSessionRecord::new(
+            "session-bob",
+            "webchat",
+            "bob",
+            "2026-05-17T00:00:02Z",
+        ))
+        .await
+        .expect("session should store");
+    let state = management_state_fixture().with_chat_projects(ManagementChatProjectState::new(
+        ChatProjectService::new(repository),
+    ));
+    let router = management_router(state);
+
+    let create_response = post_json(
+        router.clone(),
+        "/api/management/chat-projects/create",
+        json!({
+            "creator": "alice",
+            "title": "Research",
+            "emoji": "folder",
+            "description": "Project notes",
+            "now": "2026-05-17T00:00:00Z"
+        }),
+    )
+    .await;
+    assert_eq!(create_response.status(), StatusCode::OK);
+    let created: serde_json::Value = response_json(create_response).await;
+    let project_id = created["project"]["project_id"]
+        .as_str()
+        .expect("project id")
+        .to_string();
+
+    let forbidden_get = post_json(
+        router.clone(),
+        "/api/management/chat-projects/get",
+        json!({ "actor": "bob", "project_id": project_id }),
+    )
+    .await;
+    assert_eq!(forbidden_get.status(), StatusCode::FORBIDDEN);
+
+    let forbidden_membership = post_json(
+        router.clone(),
+        "/api/management/chat-projects/add-session",
+        json!({
+            "actor": "alice",
+            "project_id": project_id,
+            "session_id": "session-bob"
+        }),
+    )
+    .await;
+    assert_eq!(forbidden_membership.status(), StatusCode::FORBIDDEN);
+
+    let add_response = post_json(
+        router.clone(),
+        "/api/management/chat-projects/add-session",
+        json!({
+            "actor": "alice",
+            "project_id": project_id,
+            "session_id": "session-alice"
+        }),
+    )
+    .await;
+    assert_eq!(add_response.status(), StatusCode::OK);
+
+    let sessions_response = post_json(
+        router,
+        "/api/management/chat-projects/sessions",
+        json!({ "actor": "alice", "project_id": project_id }),
+    )
+    .await;
+    assert_eq!(sessions_response.status(), StatusCode::OK);
+    let sessions: serde_json::Value = response_json(sessions_response).await;
+    assert_eq!(sessions["sessions"][0]["session_id"], "session-alice");
+    assert_eq!(sessions["sessions"][0]["display_name"], "Alice chat");
 }
 
 #[tokio::test]

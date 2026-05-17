@@ -1,6 +1,7 @@
 mod api_key;
 mod auth;
 mod backup;
+mod chat_projects;
 mod config;
 mod files;
 mod platforms;
@@ -38,6 +39,14 @@ pub use backup::{
     ManagementBackupProgressResponse, ManagementBackupState, ManagementBackupUploadStartRequest,
     ManagementBackupUploadStartResponse,
 };
+pub use chat_projects::{
+    ManagementChatProjectActorRequest, ManagementChatProjectCatalogResponse,
+    ManagementChatProjectCreateRequest, ManagementChatProjectDescriptor,
+    ManagementChatProjectGetRequest, ManagementChatProjectMembershipRequest,
+    ManagementChatProjectMutationResponse, ManagementChatProjectResponse,
+    ManagementChatProjectSessionsResponse, ManagementChatProjectState,
+    ManagementChatProjectUpdateRequest, ManagementPlatformSessionDescriptor,
+};
 pub use config::{
     ManagementConfigMutationRequest, ManagementConfigMutationResponse,
     ManagementConfigSchemaResponse,
@@ -71,6 +80,7 @@ pub struct ManagementApiState {
     plugin_market: Option<PluginMarketManagementState>,
     file_downloads: Option<ManagementFileDownloadState>,
     backup: Option<ManagementBackupState>,
+    chat_projects: Option<ManagementChatProjectState>,
     skills: Option<ManagementSkillState>,
     tools: Option<ManagementToolState>,
 }
@@ -89,6 +99,7 @@ impl ManagementApiState {
             plugin_market: None,
             file_downloads: None,
             backup: None,
+            chat_projects: None,
             skills: None,
             tools: None,
         }
@@ -111,6 +122,11 @@ impl ManagementApiState {
 
     pub fn with_backup(mut self, backup: ManagementBackupState) -> Self {
         self.backup = Some(backup);
+        self
+    }
+
+    pub fn with_chat_projects(mut self, chat_projects: ManagementChatProjectState) -> Self {
+        self.chat_projects = Some(chat_projects);
         self
     }
 
@@ -164,6 +180,10 @@ impl ManagementApiState {
         self.backup.as_ref()
     }
 
+    pub fn chat_projects(&self) -> Option<&ManagementChatProjectState> {
+        self.chat_projects.as_ref()
+    }
+
     pub fn skills(&self) -> Option<&ManagementSkillState> {
         self.skills.as_ref()
     }
@@ -207,6 +227,35 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
+        .route("/api/management/chat-projects", post(chat_projects::list))
+        .route(
+            "/api/management/chat-projects/create",
+            post(chat_projects::create),
+        )
+        .route(
+            "/api/management/chat-projects/get",
+            post(chat_projects::get),
+        )
+        .route(
+            "/api/management/chat-projects/update",
+            post(chat_projects::update),
+        )
+        .route(
+            "/api/management/chat-projects/delete",
+            post(chat_projects::delete),
+        )
+        .route(
+            "/api/management/chat-projects/add-session",
+            post(chat_projects::add_session),
+        )
+        .route(
+            "/api/management/chat-projects/remove-session",
+            post(chat_projects::remove_session),
+        )
+        .route(
+            "/api/management/chat-projects/sessions",
+            post(chat_projects::sessions),
+        )
         .route("/api/management/tools", get(tools::catalog))
         .route("/api/management/tools/toggle", post(tools::toggle))
         .route("/api/management/skills", get(skills::catalog))

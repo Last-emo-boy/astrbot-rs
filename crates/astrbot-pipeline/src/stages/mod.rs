@@ -1,5 +1,6 @@
 mod content_safety;
 mod plugin;
+mod preprocess;
 mod process;
 mod provider;
 mod rate_limit;
@@ -11,6 +12,7 @@ mod whitelist;
 
 pub use content_safety::ContentSafetyCheckStage;
 pub use plugin::PluginStage;
+pub use preprocess::PreprocessStage;
 pub use process::ProcessStage;
 pub use provider::ProviderStage;
 pub use rate_limit::RateLimitStage;

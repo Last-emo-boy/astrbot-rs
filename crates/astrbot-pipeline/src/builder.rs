@@ -37,8 +37,8 @@ mod tests {
 
     use super::*;
     use crate::{
-        CONTENT_SAFETY_STAGE_TYPE, PROCESS_STAGE_TYPE, PipelineControl, PipelineStage,
-        PipelineStageRegistry, RATE_LIMIT_STAGE_TYPE, RESPOND_STAGE_TYPE,
+        CONTENT_SAFETY_STAGE_TYPE, PREPROCESS_STAGE_TYPE, PROCESS_STAGE_TYPE, PipelineControl,
+        PipelineStage, PipelineStageRegistry, RATE_LIMIT_STAGE_TYPE, RESPOND_STAGE_TYPE,
         RESULT_DECORATE_STAGE_TYPE, SESSION_STATUS_STAGE_TYPE, WAKE_STAGE_TYPE,
         WHITELIST_STAGE_TYPE,
     };
@@ -79,6 +79,7 @@ mod tests {
             builder.stage_types(),
             vec![
                 WAKE_STAGE_TYPE.to_string(),
+                PREPROCESS_STAGE_TYPE.to_string(),
                 WHITELIST_STAGE_TYPE.to_string(),
                 SESSION_STATUS_STAGE_TYPE.to_string(),
                 RATE_LIMIT_STAGE_TYPE.to_string(),
@@ -95,6 +96,7 @@ mod tests {
             scheduler.stage_names(),
             vec![
                 WAKE_STAGE_TYPE.to_string(),
+                PREPROCESS_STAGE_TYPE.to_string(),
                 WHITELIST_STAGE_TYPE.to_string(),
                 SESSION_STATUS_STAGE_TYPE.to_string(),
                 RATE_LIMIT_STAGE_TYPE.to_string(),

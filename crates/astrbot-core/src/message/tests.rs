@@ -46,6 +46,13 @@ fn message_chain_extracts_text_and_image_urls() {
         chain.components()[6],
         MessageComponent::record("https://example.test/audio.ogg")
     );
+    if let MessageComponent::Record { url } = &mut chain.components_mut()[6] {
+        *url = "file:///tmp/audio.ogg".to_string();
+    }
+    assert_eq!(
+        chain.components()[6],
+        MessageComponent::record("file:///tmp/audio.ogg")
+    );
     assert!(chain.mentions_user("bot-1"));
     assert!(chain.mentions_all());
     assert!(chain.replies_to_user("bot-1"));

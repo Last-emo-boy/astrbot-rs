@@ -2,6 +2,7 @@ mod api_client;
 mod long_connection;
 mod media;
 mod outbound;
+mod path_mapping;
 mod queue;
 mod quote;
 mod retry;
@@ -27,6 +28,7 @@ pub use outbound::{
     PlatformRouteTargetKind, PlatformSenderBinding, PlatformSessionScene, ProactiveSendReadiness,
     ProactiveSendRequirement,
 };
+pub use path_mapping::{PlatformPathMapping, PlatformPathMappingRules};
 pub use queue::{
     InMemoryPlatformQueueStore, PendingWebhookResponse, PlatformCallbackQueue,
     PlatformQueueDirection, PlatformQueueItem, PlatformQueueStats,

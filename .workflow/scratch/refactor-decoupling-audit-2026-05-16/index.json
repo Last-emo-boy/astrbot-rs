@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T11:43:31+08:00",
+  "updated_at": "2026-05-17T12:16:09+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 69,
-    "pending_tasks": 21,
+    "completed_tasks": 70,
+    "pending_tasks": 20,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 69,
-    "current_task_id": "TASK-069",
-    "next_task": "TASK-070"
+    "reflection_rounds": 70,
+    "current_task_id": "TASK-070",
+    "next_task": "TASK-071"
   },
-  "latest_update": "TASK-069 split skill package install/delete policy, sandbox cache, activation config, frontmatter parsing, and prompt inventory rendering into astrbot-skill; agent persona prompt decoration now consumes active skill inventory without owning package mutation; management skills routes expose catalog, activation, install-plan, and delete-plan DTO boundaries. Next pending task is TASK-070.",
+  "latest_update": "TASK-070 introduced a dedicated preprocess stage boundary for pre-ack reactions, path mapping, and Record-to-Plain STT normalization. PipelineContext now exposes optional preprocess ports/config, platform path mapping rules live under adapters/common, and tests cover preprocess behavior independently from wake/process/respond. Next pending task is TASK-071.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

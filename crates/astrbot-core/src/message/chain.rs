@@ -26,6 +26,10 @@ impl MessageChain {
         &self.components
     }
 
+    pub fn components_mut(&mut self) -> &mut [MessageComponent] {
+        &mut self.components
+    }
+
     pub fn is_empty(&self) -> bool {
         self.components.is_empty() || self.components.iter().all(MessageComponent::is_empty)
     }

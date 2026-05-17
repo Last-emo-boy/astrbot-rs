@@ -1,5 +1,6 @@
 mod content_safety;
 mod policy;
+mod preprocess;
 mod provider_preference;
 mod quote;
 mod result;
@@ -16,6 +17,11 @@ pub use content_safety::{
 pub use policy::{
     ProviderFallbackConfig, RateLimitConfig, RateLimitStrategy, WakeCheckConfig,
     WhitelistPolicyConfig,
+};
+pub use preprocess::{
+    NoopPreAckReactionSink, NoopPreprocessPathMapper, PreAckConfig, PreAckReactionSink,
+    PrefixPathMapper, PrefixPathMapping, PreprocessConfig, PreprocessPathMapper,
+    SpeechToTextPreprocessConfig, strip_file_scheme,
 };
 pub use provider_preference::{
     InMemoryProviderPreferencePort, NoProviderPreferencePort, ProviderPreferencePort,
@@ -38,6 +44,7 @@ pub struct PipelineContext {
     quote_context: Arc<dyn QuoteContextPolicy>,
     rate_limit: RateLimitConfig,
     content_safety: ContentSafetyConfig,
+    preprocess: PreprocessConfig,
     provider_fallback: ProviderFallbackConfig,
     result_decorate: ResultDecorateConfig,
 }
@@ -55,6 +62,7 @@ impl Default for PipelineContext {
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
+            preprocess: PreprocessConfig::default(),
             provider_fallback: ProviderFallbackConfig::default(),
             result_decorate: ResultDecorateConfig::default(),
         }
@@ -78,6 +86,7 @@ impl PipelineContext {
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
+            preprocess: PreprocessConfig::default(),
             provider_fallback: ProviderFallbackConfig::default(),
             result_decorate: ResultDecorateConfig::default(),
         }
@@ -134,6 +143,11 @@ impl PipelineContext {
         self
     }
 
+    pub fn with_preprocess(mut self, preprocess: PreprocessConfig) -> Self {
+        self.preprocess = preprocess;
+        self
+    }
+
     pub fn with_provider_fallback(mut self, provider_fallback: ProviderFallbackConfig) -> Self {
         self.provider_fallback = provider_fallback;
         self
@@ -182,6 +196,10 @@ impl PipelineContext {
 
     pub fn content_safety(&self) -> &ContentSafetyConfig {
         &self.content_safety
+    }
+
+    pub fn preprocess(&self) -> &PreprocessConfig {
+        &self.preprocess
     }
 
     pub fn provider_fallback(&self) -> &ProviderFallbackConfig {

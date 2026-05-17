@@ -1,7 +1,7 @@
 {
   "id": "TASK-070",
   "title": "Define pipeline preprocess stage for pre-ack reactions, path mapping, and STT normalization",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "pipeline-preprocess-boundary",
   "description": "AstrBot has a PreProcessStage before wake/process handling that sends optional platform pre-ack reactions, rewrites media paths, and converts Record components to Plain text through the selected STT provider. Rust currently has policy stages and STT providers, but no dedicated preprocessing boundary.",
@@ -40,5 +40,32 @@
     ],
     "verification_command": "cargo test -p astrbot-pipeline && cargo test -p astrbot-platform && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "high"
+  "risk": "high",
+  "completed_at": "2026-05-17T12:16:09+08:00",
+  "files_modified": [
+    "crates/astrbot-core/src/message/chain.rs",
+    "crates/astrbot-core/src/message/tests.rs",
+    "crates/astrbot-pipeline/src/builder.rs",
+    "crates/astrbot-pipeline/src/context/mod.rs",
+    "crates/astrbot-pipeline/src/context/preprocess.rs",
+    "crates/astrbot-pipeline/src/lib.rs",
+    "crates/astrbot-pipeline/src/registry.rs",
+    "crates/astrbot-pipeline/src/registry/builtins.rs",
+    "crates/astrbot-pipeline/src/registry/order.rs",
+    "crates/astrbot-pipeline/src/registry/tests/builtins.rs",
+    "crates/astrbot-pipeline/src/stages/mod.rs",
+    "crates/astrbot-pipeline/src/stages/preprocess.rs",
+    "crates/astrbot-pipeline/tests/preprocess_stage.rs",
+    "crates/astrbot-platform/src/adapters/common/mod.rs",
+    "crates/astrbot-platform/src/adapters/common/path_mapping.rs",
+    "crates/astrbot-platform/src/adapters/mod.rs",
+    "crates/astrbot-platform/src/lib.rs"
+  ],
+  "verification": [
+    "cargo test -p astrbot-pipeline",
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-core",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ]
 }

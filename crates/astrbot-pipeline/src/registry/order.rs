@@ -1,3 +1,4 @@
+pub const PREPROCESS_STAGE_TYPE: &str = "preprocess";
 pub const WAKE_STAGE_TYPE: &str = "wake";
 pub const WHITELIST_STAGE_TYPE: &str = "whitelist";
 pub const SESSION_STATUS_STAGE_TYPE: &str = "session_status";
@@ -10,6 +11,7 @@ pub const PROVIDER_STAGE_TYPE: &str = "provider";
 pub const RESPOND_STAGE_TYPE: &str = "respond";
 
 pub const WAKE_STAGE_ORDER: i32 = 100;
+pub const PREPROCESS_STAGE_ORDER: i32 = 150;
 pub const WHITELIST_STAGE_ORDER: i32 = 200;
 pub const SESSION_STATUS_STAGE_ORDER: i32 = 300;
 pub const RATE_LIMIT_STAGE_ORDER: i32 = 400;

@@ -1,6 +1,6 @@
 use crate::{
-    CONTENT_SAFETY_STAGE_TYPE, PROCESS_STAGE_TYPE, PipelineContext, PipelineStageRegistry,
-    RATE_LIMIT_STAGE_TYPE, RESPOND_STAGE_TYPE, RESULT_DECORATE_STAGE_TYPE,
+    CONTENT_SAFETY_STAGE_TYPE, PREPROCESS_STAGE_TYPE, PROCESS_STAGE_TYPE, PipelineContext,
+    PipelineStageRegistry, RATE_LIMIT_STAGE_TYPE, RESPOND_STAGE_TYPE, RESULT_DECORATE_STAGE_TYPE,
     SESSION_STATUS_STAGE_TYPE, WAKE_STAGE_TYPE, WHITELIST_STAGE_TYPE,
 };
 
@@ -12,6 +12,7 @@ fn builtin_registry_matches_current_pipeline_order() {
         registry.ordered_stage_types(),
         vec![
             WAKE_STAGE_TYPE.to_string(),
+            PREPROCESS_STAGE_TYPE.to_string(),
             WHITELIST_STAGE_TYPE.to_string(),
             SESSION_STATUS_STAGE_TYPE.to_string(),
             RATE_LIMIT_STAGE_TYPE.to_string(),
@@ -23,11 +24,12 @@ fn builtin_registry_matches_current_pipeline_order() {
     );
 
     let scheduler = registry.build_scheduler(PipelineContext::new());
-    assert_eq!(scheduler.stage_count(), 8);
+    assert_eq!(scheduler.stage_count(), 9);
     assert_eq!(
         scheduler.stage_names(),
         vec![
             WAKE_STAGE_TYPE.to_string(),
+            PREPROCESS_STAGE_TYPE.to_string(),
             WHITELIST_STAGE_TYPE.to_string(),
             SESSION_STATUS_STAGE_TYPE.to_string(),
             RATE_LIMIT_STAGE_TYPE.to_string(),

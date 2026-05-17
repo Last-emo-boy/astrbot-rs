@@ -41,8 +41,9 @@ pub use policy_config::{
     RuntimeWhitelistPolicyConfig,
 };
 pub use provider_config::{
-    RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeRerankProviderConfig,
-    RuntimeSpeechToTextProviderConfig, RuntimeTextToSpeechProviderConfig,
+    RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeExternalAgentConfig,
+    RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
+    RuntimeTextToSpeechProviderConfig,
 };
 pub use provider_selection::RuntimeProviderSelectionSnapshot;
 

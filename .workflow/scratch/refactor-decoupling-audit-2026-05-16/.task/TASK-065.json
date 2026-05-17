@@ -1,7 +1,7 @@
 {
   "id": "TASK-065",
   "title": "Define external agent runner connector and stream mapping boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "external-agent-runner-boundary",
   "description": "AstrBot supports non-standard agent runners such as Coze, Dify, DashScope, and DeerFlow. Their API clients, thread/session mapping, stream event parsing, final response mapping, and runner lifecycle should not be folded into chat provider adapters or the generic AgentRunner.",
@@ -37,5 +37,28 @@
     ],
     "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-runtime && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T08:12:03+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/external/mod.rs",
+    "crates/astrbot-runtime/Cargo.toml",
+    "crates/astrbot-runtime/src/config.rs",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/provider_config.rs",
+    "crates/astrbot-runtime/src/provider_config/external_agent.rs",
+    "crates/astrbot-runtime/src/tests/provider_config.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-065.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-065-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/.csv-wave/20260517-execute-scratch-task-065/wave-1.csv"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-runtime",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check"
+  ],
   "risk": "high"
 }

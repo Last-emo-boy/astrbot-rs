@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use astrbot_agent::{ExternalAgentConnectorConfig, ExternalAgentConnectorKind};
 use astrbot_platform::WEBCHAT_PLATFORM_TYPE;
 use astrbot_provider::{
     ChatProviderConfig, EmbeddingProvider, EmbeddingProviderConfig, EmbeddingRequest,
@@ -10,7 +11,7 @@ use astrbot_provider::{
 
 use crate::{
     AstrbotRuntime, RuntimeChatProviderConfig, RuntimeConfig, RuntimeEmbeddingProviderConfig,
-    RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
+    RuntimeExternalAgentConfig, RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
     RuntimeTextToSpeechProviderConfig,
 };
 
@@ -116,10 +117,39 @@ fn runtime_config_defaults_include_disabled_webchat_server() {
     assert!(config.embedding_providers.is_empty());
     assert!(config.default_rerank_provider_id.is_none());
     assert!(config.rerank_providers.is_empty());
+    assert!(config.external_agent_runners.is_empty());
     assert!(!config.webchat_server.enabled);
     assert_eq!(config.webchat_server.platform_id, WEBCHAT_PLATFORM_TYPE);
     assert_eq!(config.webchat_server.host, "127.0.0.1");
     assert_eq!(config.webchat_server.port, 6185);
+}
+
+#[test]
+fn runtime_external_agent_config_maps_to_agent_connector_not_chat_provider() {
+    let config = RuntimeExternalAgentConfig::coze("coze-main", "https://api.coze.example", "bot-1")
+        .with_api_key("coze-key")
+        .with_app_id("app-1")
+        .with_streaming(true)
+        .with_timeout_secs(45)
+        .with_option("workspace", "prod");
+
+    let connector = ExternalAgentConnectorConfig::from(config);
+
+    assert_eq!(connector.connector_id, "coze-main");
+    assert_eq!(connector.kind, ExternalAgentConnectorKind::Coze);
+    assert_eq!(
+        connector.api_base.as_deref(),
+        Some("https://api.coze.example")
+    );
+    assert_eq!(connector.api_key.as_deref(), Some("coze-key"));
+    assert_eq!(connector.app_id.as_deref(), Some("app-1"));
+    assert_eq!(connector.bot_id.as_deref(), Some("bot-1"));
+    assert!(connector.stream);
+    assert_eq!(connector.timeout_secs, 45);
+    assert_eq!(
+        connector.options.get("workspace"),
+        Some(&"prod".to_string())
+    );
 }
 
 #[test]

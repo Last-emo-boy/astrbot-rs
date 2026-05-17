@@ -1,4 +1,5 @@
 mod context;
+mod external;
 mod fallback;
 mod feedback;
 mod memory;
@@ -13,6 +14,11 @@ pub use context::{
     AgentContextCompressor, AgentContextWindow, AgentTokenCounter, ApproximateTokenCounter,
     ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
     ContextWindowRequestDecorator, NoopContextCompressor,
+};
+pub use external::{
+    ExternalAgentConnector, ExternalAgentConnectorConfig, ExternalAgentConnectorKind,
+    ExternalAgentMappedEvent, ExternalAgentRawStreamEvent, ExternalAgentRequest,
+    ExternalAgentRunState, ExternalAgentRunStateKind, ExternalAgentStreamMapper,
 };
 pub use fallback::AgentFallbackPolicy;
 pub use feedback::{

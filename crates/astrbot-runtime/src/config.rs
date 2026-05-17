@@ -36,8 +36,9 @@ use crate::policy_config::{
     RuntimeWakeCheckConfig, RuntimeWhitelistPolicyConfig,
 };
 use crate::provider_config::{
-    RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeRerankProviderConfig,
-    RuntimeSpeechToTextProviderConfig, RuntimeTextToSpeechProviderConfig,
+    RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeExternalAgentConfig,
+    RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
+    RuntimeTextToSpeechProviderConfig,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -66,6 +67,8 @@ pub struct RuntimeConfig {
     pub default_rerank_provider_id: Option<String>,
     #[serde(default)]
     pub rerank_providers: Vec<RuntimeRerankProviderConfig>,
+    #[serde(default)]
+    pub external_agent_runners: Vec<RuntimeExternalAgentConfig>,
     #[serde(default = "default_platforms")]
     pub platforms: Vec<RuntimePlatformConfig>,
     #[serde(default)]
@@ -105,6 +108,7 @@ impl Default for RuntimeConfig {
             embedding_providers: Vec::new(),
             default_rerank_provider_id: None,
             rerank_providers: Vec::new(),
+            external_agent_runners: Vec::new(),
             platforms: default_platforms(),
             wake_check: RuntimeWakeCheckConfig::default(),
             whitelist_policy: RuntimeWhitelistPolicyConfig::default(),

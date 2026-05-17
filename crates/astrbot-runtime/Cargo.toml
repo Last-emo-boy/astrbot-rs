@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-agent = { path = "../astrbot-agent" }
 astrbot-core = { path = "../astrbot-core" }
 astrbot-observability = { path = "../astrbot-observability" }
 astrbot-pipeline = { path = "../astrbot-pipeline" }

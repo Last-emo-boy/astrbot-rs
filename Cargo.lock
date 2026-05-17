@@ -198,6 +198,7 @@ dependencies = [
 name = "astrbot-runtime"
 version = "0.1.0"
 dependencies = [
+ "astrbot-agent",
  "astrbot-core",
  "astrbot-observability",
  "astrbot-pipeline",

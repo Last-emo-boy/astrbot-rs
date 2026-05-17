@@ -510,3 +510,12 @@
 - AstrBot reference: `core/utils/io.py`, `core/utils/http_ssl.py`, and `core/utils/t2i/network_strategy.py`.
 - Adjustment: next implementation pointer moves to `TASK-085`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-net`, `cargo test -p astrbot-media`, `cargo test -p astrbot-provider`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 85 - TASK-085 Knowledge Base Management API Boundary
+
+- Scope: `astrbot-kb` dashboard-facing management, provider preflight, upload task lifecycle, and `astrbot-web` management route adapter.
+- Strategy: follow AstrBot `knowledge_base.py`, `kb_mgr.py`, `kb_helper.py`, and `kb_db_sqlite.py`, but keep provider smoke checks, KB CRUD/doc/chunk DTOs, stats, and upload/import/url progress out of HTTP handlers and separate from retrieval/ingestion.
+- Result: added KB management service/store, embedding/rerank preflight service, upload task store/service, and management routes for catalog/create/get/update/delete, preflight, document/chunk operations, upload plan/progress/complete/fail/poll.
+- AstrBot reference: `dashboard/routes/knowledge_base.py`, `core/knowledge_base/kb_mgr.py`, `core/knowledge_base/kb_helper.py`, and `core/knowledge_base/kb_db_sqlite.py`.
+- Adjustment: next implementation pointer moves to `TASK-086`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-kb`, `cargo test -p astrbot-web`, `cargo test --workspace`, and `cargo clippy --workspace -- -D warnings` passed.

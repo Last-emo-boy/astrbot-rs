@@ -4,6 +4,7 @@ mod backup;
 mod chat_projects;
 mod config;
 mod files;
+mod knowledge_base;
 mod platforms;
 mod plugin_market;
 mod plugins;
@@ -54,6 +55,17 @@ pub use config::{
     ManagementConfigSchemaResponse,
 };
 pub use files::{ManagementFileDownloadState, ScopedDownloadError, ScopedDownloadFile};
+pub use knowledge_base::{
+    ManagementKnowledgeBaseCatalogResponse, ManagementKnowledgeBaseCreateRequest,
+    ManagementKnowledgeBaseIdRequest, ManagementKnowledgeBaseResponse,
+    ManagementKnowledgeBaseState, ManagementKnowledgeBaseUpdateRequest,
+    ManagementKnowledgeChunkCatalogResponse, ManagementKnowledgeChunkDeleteRequest,
+    ManagementKnowledgeDocumentCatalogResponse, ManagementKnowledgeDocumentIdRequest,
+    ManagementKnowledgeMutationResponse, ManagementKnowledgePreflightResponse,
+    ManagementKnowledgeProviderPreflightRequest, ManagementKnowledgeUploadCompleteRequest,
+    ManagementKnowledgeUploadFailRequest, ManagementKnowledgeUploadPlanRequest,
+    ManagementKnowledgeUploadProgressRequest, ManagementKnowledgeUploadTaskResponse,
+};
 pub use platforms::PlatformManagementResponse;
 pub use plugin_market::{
     PluginMarketCatalogResponse, PluginMarketManagementState, PluginMarketPlanRequest,
@@ -93,6 +105,7 @@ pub struct ManagementApiState {
     skills: Option<ManagementSkillState>,
     tools: Option<ManagementToolState>,
     maintenance: Option<ManagementMaintenanceState>,
+    knowledge_base: Option<ManagementKnowledgeBaseState>,
 }
 
 impl ManagementApiState {
@@ -114,6 +127,7 @@ impl ManagementApiState {
             skills: None,
             tools: None,
             maintenance: None,
+            knowledge_base: None,
         }
     }
 
@@ -159,6 +173,11 @@ impl ManagementApiState {
 
     pub fn with_maintenance(mut self, maintenance: ManagementMaintenanceState) -> Self {
         self.maintenance = Some(maintenance);
+        self
+    }
+
+    pub fn with_knowledge_base(mut self, knowledge_base: ManagementKnowledgeBaseState) -> Self {
+        self.knowledge_base = Some(knowledge_base);
         self
     }
 
@@ -220,6 +239,10 @@ impl ManagementApiState {
 
     pub fn maintenance(&self) -> Option<&ManagementMaintenanceState> {
         self.maintenance.as_ref()
+    }
+
+    pub fn knowledge_base(&self) -> Option<&ManagementKnowledgeBaseState> {
+        self.knowledge_base.as_ref()
     }
 
     pub fn status(&self) -> ManagementStatusResponse {
@@ -324,6 +347,55 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/tools", get(tools::catalog))
         .route("/api/management/tools/toggle", post(tools::toggle))
+        .route("/api/management/kb/catalog", get(knowledge_base::catalog))
+        .route("/api/management/kb/create", post(knowledge_base::create))
+        .route("/api/management/kb/get", post(knowledge_base::get))
+        .route("/api/management/kb/update", post(knowledge_base::update))
+        .route("/api/management/kb/delete", post(knowledge_base::delete))
+        .route(
+            "/api/management/kb/preflight",
+            post(knowledge_base::preflight),
+        )
+        .route(
+            "/api/management/kb/document/list",
+            post(knowledge_base::list_documents),
+        )
+        .route(
+            "/api/management/kb/document/get",
+            post(knowledge_base::get_document),
+        )
+        .route(
+            "/api/management/kb/document/delete",
+            post(knowledge_base::delete_document),
+        )
+        .route(
+            "/api/management/kb/chunk/list",
+            post(knowledge_base::list_chunks),
+        )
+        .route(
+            "/api/management/kb/chunk/delete",
+            post(knowledge_base::delete_chunk),
+        )
+        .route(
+            "/api/management/kb/upload/plan",
+            post(knowledge_base::plan_upload),
+        )
+        .route(
+            "/api/management/kb/upload/progress",
+            post(knowledge_base::update_upload_progress),
+        )
+        .route(
+            "/api/management/kb/upload/complete",
+            post(knowledge_base::complete_upload),
+        )
+        .route(
+            "/api/management/kb/upload/fail",
+            post(knowledge_base::fail_upload),
+        )
+        .route(
+            "/api/management/kb/upload/progress/{task_id}",
+            get(knowledge_base::upload_progress),
+        )
         .route("/api/management/update/check", get(update::check))
         .route("/api/management/update/releases", get(update::releases))
         .route(

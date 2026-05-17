@@ -4,12 +4,15 @@ pub mod embedding;
 pub mod formatter;
 pub mod index_job;
 pub mod ingestion;
+pub mod management;
 pub mod media_store;
 pub mod parser;
+pub mod preflight;
 pub mod rank_fusion;
 pub mod repository;
 pub mod retrieval;
 pub mod types;
+pub mod upload_task;
 pub mod vector_store;
 
 pub use chunking::{ChunkingOptions, DocumentChunker, RecursiveCharacterChunker};
@@ -24,11 +27,21 @@ pub use index_job::{
 pub use ingestion::{
     KnowledgeIngestionOutcome, KnowledgeIngestionRequest, KnowledgeIngestionService,
 };
+pub use management::{
+    InMemoryKnowledgeBaseManagementStore, KnowledgeBaseCatalog, KnowledgeBaseCreateCommand,
+    KnowledgeBaseManagementService, KnowledgeBaseManagementStore, KnowledgeBaseSummary,
+    KnowledgeBaseUpdateCommand, KnowledgeChunkCatalog, KnowledgeChunkSummary,
+    KnowledgeDocumentCatalog, KnowledgeDocumentSummary,
+};
 pub use media_store::{
     InMemoryKnowledgeMediaStore, KnowledgeMediaStore, KnowledgeMediaWriteRequest,
     KnowledgeMediaWriteResult,
 };
 pub use parser::{DocumentParser, MediaItem, ParseResult, PlainTextParser};
+pub use preflight::{
+    KnowledgeEmbeddingPreflight, KnowledgeProviderPreflightReport,
+    KnowledgeProviderPreflightRequest, KnowledgeProviderPreflightService, KnowledgeRerankPreflight,
+};
 pub use rank_fusion::{RankFusionHit, ReciprocalRankFusion};
 pub use repository::{InMemoryKnowledgeDocumentRepository, KnowledgeDocumentRepository};
 pub use retrieval::{
@@ -37,6 +50,12 @@ pub use retrieval::{
     SparseRetrievalResult,
 };
 pub use types::{ChunkId, DocumentId, KnowledgeBaseId, KnowledgeChunk, MediaId, kb_error};
+pub use upload_task::{
+    InMemoryKnowledgeUploadTaskStore, KnowledgeUploadProgress, KnowledgeUploadStage,
+    KnowledgeUploadTaskId, KnowledgeUploadTaskKind, KnowledgeUploadTaskResult,
+    KnowledgeUploadTaskService, KnowledgeUploadTaskStatus, KnowledgeUploadTaskStore,
+    KnowledgeUploadTaskSummary,
+};
 pub use vector_store::{InMemoryVectorStore, VectorSearchRequest, VectorSearchResult, VectorStore};
 
 #[cfg(test)]

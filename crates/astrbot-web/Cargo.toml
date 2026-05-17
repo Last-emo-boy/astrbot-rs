@@ -7,6 +7,7 @@ rust-version.workspace = true
 [dependencies]
 astrbot-conversation = { path = "../astrbot-conversation" }
 astrbot-core = { path = "../astrbot-core" }
+astrbot-kb = { path = "../astrbot-kb" }
 astrbot-maintenance = { path = "../astrbot-maintenance" }
 astrbot-media = { path = "../astrbot-media" }
 astrbot-platform = { path = "../astrbot-platform" }

@@ -4,13 +4,18 @@ use astrbot_provider::{MockEmbeddingProvider, MockRerankProvider};
 
 use crate::{
     ChunkId, ChunkingOptions, DocumentChunker, DocumentId, EmbeddedKnowledgeChunk,
-    HybridKnowledgeRetriever, InMemoryKnowledgeDocumentRepository, InMemoryKnowledgeMediaStore,
-    InMemorySparseRetriever, InMemoryVectorStore, KnowledgeBaseId, KnowledgeChunk,
-    KnowledgeContextFormatter, KnowledgeDocumentRepository, KnowledgeIndexStage,
-    KnowledgeIngestionRequest, KnowledgeIngestionService, KnowledgeRetrievalRequest,
-    KnowledgeRetriever, PlainTextParser, RecordingKnowledgeIndexProgressSink,
-    RecursiveCharacterChunker, RetrievalContextFormatter, VectorStore, VectorStorePersistencePort,
-    embed_chunks,
+    HybridKnowledgeRetriever, InMemoryKnowledgeBaseManagementStore,
+    InMemoryKnowledgeDocumentRepository, InMemoryKnowledgeMediaStore,
+    InMemoryKnowledgeUploadTaskStore, InMemorySparseRetriever, InMemoryVectorStore,
+    KnowledgeBaseCreateCommand, KnowledgeBaseId, KnowledgeBaseManagementService,
+    KnowledgeBaseUpdateCommand, KnowledgeChunk, KnowledgeContextFormatter, KnowledgeDocument,
+    KnowledgeDocumentRepository, KnowledgeIndexStage, KnowledgeIngestionRequest,
+    KnowledgeIngestionService, KnowledgeProviderPreflightRequest,
+    KnowledgeProviderPreflightService, KnowledgeRetrievalRequest, KnowledgeRetriever,
+    KnowledgeUploadProgress, KnowledgeUploadStage, KnowledgeUploadTaskId, KnowledgeUploadTaskKind,
+    KnowledgeUploadTaskResult, KnowledgeUploadTaskService, KnowledgeUploadTaskStatus,
+    PlainTextParser, RecordingKnowledgeIndexProgressSink, RecursiveCharacterChunker,
+    RetrievalContextFormatter, VectorStore, VectorStorePersistencePort, embed_chunks,
 };
 
 fn chunk(id: &str, index: usize, content: &str, embedding: Vec<f32>) -> EmbeddedKnowledgeChunk {
@@ -174,4 +179,158 @@ async fn ingestion_service_orchestrates_parse_chunk_embed_vector_and_metadata_po
             .iter()
             .any(|event| event.stage == KnowledgeIndexStage::Completed)
     );
+}
+
+#[tokio::test]
+async fn management_service_keeps_kb_crud_documents_and_chunks_outside_routes() {
+    let store = Arc::new(InMemoryKnowledgeBaseManagementStore::new());
+    let service = KnowledgeBaseManagementService::new(store);
+    let kb_id = KnowledgeBaseId::new("kb-1").expect("kb id");
+
+    let created = service
+        .create_kb(
+            KnowledgeBaseCreateCommand::new(kb_id.clone(), "Docs", "embedding-1")
+                .with_description(Some("Project docs".to_string()))
+                .with_rerank_provider_id(Some("rerank-1".to_string()))
+                .with_chunking(Some(256), Some(32)),
+        )
+        .await
+        .expect("kb should create");
+
+    assert_eq!(created.name, "Docs");
+    assert_eq!(created.stats.doc_count, 0);
+    assert_eq!(created.rerank_provider_id.as_deref(), Some("rerank-1"));
+
+    let doc_id = DocumentId::new("doc-1").expect("doc id");
+    service
+        .upsert_document(KnowledgeDocument::new(
+            doc_id.clone(),
+            kb_id.clone(),
+            "intro.txt",
+            "txt",
+        ))
+        .await
+        .expect("document should store");
+    service
+        .upsert_chunk(KnowledgeChunk::new(
+            ChunkId::new("chunk-1").expect("chunk id"),
+            kb_id.clone(),
+            doc_id.clone(),
+            0,
+            "hello knowledge",
+        ))
+        .await
+        .expect("chunk should store");
+
+    let stats = service.stats_for(&kb_id).await.expect("stats should load");
+    assert_eq!(stats.doc_count, 1);
+    assert_eq!(stats.chunk_count, 1);
+
+    let chunks = service
+        .list_chunks_for_document(&doc_id)
+        .await
+        .expect("chunks should list");
+    assert_eq!(
+        chunks.chunks[0].char_count,
+        "hello knowledge".chars().count()
+    );
+
+    let updated = service
+        .update_kb(
+            &kb_id,
+            KnowledgeBaseUpdateCommand {
+                name: Some("Reference".to_string()),
+                top_m_final: Some(3),
+                ..KnowledgeBaseUpdateCommand::default()
+            },
+        )
+        .await
+        .expect("kb should update")
+        .expect("kb should exist");
+    assert_eq!(updated.name, "Reference");
+    assert_eq!(updated.top_m_final, 3);
+    assert_eq!(updated.stats.chunk_count, 1);
+}
+
+#[tokio::test]
+async fn provider_preflight_checks_embedding_dimension_and_rerank_smoke_test() {
+    let service = KnowledgeProviderPreflightService::new(
+        Arc::new(MockEmbeddingProvider::new(vec![0.25, 0.75])),
+        Some(Arc::new(MockRerankProvider::new(vec![0.9]))),
+    );
+
+    let report = service
+        .preflight(
+            KnowledgeProviderPreflightRequest::new("embedding-1")
+                .with_expected_embedding_dimension(2)
+                .with_rerank_provider_id(Some("rerank-1".to_string())),
+        )
+        .await
+        .expect("preflight should run");
+
+    assert!(report.is_usable());
+    assert_eq!(report.embedding.actual_dimension, Some(2));
+    assert_eq!(
+        report
+            .rerank
+            .as_ref()
+            .expect("rerank preflight")
+            .result_count,
+        1
+    );
+}
+
+#[tokio::test]
+async fn upload_task_service_tracks_progress_results_and_failures() {
+    let service =
+        KnowledgeUploadTaskService::new(Arc::new(InMemoryKnowledgeUploadTaskStore::new()));
+    let task_id = KnowledgeUploadTaskId::new("task-1").expect("task id");
+
+    let started = service
+        .start_task(task_id.clone(), KnowledgeUploadTaskKind::Upload, "kb-1", 2)
+        .await
+        .expect("task should start");
+    assert_eq!(started.status, KnowledgeUploadTaskStatus::Pending);
+
+    let progress = KnowledgeUploadProgress::queued(2).processing(
+        1,
+        "intro.txt",
+        KnowledgeUploadStage::Embedding,
+        3,
+        5,
+    );
+    let updated = service
+        .update_progress(&task_id, progress)
+        .await
+        .expect("progress should update")
+        .expect("task should exist");
+    assert_eq!(updated.status, KnowledgeUploadTaskStatus::Processing);
+    assert_eq!(
+        updated.progress.expect("progress").stage,
+        KnowledgeUploadStage::Embedding
+    );
+
+    let completed = service
+        .complete_task(
+            &task_id,
+            KnowledgeUploadTaskResult::new(vec!["doc-1".to_string()], 5),
+        )
+        .await
+        .expect("task should complete")
+        .expect("task should exist");
+    assert_eq!(completed.status, KnowledgeUploadTaskStatus::Completed);
+    assert_eq!(completed.result.expect("result").chunk_count, 5);
+
+    let failed_id = KnowledgeUploadTaskId::new("task-2").expect("task id");
+    service
+        .start_task(failed_id.clone(), KnowledgeUploadTaskKind::Url, "kb-1", 1)
+        .await
+        .expect("task should start");
+    let failed = service
+        .fail_task(&failed_id, "download failed")
+        .await
+        .expect("task should fail")
+        .expect("task should exist");
+    assert_eq!(failed.status, KnowledgeUploadTaskStatus::Failed);
+    assert_eq!(failed.error.as_deref(), Some("download failed"));
 }

@@ -316,6 +316,7 @@ version = "0.1.0"
 dependencies = [
  "astrbot-conversation",
  "astrbot-core",
+ "astrbot-kb",
  "astrbot-maintenance",
  "astrbot-media",
  "astrbot-platform",

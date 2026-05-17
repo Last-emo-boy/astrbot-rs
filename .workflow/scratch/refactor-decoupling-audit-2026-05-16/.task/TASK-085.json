@@ -1,7 +1,7 @@
 {
   "id": "TASK-085",
   "title": "Separate knowledge-base management API, provider preflight, upload task, and progress boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "kb-management-api-boundary",
   "description": "TASK-031 covers KB parser/chunking/retrieval ports and TASK-076 covers ingestion/index jobs. AstrBot's dashboard KB route adds a separate management surface: KB CRUD, embedding/rerank provider preflight, document upload/import/from-URL tasks, upload progress maps, chunk CRUD, stats, and debug retrieval. Rust should define this service boundary before dashboard management routes call KB/provider/storage internals directly.",

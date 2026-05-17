@@ -10,7 +10,8 @@ use astrbot_plugin::{
     RegisteredHandler,
 };
 use astrbot_provider::{
-    ChatProviderConfig, ProviderManager, ProviderManagerConfigSet, ProviderRegistry,
+    ChatProviderConfig, EmbeddingProviderConfig, ProviderManager, ProviderManagerConfigSet,
+    ProviderRegistry, RerankProviderConfig,
 };
 use astrbot_runtime::{RuntimeConfig, RuntimeConfigService};
 use astrbot_session::ProviderCapability;
@@ -36,9 +37,9 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
-    ManagementChatProjectState, ManagementFileDownloadState, ManagementMaintenanceState,
-    ManagementSessionRuleState, ManagementSkillState, ManagementStatusResponse,
-    ManagementToolState, PluginMarketManagementState, management_router,
+    ManagementChatProjectState, ManagementFileDownloadState, ManagementKnowledgeBaseState,
+    ManagementMaintenanceState, ManagementSessionRuleState, ManagementSkillState,
+    ManagementStatusResponse, ManagementToolState, PluginMarketManagementState, management_router,
     management_router_with_auth,
 };
 
@@ -303,6 +304,107 @@ async fn management_tool_routes_expose_sources_and_reject_internal_toggle() {
     let catalog_response = get(router, "/api/management/tools").await;
     let catalog: serde_json::Value = response_json(catalog_response).await;
     assert_eq!(catalog["tools"][1]["active"], false);
+}
+
+#[tokio::test]
+async fn management_knowledge_base_routes_delegate_to_typed_services() {
+    let state =
+        management_state_fixture().with_knowledge_base(knowledge_base_management_state_fixture());
+    let router = management_router(state);
+
+    let preflight_response = post_json(
+        router.clone(),
+        "/api/management/kb/preflight",
+        json!({
+            "embedding_provider_id": "embedding",
+            "expected_embedding_dimension": 2,
+            "rerank_provider_id": "rerank"
+        }),
+    )
+    .await;
+    assert_eq!(preflight_response.status(), StatusCode::OK);
+    let preflight: serde_json::Value = response_json(preflight_response).await;
+    assert_eq!(
+        preflight["report"]["embedding"]["actual_dimension"],
+        json!(2)
+    );
+    assert_eq!(preflight["report"]["rerank"]["smoke_test_passed"], true);
+
+    let create_response = post_json(
+        router.clone(),
+        "/api/management/kb/create",
+        json!({
+            "kb_id": "kb-1",
+            "name": "Docs",
+            "description": "Project docs",
+            "embedding_provider_id": "embedding",
+            "rerank_provider_id": "rerank",
+            "chunk_size": 256,
+            "chunk_overlap": 32
+        }),
+    )
+    .await;
+    assert_eq!(create_response.status(), StatusCode::OK);
+    let created: serde_json::Value = response_json(create_response).await;
+    assert_eq!(created["knowledge_base"]["kb_id"], "kb-1");
+    assert_eq!(created["knowledge_base"]["stats"]["doc_count"], 0);
+
+    let catalog_response = get(router.clone(), "/api/management/kb/catalog").await;
+    assert_eq!(catalog_response.status(), StatusCode::OK);
+    let catalog: serde_json::Value = response_json(catalog_response).await;
+    assert_eq!(catalog["knowledge_bases"][0]["name"], "Docs");
+
+    let plan_response = post_json(
+        router.clone(),
+        "/api/management/kb/upload/plan",
+        json!({
+            "task_id": "upload-1",
+            "kb_id": "kb-1",
+            "kind": "upload",
+            "file_total": 1
+        }),
+    )
+    .await;
+    assert_eq!(plan_response.status(), StatusCode::OK);
+    let planned: serde_json::Value = response_json(plan_response).await;
+    assert_eq!(planned["task"]["status"], "pending");
+
+    let progress_response = post_json(
+        router.clone(),
+        "/api/management/kb/upload/progress",
+        json!({
+            "task_id": "upload-1",
+            "file_index": 0,
+            "file_total": 1,
+            "file_name": "intro.txt",
+            "stage": "embedding",
+            "current": 1,
+            "total": 2
+        }),
+    )
+    .await;
+    assert_eq!(progress_response.status(), StatusCode::OK);
+    let progress: serde_json::Value = response_json(progress_response).await;
+    assert_eq!(progress["task"]["status"], "processing");
+    assert_eq!(progress["task"]["progress"]["stage"], "embedding");
+
+    let complete_response = post_json(
+        router.clone(),
+        "/api/management/kb/upload/complete",
+        json!({
+            "task_id": "upload-1",
+            "document_ids": ["doc-1"],
+            "chunk_count": 2
+        }),
+    )
+    .await;
+    assert_eq!(complete_response.status(), StatusCode::OK);
+
+    let poll_response = get(router, "/api/management/kb/upload/progress/upload-1").await;
+    assert_eq!(poll_response.status(), StatusCode::OK);
+    let task: serde_json::Value = response_json(poll_response).await;
+    assert_eq!(task["task"]["status"], "completed");
+    assert_eq!(task["task"]["result"]["doc_count"], 1);
 }
 
 #[tokio::test]
@@ -814,6 +916,22 @@ fn tool_management_state_fixture() -> ManagementToolState {
     );
 
     ManagementToolState::new(catalog)
+}
+
+fn knowledge_base_management_state_fixture() -> ManagementKnowledgeBaseState {
+    let provider_manager = ProviderManager::from_configs(
+        &ProviderRegistry::with_builtin_providers(),
+        ProviderManagerConfigSet {
+            embedding_providers: vec![EmbeddingProviderConfig::mock("embedding", vec![0.1, 0.9])],
+            default_embedding_provider_id: Some("embedding".to_string()),
+            rerank_providers: vec![RerankProviderConfig::mock("rerank", vec![0.8])],
+            default_rerank_provider_id: Some("rerank".to_string()),
+            ..ProviderManagerConfigSet::default()
+        },
+    )
+    .expect("knowledge base provider manager should build");
+
+    ManagementKnowledgeBaseState::in_memory(provider_manager)
 }
 
 fn temp_management_config_path(suffix: &str) -> std::path::PathBuf {

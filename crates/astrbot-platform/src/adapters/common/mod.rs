@@ -1,8 +1,10 @@
 mod api_client;
+mod identity;
 mod long_connection;
 mod media;
 mod outbound;
 mod path_mapping;
+mod permission;
 mod queue;
 mod quote;
 mod retry;
@@ -15,6 +17,7 @@ pub use api_client::{
     PlatformApiClient, PlatformApiError, PlatformApiErrorKind, PlatformApiMethod,
     PlatformApiRequest, PlatformApiResponse,
 };
+pub use identity::{PlatformGroupIdentityInput, PlatformIdentityNormalizer, platform_member};
 pub use long_connection::{
     LongConnectionClient, LongConnectionCommand, LongConnectionEndpoint, LongConnectionFrame,
     LongConnectionReconnectPolicy, LongConnectionState, LongConnectionWaiters,
@@ -29,6 +32,9 @@ pub use outbound::{
     ProactiveSendRequirement,
 };
 pub use path_mapping::{PlatformPathMapping, PlatformPathMappingRules};
+pub use permission::{
+    IdentityPermissionResolver, PlatformPermission, PlatformPermissionResolver, permission_allows,
+};
 pub use queue::{
     InMemoryPlatformQueueStore, PendingWebhookResponse, PlatformCallbackQueue,
     PlatformQueueDirection, PlatformQueueItem, PlatformQueueStats,

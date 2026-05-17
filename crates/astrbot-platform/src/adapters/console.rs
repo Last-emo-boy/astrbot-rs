@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::sync::{Mutex, mpsc};
 
-use crate::{MessageRecorder, PlatformAdapter, SentMessage};
+use crate::{MessageRecorder, PlatformAdapter, PlatformIdentityNormalizer, SentMessage};
 #[derive(Default)]
 pub struct ConsoleSink {
     sent: Mutex<Vec<SentMessage>>,
@@ -88,15 +88,18 @@ impl ConsolePlatform {
             self.id,
             self.event_counter.fetch_add(1, Ordering::Relaxed)
         );
+        let sender = MessageSender::new(sender_id, None);
+        let identity = PlatformIdentityNormalizer::normalize_direct_event(&sender);
         let event = MessageEvent::new(
             event_id,
             self.id.clone(),
             self.name.clone(),
             MessageSession::new(self.id.clone(), "console"),
-            MessageSender::new(sender_id, None),
+            sender,
             MessageChain::plain(text),
             self.sink.clone(),
-        );
+        )
+        .with_identity(identity);
 
         self.event_sender
             .send(event)

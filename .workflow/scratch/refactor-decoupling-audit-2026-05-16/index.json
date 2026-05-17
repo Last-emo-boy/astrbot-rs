@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T14:15:49+08:00",
+  "updated_at": "2026-05-17T14:30:08+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 78,
-    "pending_tasks": 12,
+    "completed_tasks": 79,
+    "pending_tasks": 11,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 78,
-    "current_task_id": "TASK-078",
-    "next_task": "TASK-079"
+    "reflection_rounds": 79,
+    "current_task_id": "TASK-079",
+    "next_task": "TASK-080"
   },
-  "latest_update": "TASK-078 introduced provider response metadata, token usage, reasoning, tool-call, raw response, and stream event boundaries. OpenAI-compatible, Gemini, and Anthropic adapters now preserve typed metadata on ChatResponse while AgentRunner forwards provider reasoning through lifecycle hooks without coupling to provider DTOs. Next pending task is TASK-079.",
+  "latest_update": "TASK-079 introduced platform identity boundaries for sender member profile, group metadata, effective role resolution, adapter identity normalization, and typed permission checks. MessageSession remains a routing identifier while plugin permission filters can consume normalized event identity without platform DTO leakage. Next pending task is TASK-080.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

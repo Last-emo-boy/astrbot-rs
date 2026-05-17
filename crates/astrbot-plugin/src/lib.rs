@@ -25,7 +25,7 @@ pub use extension::{
 };
 pub use filter::{
     AlwaysFilter, CommandFilter, EventFilter, MessageSessionKindFilter, PermissionFilter,
-    PermissionLevel, PermissionScope, PlatformFilter, RegexFilter,
+    PermissionLevel, PermissionResolver, PermissionScope, PlatformFilter, RegexFilter,
 };
 pub use handler::{HandlerMetadata, PluginHandler, RegisteredHandler};
 pub use loader::{

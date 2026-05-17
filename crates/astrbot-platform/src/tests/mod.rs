@@ -1,4 +1,5 @@
 mod console;
+mod identity;
 mod manager;
 mod onebot;
 mod registry;

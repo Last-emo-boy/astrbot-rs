@@ -1,6 +1,7 @@
 mod chain;
 mod component;
 mod event;
+mod identity;
 mod provider_request;
 mod quote;
 mod result;
@@ -10,6 +11,9 @@ mod sink;
 pub use chain::MessageChain;
 pub use component::MessageComponent;
 pub use event::MessageEvent;
+pub use identity::{
+    PlatformGroupMetadata, PlatformIdentity, PlatformMemberProfile, PlatformMemberRole,
+};
 pub use provider_request::{
     ProviderContentPart, ProviderContextMessage, ProviderRequest, ProviderToolCallResult,
     ProviderToolPlaceholder,

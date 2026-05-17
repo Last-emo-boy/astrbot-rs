@@ -8,7 +8,7 @@ use astrbot_core::MessageEvent;
 
 pub use command::CommandFilter;
 pub use event_type::MessageSessionKindFilter;
-pub use permission::{PermissionFilter, PermissionLevel, PermissionScope};
+pub use permission::{PermissionFilter, PermissionLevel, PermissionResolver, PermissionScope};
 pub use platform::PlatformFilter;
 pub use regex::RegexFilter;
 

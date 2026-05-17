@@ -6,7 +6,7 @@ use astrbot_core::{
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
-use crate::{PlatformAdapter, RecordingSink};
+use crate::{PlatformAdapter, PlatformIdentityNormalizer, RecordingSink};
 pub struct MockPlatform {
     id: String,
     name: String,
@@ -40,15 +40,18 @@ impl MockPlatform {
         sender_id: impl Into<String>,
         text: impl Into<String>,
     ) -> Result<()> {
+        let sender = MessageSender::new(sender_id, None);
+        let identity = PlatformIdentityNormalizer::normalize_direct_event(&sender);
         let event = MessageEvent::new(
             event_id,
             self.id.clone(),
             self.name.clone(),
             MessageSession::new(self.id.clone(), conversation_id),
-            MessageSender::new(sender_id, None),
+            sender,
             MessageChain::plain(text),
             self.sink.clone(),
-        );
+        )
+        .with_identity(identity);
 
         self.event_sender
             .send(event)

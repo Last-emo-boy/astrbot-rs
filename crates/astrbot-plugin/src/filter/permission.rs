@@ -9,6 +9,28 @@ pub enum PermissionLevel {
     Owner,
 }
 
+impl PermissionLevel {
+    pub fn allows(self, required: Self) -> bool {
+        self.rank() >= required.rank()
+    }
+
+    pub fn max(self, other: Self) -> Self {
+        if self.rank() >= other.rank() {
+            self
+        } else {
+            other
+        }
+    }
+
+    fn rank(self) -> u8 {
+        match self {
+            Self::Member => 0,
+            Self::Admin => 1,
+            Self::Owner => 2,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PermissionScope {
     admin_user_ids: Vec<String>,
@@ -31,12 +53,54 @@ impl PermissionScope {
     }
 
     pub fn is_admin(&self, user_id: &str) -> bool {
-        self.owner_user_ids.iter().any(|known| known == user_id)
-            || self.admin_user_ids.iter().any(|known| known == user_id)
+        self.permission_for_user(user_id)
+            .allows(PermissionLevel::Admin)
     }
 
     pub fn is_owner(&self, user_id: &str) -> bool {
-        self.owner_user_ids.iter().any(|known| known == user_id)
+        self.permission_for_user(user_id)
+            .allows(PermissionLevel::Owner)
+    }
+
+    pub fn permission_for_user(&self, user_id: &str) -> PermissionLevel {
+        if self.owner_user_ids.iter().any(|known| known == user_id) {
+            PermissionLevel::Owner
+        } else if self.admin_user_ids.iter().any(|known| known == user_id) {
+            PermissionLevel::Admin
+        } else {
+            PermissionLevel::Member
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PermissionResolver;
+
+impl PermissionResolver {
+    pub fn resolve(&self, event: &MessageEvent, scope: &PermissionScope) -> PermissionLevel {
+        let identity_permission = event
+            .identity()
+            .map(|identity| {
+                if identity.is_owner() {
+                    PermissionLevel::Owner
+                } else if identity.is_admin_or_owner() {
+                    PermissionLevel::Admin
+                } else {
+                    PermissionLevel::Member
+                }
+            })
+            .unwrap_or(PermissionLevel::Member);
+
+        identity_permission.max(scope.permission_for_user(&event.sender.id))
+    }
+
+    pub fn allows(
+        &self,
+        event: &MessageEvent,
+        scope: &PermissionScope,
+        required: PermissionLevel,
+    ) -> bool {
+        self.resolve(event, scope).allows(required)
     }
 }
 
@@ -44,11 +108,16 @@ impl PermissionScope {
 pub struct PermissionFilter {
     required: PermissionLevel,
     scope: PermissionScope,
+    resolver: PermissionResolver,
 }
 
 impl PermissionFilter {
     pub fn new(required: PermissionLevel, scope: PermissionScope) -> Self {
-        Self { required, scope }
+        Self {
+            required,
+            scope,
+            resolver: PermissionResolver,
+        }
     }
 
     pub fn admin(scope: PermissionScope) -> Self {
@@ -62,11 +131,7 @@ impl PermissionFilter {
 
 impl EventFilter for PermissionFilter {
     fn matches(&self, event: &MessageEvent) -> bool {
-        match self.required {
-            PermissionLevel::Member => true,
-            PermissionLevel::Admin => self.scope.is_admin(&event.sender.id),
-            PermissionLevel::Owner => self.scope.is_owner(&event.sender.id),
-        }
+        self.resolver.allows(event, &self.scope, self.required)
     }
 }
 

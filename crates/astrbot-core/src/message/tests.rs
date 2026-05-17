@@ -6,7 +6,8 @@ use crate::Result;
 
 use super::{
     ForwardMessageReference, MessageChain, MessageComponent, MessageEvent, MessageEventResult,
-    MessageSender, MessageSession, MessageSink, MessageStream, ProviderContentPart,
+    MessageSender, MessageSession, MessageSink, MessageStream, PlatformGroupMetadata,
+    PlatformIdentity, PlatformMemberProfile, PlatformMemberRole, ProviderContentPart,
     ProviderContextMessage, ProviderRequest, ProviderToolPlaceholder, QuotedImageReference,
     QuotedImageReferenceKind, QuotedMessage, ResultContentType,
 };
@@ -173,4 +174,58 @@ fn message_stream_builds_streaming_results() {
     assert_eq!(finish.chain.plain_text(), "final");
 
     assert!(MessageStream::new(vec![MessageChain::plain(" ")]).is_empty());
+}
+
+#[test]
+fn platform_identity_resolves_sender_and_group_roles_without_changing_session_routing() {
+    let session = MessageSession::group("onebot", "group:42");
+    let identity = PlatformIdentity::new(PlatformMemberProfile::new(
+        "user-1",
+        Some("Alice".to_string()),
+    ))
+    .with_group(
+        PlatformGroupMetadata::new("42")
+            .with_owner_id("owner-1")
+            .with_admin_id("user-1")
+            .with_member(
+                PlatformMemberProfile::new("owner-1", Some("Owner".to_string()))
+                    .with_role(PlatformMemberRole::Owner),
+            ),
+    );
+
+    let event = MessageEvent::new(
+        "event-1",
+        "onebot",
+        "OneBot",
+        session.clone(),
+        MessageSender::new("user-1", Some("Alice".to_string())),
+        MessageChain::plain("hello"),
+        Arc::new(NoopSink),
+    )
+    .with_identity(identity);
+
+    assert_eq!(event.session, session);
+    assert_eq!(event.session.conversation_id, "group:42");
+    assert_eq!(event.identity().expect("identity").group_id(), Some("42"));
+    assert!(event.identity().expect("identity").is_admin_or_owner());
+    assert!(!event.identity().expect("identity").is_owner());
+    assert_eq!(
+        event
+            .identity()
+            .expect("identity")
+            .sender
+            .display_name_or_id(),
+        "Alice"
+    );
+}
+
+#[test]
+fn platform_identity_prefers_owner_over_member_profile() {
+    let identity = PlatformIdentity::new(
+        PlatformMemberProfile::new("owner-1", None).with_role(PlatformMemberRole::Member),
+    )
+    .with_group(PlatformGroupMetadata::new("group-1").with_owner_id("owner-1"));
+
+    assert_eq!(identity.effective_role(), PlatformMemberRole::Owner);
+    assert!(identity.is_owner());
 }

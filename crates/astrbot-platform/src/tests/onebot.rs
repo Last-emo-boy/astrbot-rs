@@ -43,6 +43,10 @@ async fn onebot_platform_submits_group_text_events() {
     assert_eq!(event.sender.id, "user-1");
     assert!(event.session.is_group());
     assert_eq!(event.session.conversation_id, "group:group-1");
+    assert_eq!(
+        event.identity().and_then(|identity| identity.group_id()),
+        Some("group-1")
+    );
     assert_eq!(event.message.plain_text(), "hello group");
 }
 

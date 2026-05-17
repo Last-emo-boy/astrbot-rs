@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::Result;
 
 use super::chain::MessageChain;
+use super::identity::PlatformIdentity;
 use super::provider_request::ProviderRequest;
 use super::result::{MessageEventResult, MessageStream};
 use super::session::{MessageSender, MessageSession};
@@ -15,6 +16,7 @@ pub struct MessageEvent {
     pub platform_name: String,
     pub session: MessageSession,
     pub sender: MessageSender,
+    pub identity: Option<PlatformIdentity>,
     pub message: MessageChain,
     self_id: Option<String>,
     is_wake: bool,
@@ -42,6 +44,7 @@ impl MessageEvent {
             platform_name: platform_name.into(),
             session,
             sender,
+            identity: None,
             message,
             self_id: None,
             is_wake: false,
@@ -57,6 +60,27 @@ impl MessageEvent {
     pub fn with_self_id(mut self, self_id: impl Into<String>) -> Self {
         self.self_id = Some(self_id.into());
         self
+    }
+
+    pub fn with_identity(mut self, identity: PlatformIdentity) -> Self {
+        self.identity = Some(identity);
+        self
+    }
+
+    pub fn identity(&self) -> Option<&PlatformIdentity> {
+        self.identity.as_ref()
+    }
+
+    pub fn identity_mut(&mut self) -> Option<&mut PlatformIdentity> {
+        self.identity.as_mut()
+    }
+
+    pub fn set_identity(&mut self, identity: PlatformIdentity) {
+        self.identity = Some(identity);
+    }
+
+    pub fn take_identity(&mut self) -> Option<PlatformIdentity> {
+        self.identity.take()
     }
 
     pub fn self_id(&self) -> Option<&str> {

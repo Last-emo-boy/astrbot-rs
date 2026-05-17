@@ -7,7 +7,8 @@ pub use event::{EventBus, EventExecutor};
 pub use message::{
     EventResultType, ForwardMessageNode, ForwardMessageReference, MessageChain, MessageComponent,
     MessageEvent, MessageEventResult, MessageSender, MessageSession, MessageSessionKind,
-    MessageSink, MessageStream, ProviderContentPart, ProviderContextMessage, ProviderRequest,
+    MessageSink, MessageStream, PlatformGroupMetadata, PlatformIdentity, PlatformMemberProfile,
+    PlatformMemberRole, ProviderContentPart, ProviderContextMessage, ProviderRequest,
     ProviderToolCallResult, ProviderToolPlaceholder, QuotedImageReference,
     QuotedImageReferenceKind, QuotedMessage, ResultContentType,
 };

@@ -18,15 +18,16 @@ use crate::{
     AgentFeedbackEvent, AgentFeedbackEventKind, AgentHookEvent, AgentHookEventKind,
     AgentKnowledgeContextPort, AgentMemoryContextPort, AgentMessage, AgentMessageRole,
     AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort, AgentReferenceDecorator,
-    AgentResponseEvent, AgentResponseEventKind, AgentResponseStats, AgentRunContext, AgentRunHook,
-    AgentRunOutcome, AgentRunner, AgentSessionContextPort, AgentTokenCounter, AgentTokenUsage,
-    AgentToolCall, ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
-    ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
-    ContextWindowRequestDecorator, InMemoryToolImageCache, KnowledgeContextRequestDecorator,
-    MemoryRequestDecorator, NoopContextCompressor, PersonaPromptDecorator,
-    ProviderPreferenceRequestDecorator, ProviderRequestDecorator, QuoteContextRequestDecorator,
-    SessionContextRequestDecorator, SkillPromptInventoryRequestDecorator, ToolImageCachePort,
-    ToolImageCacheRequest, ToolLoopPolicy,
+    AgentRequestDecoratorComposer, AgentResponseEvent, AgentResponseEventKind, AgentResponseStats,
+    AgentRunContext, AgentRunHook, AgentRunOutcome, AgentRunner, AgentSessionContextPort,
+    AgentTokenCounter, AgentTokenUsage, AgentToolCall, ApproximateTokenCounter, ChatAgentRunner,
+    CompositeProviderRequestDecorator, ContextTokenBudget, ContextTruncationPolicy,
+    ContextWindowManager, ContextWindowRequestDecorator, InMemoryToolImageCache,
+    KnowledgeContextRequestDecorator, MemoryRequestDecorator, NoopContextCompressor,
+    PersonaPromptDecorator, ProviderPreferenceRequestDecorator, ProviderRequestDecorator,
+    ProviderRequestEnvelope, QuoteContextRequestDecorator, SessionContextRequestDecorator,
+    SkillPromptInventoryRequestDecorator, ToolImageCachePort, ToolImageCacheRequest,
+    ToolLoopPolicy,
 };
 use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
 use astrbot_provider::{ProviderReasoningMetadata, ProviderResponseMetadata};
@@ -187,6 +188,46 @@ async fn composite_decorator_applies_preference_context_quote_and_persona() {
         vec![ProviderContentPart::text("quoted")]
     );
     assert_eq!(request.system_prompt.as_deref(), Some("persona prompt"));
+}
+
+#[test]
+fn request_envelope_marks_explicit_provider_request_and_applies_event_defaults() {
+    let mut message_event = event("fallback text");
+    message_event.set_provider_request(ProviderRequest::default().with_prompt("explicit text"));
+
+    let envelope = ProviderRequestEnvelope::from_event(&message_event)
+        .expect("explicit provider request should produce envelope");
+
+    assert!(envelope.explicit);
+    assert_eq!(envelope.request.prompt.as_deref(), Some("explicit text"));
+    assert_eq!(
+        envelope.request.session_id.as_deref(),
+        Some("conversation-1")
+    );
+}
+
+#[tokio::test]
+async fn request_decorator_composer_keeps_decorator_order() {
+    let decorator = AgentRequestDecoratorComposer::new()
+        .with_decorator(Arc::new(SessionContextRequestDecorator::new(Arc::new(
+            StaticSessionContext,
+        ))))
+        .with_decorator(Arc::new(QuoteContextRequestDecorator::new(Arc::new(
+            StaticQuoteContext,
+        ))))
+        .build();
+    let mut request = ProviderRequest::new("hello", "conversation-1");
+
+    decorator
+        .decorate(&event("hello"), &mut request)
+        .await
+        .expect("composed decorators should run");
+
+    assert_eq!(request.contexts[0].role, "assistant");
+    assert_eq!(
+        request.extra_user_content_parts,
+        vec![ProviderContentPart::text("quoted")]
+    );
 }
 
 #[tokio::test]

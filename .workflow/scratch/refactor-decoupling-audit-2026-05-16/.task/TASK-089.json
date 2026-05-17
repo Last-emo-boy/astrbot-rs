@@ -1,12 +1,12 @@
 {
   "id": "TASK-089",
   "title": "Separate agent request envelope, decorator chain, and context source ports",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "agent-request-decoration-boundary",
   "description": "Agent request preparation is now split across runner, request_decorator.rs, context decorators, persona, multimodal decorators, and pipeline adapters. AstrBot keeps provider request construction, agent sub-stage request building, context managers, modality fixes, plugin-tool fixes, and hooks as separate concepts even though they meet in the main agent. Rust should make request envelope creation, decorator chain composition, and injected context source ports explicit before tool, hook, KB, memory, and provider-response metadata grow around ChatAgentRunner.",
   "read_first": [
-    "crates/astrbot-agent/src/request_decorator.rs",
+    "crates/astrbot-agent/src/request/mod.rs",
     "crates/astrbot-agent/src/runner.rs",
     "crates/astrbot-agent/src/context/mod.rs",
     "crates/astrbot-agent/src/multimodal/mod.rs",

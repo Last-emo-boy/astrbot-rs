@@ -9,7 +9,7 @@ mod message;
 mod multimodal;
 mod persona;
 mod references;
-mod request_decorator;
+mod request;
 mod response;
 mod run_context;
 mod runner;
@@ -51,9 +51,9 @@ pub use multimodal::{
 };
 pub use persona::{AgentPersona, PersonaPromptDecorator};
 pub use references::{AgentReferenceDecorator, AgentResponseReferences};
-pub use request_decorator::{
-    AgentProviderPreferencePort, AgentQuoteContextPort, AgentSessionContextPort,
-    CompositeProviderRequestDecorator, NoopProviderRequestDecorator,
+pub use request::{
+    AgentProviderPreferencePort, AgentQuoteContextPort, AgentRequestDecoratorComposer,
+    AgentSessionContextPort, CompositeProviderRequestDecorator, NoopProviderRequestDecorator,
     ProviderPreferenceRequestDecorator, ProviderRequestDecorator, ProviderRequestEnvelope,
     QuoteContextRequestDecorator, SessionContextRequestDecorator,
 };

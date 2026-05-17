@@ -546,3 +546,12 @@
 - AstrBot reference: `core/platform/platform.py`, `core/platform/platform_metadata.py`, `core/platform/register.py`, and `core/platform/manager.py`.
 - Adjustment: next implementation pointer moves to `TASK-089`.
 - Verification: `cargo fmt --all --check`, `cargo test -p astrbot-platform`, `cargo clippy -p astrbot-platform -- -D warnings`, and `cargo test --workspace` passed.
+
+## Round 89 - TASK-089 Agent Request Decoration Boundary
+
+- Scope: agent request envelope, decorator trait/composite, context source ports, concrete context decorators, and request decorator composition.
+- Strategy: follow AstrBot's distinction between request construction, agent request sub-stages, context managers, modality fixes, and main-agent assembly while preserving Rust `ChatAgentRunner` behavior and crate-root exports.
+- Result: replaced `request_decorator.rs` with `request/{mod,envelope,decorator,ports,context,composer}.rs`; added `AgentRequestDecoratorComposer`; added tests for explicit request envelope defaults and decorator composition order.
+- AstrBot reference: `astr_main_agent.py`, `pipeline/process_stage/method/agent_request.py`, `pipeline/process_stage/method/agent_sub_stages/internal.py`, and `agent/context/manager.py`.
+- Adjustment: next implementation pointer moves to `TASK-090`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-agent`, `cargo test -p astrbot-pipeline`, and `cargo clippy --workspace -- -D warnings` passed.

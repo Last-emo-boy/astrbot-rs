@@ -1,90 +1,12 @@
 use std::sync::Arc;
 
-use astrbot_core::{
-    MessageEvent, ProviderContentPart, ProviderContextMessage, ProviderRequest, Result,
-};
+use astrbot_core::{MessageEvent, ProviderRequest, Result};
 use async_trait::async_trait;
 
-pub struct ProviderRequestEnvelope {
-    pub request: ProviderRequest,
-    pub explicit: bool,
-}
-
-impl ProviderRequestEnvelope {
-    pub fn from_event(event: &MessageEvent) -> Option<Self> {
-        if let Some(request) = event.provider_request() {
-            return Some(Self {
-                request: request.clone().with_event_defaults(event),
-                explicit: true,
-            });
-        }
-
-        let request = ProviderRequest::from_event(event);
-        request.has_user_content().then_some(Self {
-            request,
-            explicit: false,
-        })
-    }
-}
-
-#[async_trait]
-pub trait ProviderRequestDecorator: Send + Sync {
-    async fn decorate(&self, event: &MessageEvent, request: &mut ProviderRequest) -> Result<()>;
-}
-
-pub struct NoopProviderRequestDecorator;
-
-#[async_trait]
-impl ProviderRequestDecorator for NoopProviderRequestDecorator {
-    async fn decorate(&self, _event: &MessageEvent, _request: &mut ProviderRequest) -> Result<()> {
-        Ok(())
-    }
-}
-
-#[derive(Default)]
-pub struct CompositeProviderRequestDecorator {
-    decorators: Vec<Arc<dyn ProviderRequestDecorator>>,
-}
-
-impl CompositeProviderRequestDecorator {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn with_decorator(mut self, decorator: Arc<dyn ProviderRequestDecorator>) -> Self {
-        self.decorators.push(decorator);
-        self
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.decorators.is_empty()
-    }
-}
-
-#[async_trait]
-impl ProviderRequestDecorator for CompositeProviderRequestDecorator {
-    async fn decorate(&self, event: &MessageEvent, request: &mut ProviderRequest) -> Result<()> {
-        for decorator in &self.decorators {
-            decorator.decorate(event, request).await?;
-        }
-        Ok(())
-    }
-}
-
-#[async_trait]
-pub trait AgentProviderPreferencePort: Send + Sync {
-    async fn preferred_chat_provider_id(&self, event: &MessageEvent) -> Result<Option<String>>;
-}
-
-#[async_trait]
-pub trait AgentSessionContextPort: Send + Sync {
-    async fn context_messages(&self, event: &MessageEvent) -> Result<Vec<ProviderContextMessage>>;
-}
-
-#[async_trait]
-pub trait AgentQuoteContextPort: Send + Sync {
-    async fn quote_content_parts(&self, event: &MessageEvent) -> Result<Vec<ProviderContentPart>>;
-}
+use super::{
+    AgentProviderPreferencePort, AgentQuoteContextPort, AgentSessionContextPort,
+    ProviderRequestDecorator,
+};
 
 pub struct ProviderPreferenceRequestDecorator {
     preference: Arc<dyn AgentProviderPreferencePort>,

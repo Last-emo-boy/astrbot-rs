@@ -1,7 +1,7 @@
 {
   "id": "TASK-068",
   "title": "Define platform outbound routing state and message binding boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "platform-outbound-routing-boundary",
   "description": "AstrBot rich platform adapters cache session scene, last inbound/outbound message IDs, sender bindings, and platform-specific reply routing state. Rust should define a common outbound routing state boundary before QQ Official, DingTalk, Lark, WeCom, and proactive-send parity grow adapter internals.",
@@ -36,5 +36,28 @@
     ],
     "verification_command": "cargo test -p astrbot-platform && cargo test -p astrbot-storage && cargo clippy --workspace -- -D warnings"
   },
+  "completed_at": "2026-05-17T11:18:34+08:00",
+  "files_modified": [
+    "crates/astrbot-platform/src/adapters/common/outbound.rs",
+    "crates/astrbot-platform/src/adapters/common/mod.rs",
+    "crates/astrbot-platform/src/adapters/mod.rs",
+    "crates/astrbot-platform/src/adapters/onebot/session.rs",
+    "crates/astrbot-platform/src/lib.rs",
+    "crates/astrbot-storage/src/platform_binding.rs",
+    "crates/astrbot-storage/src/lib.rs",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.task/TASK-068.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/.summaries/TASK-068-summary.md",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/index.json",
+    ".workflow/scratch/refactor-decoupling-audit-2026-05-16/plan.json"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo check --tests -p astrbot-platform",
+    "cargo check --tests -p astrbot-storage",
+    "cargo clippy --workspace -- -D warnings",
+    "cargo fmt --all --check",
+    "cargo test -p astrbot-platform",
+    "cargo test -p astrbot-storage"
+  ],
   "risk": "medium"
 }

@@ -1,5 +1,7 @@
 use astrbot_core::MessageSession;
 
+use crate::adapters::common::{PlatformOutboundRoutingState, PlatformSessionScene};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OneBotSessionKind {
     Private,
@@ -67,6 +69,22 @@ impl OneBotSession {
             OneBotSessionKind::Group => format!("group:{}", self.session_id),
         }
     }
+
+    pub fn outbound_routing_state(&self) -> PlatformOutboundRoutingState {
+        let scene = match self.kind {
+            OneBotSessionKind::Private => PlatformSessionScene::Direct,
+            OneBotSessionKind::Group => PlatformSessionScene::Group,
+        };
+        let mut state = PlatformOutboundRoutingState::from_session(
+            self.message_session(),
+            &self.session_id,
+            scene,
+        );
+        if let Some(message_id) = self.message_id() {
+            state = state.with_last_inbound_message_id(message_id);
+        }
+        state
+    }
 }
 
 #[cfg(test)]
@@ -86,5 +104,16 @@ mod tests {
         assert_eq!(group.kind(), &OneBotSessionKind::Group);
         assert_eq!(group.message_session().conversation_id, "group:group-1");
         assert!(group.message_session().is_group());
+        assert_eq!(
+            private
+                .outbound_routing_state()
+                .last_inbound_message_id
+                .as_deref(),
+            Some("msg-1")
+        );
+        assert_eq!(
+            group.outbound_routing_state().platform_session_id,
+            "group-1"
+        );
     }
 }

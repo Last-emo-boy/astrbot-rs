@@ -1,6 +1,7 @@
 mod api_client;
 mod long_connection;
 mod media;
+mod outbound;
 mod queue;
 mod quote;
 mod retry;
@@ -20,6 +21,11 @@ pub use long_connection::{
 pub use media::{
     PlatformMediaKind, PlatformMediaReference, PlatformMediaSource, PlatformMediaUpload,
     PlatformMediaUploadClient,
+};
+pub use outbound::{
+    PlatformOutboundRoute, PlatformOutboundRoutingState, PlatformReplyTarget,
+    PlatformRouteTargetKind, PlatformSenderBinding, PlatformSessionScene, ProactiveSendReadiness,
+    ProactiveSendRequirement,
 };
 pub use queue::{
     InMemoryPlatformQueueStore, PendingWebhookResponse, PlatformCallbackQueue,

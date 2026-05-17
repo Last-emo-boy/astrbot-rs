@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T11:03:16+08:00",
+  "updated_at": "2026-05-17T11:18:34+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 67,
-    "pending_tasks": 23,
+    "completed_tasks": 68,
+    "pending_tasks": 22,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 67,
-    "current_task_id": "TASK-067",
-    "next_task": "TASK-068"
+    "reflection_rounds": 68,
+    "current_task_id": "TASK-068",
+    "next_task": "TASK-069"
   },
-  "latest_update": "TASK-067 introduced astrbot-backup domain boundaries for manifest compatibility, import/export jobs, upload sessions, progress snapshots, and web management DTO adapters. Next pending task is TASK-068.",
+  "latest_update": "TASK-068 introduced common platform outbound routing state, proactive-send readiness decisions, OneBot session routing conversion, and storage-backed platform routing bindings. Next pending task is TASK-069.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

@@ -6,6 +6,7 @@ mod conversation;
 mod file_token;
 mod memory;
 mod migration;
+mod platform_binding;
 mod provider_preference;
 mod repository;
 mod schema;
@@ -38,6 +39,10 @@ pub use memory::{InMemoryMemoryRepository, MemoryRepository};
 pub use migration::{
     DeclarativeMigration, InMemoryMigrationStateRepository, MigrationOperation, MigrationOutcome,
     MigrationRecord, MigrationRunner, MigrationStateRepository, StorageMigration,
+};
+pub use platform_binding::{
+    InMemoryPlatformRoutingBindingRepository, PlatformRoutingBindingRecord,
+    PlatformRoutingBindingRepository,
 };
 pub use provider_preference::{
     InMemoryProviderPreferenceRepository, ProviderPreferenceRecord, ProviderPreferenceRepository,

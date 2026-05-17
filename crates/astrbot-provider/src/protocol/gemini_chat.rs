@@ -1,4 +1,5 @@
 use astrbot_core::{AstrbotError, MessageChain, ProviderContentPart, Result};
+use astrbot_media::DataUrl;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -173,32 +174,16 @@ fn gemini_text_part(text: &str) -> GeminiPart {
 }
 
 fn image_part_from_data_url(url: &str) -> Result<GeminiPart> {
-    let url = url.trim();
-    let Some(data_url) = url.strip_prefix("data:") else {
-        return Err(AstrbotError::Provider(
-            "Gemini image inputs currently require data URLs".to_string(),
-        ));
-    };
-    let Some((metadata, data)) = data_url.split_once(',') else {
-        return Err(AstrbotError::Provider(
-            "invalid Gemini image data URL".to_string(),
-        ));
-    };
-    if !metadata.split(';').any(|part| part == "base64") {
-        return Err(AstrbotError::Provider(
-            "Gemini image data URLs must be base64 encoded".to_string(),
-        ));
-    }
-    let mime_type = metadata
-        .split(';')
-        .next()
-        .filter(|mime_type| mime_type.starts_with("image/"))
-        .ok_or_else(|| AstrbotError::Provider("invalid Gemini image media type".to_string()))?;
+    let data_url = DataUrl::parse_image(url).map_err(|err| {
+        AstrbotError::Provider(format!(
+            "Gemini image inputs require valid data URLs: {err}"
+        ))
+    })?;
 
     Ok(GeminiPart::InlineData {
         inline_data: GeminiInlineData {
-            mime_type: mime_type.to_string(),
-            data: data.to_string(),
+            mime_type: data_url.mime_type().to_string(),
+            data: data_url.base64_data().to_string(),
         },
     })
 }
@@ -365,9 +350,9 @@ mod tests {
     use super::{gemini_parts_from_parts, image_part_from_data_url};
 
     #[test]
-    fn rejects_remote_image_urls_until_transport_download_exists() {
+    fn rejects_remote_image_urls_before_protocol_serialization() {
         let error = image_part_from_data_url("https://example.test/image.png")
-            .expect_err("remote URL should not be accepted yet");
+            .expect_err("remote URL should be normalized before protocol serialization");
 
         assert!(error.to_string().contains("data URLs"));
     }

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use astrbot_core::Result;
+use astrbot_media::MediaInput;
 use async_trait::async_trait;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +54,24 @@ impl PlatformMediaUpload {
     pub fn with_content_type(mut self, content_type: impl Into<String>) -> Self {
         self.content_type = Some(content_type.into());
         self
+    }
+
+    pub fn to_media_input(&self) -> MediaInput {
+        let mut media = match &self.source {
+            PlatformMediaSource::Url(url) if url.starts_with("data:") => {
+                MediaInput::data_url(url.clone())
+            }
+            PlatformMediaSource::Url(url) => MediaInput::url(url.clone()),
+            PlatformMediaSource::Path(path) => MediaInput::file(path.clone()),
+            PlatformMediaSource::Bytes(bytes) => MediaInput::bytes(bytes.clone()),
+        };
+        if let Some(filename) = &self.filename {
+            media = media.with_filename(filename.clone());
+        }
+        if let Some(content_type) = &self.content_type {
+            media = media.with_content_type(content_type.clone());
+        }
+        media
     }
 }
 
@@ -109,5 +128,7 @@ mod tests {
         );
         assert_eq!(upload.filename.as_deref(), Some("image.png"));
         assert_eq!(upload.content_type.as_deref(), Some("image/png"));
+        let media = upload.to_media_input();
+        assert_eq!(media.content_type.as_deref(), Some("image/png"));
     }
 }

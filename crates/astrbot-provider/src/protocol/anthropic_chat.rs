@@ -1,4 +1,5 @@
 use astrbot_core::{AstrbotError, MessageChain, ProviderContentPart, Result};
+use astrbot_media::DataUrl;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -174,28 +175,17 @@ fn push_part_block(
 }
 
 fn image_block_from_data_url(url: &str) -> Result<AnthropicContentBlock> {
-    let url = url.trim();
-    let Some(data_url) = url.strip_prefix("data:") else {
-        return Err(AstrbotError::Provider(
-            "Anthropic image inputs currently require data URLs".to_string(),
-        ));
-    };
-    let Some((metadata, data)) = data_url.split_once(',') else {
-        return Err(AstrbotError::Provider(
-            "invalid Anthropic image data URL".to_string(),
-        ));
-    };
-    let media_type = metadata
-        .split(';')
-        .next()
-        .filter(|media_type| media_type.starts_with("image/"))
-        .ok_or_else(|| AstrbotError::Provider("invalid Anthropic image media type".to_string()))?;
+    let data_url = DataUrl::parse_image(url).map_err(|err| {
+        AstrbotError::Provider(format!(
+            "Anthropic image inputs require valid data URLs: {err}"
+        ))
+    })?;
 
     Ok(AnthropicContentBlock::Image {
         source: AnthropicImageSource {
             source_type: "base64",
-            media_type: media_type.to_string(),
-            data: data.to_string(),
+            media_type: data_url.mime_type().to_string(),
+            data: data_url.base64_data().to_string(),
         },
     })
 }
@@ -291,9 +281,9 @@ mod tests {
     use super::{content_from_parts, image_block_from_data_url};
 
     #[test]
-    fn rejects_remote_image_urls_until_transport_download_exists() {
+    fn rejects_remote_image_urls_before_protocol_serialization() {
         let error = image_block_from_data_url("https://example.test/image.png")
-            .expect_err("remote URL should not be accepted yet");
+            .expect_err("remote URL should be normalized before protocol serialization");
 
         assert!(error.to_string().contains("data URLs"));
     }

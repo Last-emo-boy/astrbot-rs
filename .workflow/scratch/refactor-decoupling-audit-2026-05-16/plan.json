@@ -3,7 +3,7 @@
   "status": "in_progress",
   "strategy": "incremental, facade-preserving module splits; do not change public behavior in the first pass",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T14:50:00+08:00",
+  "updated_at": "2026-05-17T15:07:50+08:00",
   "total_tasks": 90,
   "ordering_rationale": "Split runtime and provider first because new parity work currently lands there. Then split web/core/pipeline boundaries that feed dashboard and platform work.",
   "tasks": [
@@ -918,7 +918,7 @@
       "priority": 41,
       "risk": "medium",
       "category": "event-bus-routing-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-core/src/event.rs",
         "crates/astrbot-pipeline/src/scheduler.rs",
@@ -939,7 +939,7 @@
       "priority": 42,
       "risk": "medium",
       "category": "provider-selection-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/manager.rs",
         "crates/astrbot-pipeline/src/context/provider_preference.rs",
@@ -960,7 +960,7 @@
       "priority": 43,
       "risk": "high",
       "category": "conversation-history-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-pipeline/src/context/session.rs",
         "crates/astrbot-web/src/history.rs",
@@ -982,7 +982,7 @@
       "priority": 44,
       "risk": "high",
       "category": "persona-skill-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-pipeline/src/stages/process.rs",
         "crates/astrbot-plugin/src/sdk.rs",
@@ -1004,7 +1004,7 @@
       "priority": 45,
       "risk": "high",
       "category": "cron-proactive-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-runtime/src/handle.rs",
         "crates/astrbot-plugin/src/sdk.rs",
@@ -1026,7 +1026,7 @@
       "priority": 46,
       "risk": "high",
       "category": "subagent-handoff-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src",
         "crates/astrbot-plugin/src/sandbox.rs",
@@ -1048,7 +1048,7 @@
       "priority": 47,
       "risk": "high",
       "category": "computer-use-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-plugin/src/tool",
         "crates/astrbot-agent/src",
@@ -1070,7 +1070,7 @@
       "priority": 48,
       "risk": "high",
       "category": "plugin-dependency-environment-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-plugin/src/loader/dependency.rs",
         "crates/astrbot-plugin/src/loader/metadata.rs",
@@ -1091,7 +1091,7 @@
       "priority": 49,
       "risk": "medium",
       "category": "platform-api-client-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters",
         "crates/astrbot-platform/src/manager.rs",
@@ -1112,7 +1112,7 @@
       "priority": 50,
       "risk": "medium",
       "category": "quote-forward-parser-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-core/src/message",
         "crates/astrbot-platform/src/adapters/onebot",
@@ -1133,7 +1133,7 @@
       "priority": 51,
       "risk": "high",
       "category": "live-agent-feedback-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src",
         "crates/astrbot-pipeline/src/stages/respond.rs",
@@ -1154,7 +1154,7 @@
       "priority": 52,
       "risk": "medium",
       "category": "provider-non-chat-protocol-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/openai_embedding.rs",
         "crates/astrbot-provider/src/gemini_embedding.rs",
@@ -1179,7 +1179,7 @@
       "priority": 53,
       "risk": "medium",
       "category": "provider-model-resolver-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/xinference_stt.rs",
         "crates/astrbot-provider/src/xinference_rerank.rs",
@@ -1197,7 +1197,7 @@
       "priority": 54,
       "risk": "medium",
       "category": "provider-manager-bucket-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/manager.rs",
         "crates/astrbot-provider/src/manager/{chat,speech,tts,embedding,rerank}.rs"
@@ -1216,7 +1216,7 @@
       "priority": 55,
       "risk": "low",
       "category": "plugin-test-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-plugin/src/tests.rs"
       ],
@@ -1238,7 +1238,7 @@
       "priority": 56,
       "risk": "medium",
       "category": "runtime-policy-config-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-runtime/src/policy_config.rs",
         "crates/astrbot-runtime/src/config/schema.rs",
@@ -1263,7 +1263,7 @@
       "priority": 57,
       "risk": "medium",
       "category": "provider-tts-factory-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/factories/tts.rs",
         "crates/astrbot-runtime/src/provider_config/tts.rs",
@@ -1286,7 +1286,7 @@
       "priority": 58,
       "risk": "high",
       "category": "management-auth-api-key-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-web/src/management",
         "crates/astrbot-web/src/server.rs",
@@ -1309,7 +1309,7 @@
       "priority": 59,
       "risk": "high",
       "category": "management-config-mutation-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-web/src/management",
         "crates/astrbot-runtime/src/config_io.rs",
@@ -1332,7 +1332,7 @@
       "priority": 60,
       "risk": "high",
       "category": "plugin-market-update-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-plugin/src/loader",
         "crates/astrbot-plugin/src/extension",
@@ -1355,7 +1355,7 @@
       "priority": 61,
       "risk": "high",
       "category": "session-concurrency-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-core/src/message/session.rs",
         "crates/astrbot-pipeline/src/scheduler.rs",
@@ -1377,7 +1377,7 @@
       "priority": 62,
       "risk": "high",
       "category": "realtime-chat-gateway-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-web/src",
         "crates/astrbot-platform/src/adapters/webchat",
@@ -1400,7 +1400,7 @@
       "priority": 63,
       "risk": "medium",
       "category": "file-token-static-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-web/src",
         "crates/astrbot-storage/src/attachment.rs",
@@ -1421,7 +1421,7 @@
       "priority": 64,
       "risk": "high",
       "category": "long-term-memory-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src",
         "crates/astrbot-storage/src",
@@ -1442,7 +1442,7 @@
       "priority": 65,
       "risk": "high",
       "category": "external-agent-runner-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src",
         "crates/astrbot-provider/src",
@@ -1463,7 +1463,7 @@
       "priority": 66,
       "risk": "high",
       "category": "mcp-transport-bridge-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-mcp/src",
         "crates/astrbot-tool/src",
@@ -1487,7 +1487,7 @@
       "priority": 67,
       "risk": "high",
       "category": "backup-job-service-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-web/src/management",
         "crates/astrbot-storage/src",
@@ -1510,7 +1510,7 @@
       "priority": 68,
       "risk": "medium",
       "category": "platform-outbound-routing-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters",
         "crates/astrbot-storage/src",
@@ -1768,7 +1768,7 @@
       "priority": 80,
       "risk": "high",
       "category": "session-rule-preference-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-storage/src/provider_preference.rs",
         "crates/astrbot-pipeline/src/context/session.rs",
@@ -1789,7 +1789,7 @@
       "priority": 81,
       "risk": "high",
       "category": "media-normalization-boundary",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/audio.rs",
         "crates/astrbot-provider/src/protocol/{gemini_chat.rs,anthropic_chat.rs,openai_chat.rs}",
@@ -1938,7 +1938,7 @@
       "priority": 88,
       "risk": "medium",
       "category": "platform-core-contract-boundary",
-      "status": "completed",
+      "status": "pending",
       "target_files": [
         "crates/astrbot-platform/src/core.rs",
         "crates/astrbot-platform/src/built.rs",
@@ -1961,7 +1961,7 @@
       "priority": 89,
       "risk": "medium",
       "category": "agent-request-decoration-boundary",
-      "status": "completed",
+      "status": "pending",
       "target_files": [
         "crates/astrbot-agent/src/request_decorator.rs",
         "crates/astrbot-agent/src/runner.rs",
@@ -1984,7 +1984,7 @@
       "priority": 90,
       "risk": "low",
       "category": "agent-mcp-tool-test-boundary",
-      "status": "completed",
+      "status": "pending",
       "target_files": [
         "crates/astrbot-agent/src/tests.rs",
         "crates/astrbot-mcp/src/tests.rs",

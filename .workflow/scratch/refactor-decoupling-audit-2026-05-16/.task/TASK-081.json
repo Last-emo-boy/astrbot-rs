@@ -1,7 +1,7 @@
 {
   "id": "TASK-081",
   "title": "Introduce media input normalization, data URL conversion, and provider attachment resolver boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "media-normalization-boundary",
   "description": "Rust has audio loading and provider-specific data-URL requirements, while AstrBot provider sources download/encode images and normalize file/base64/HTTP inputs before provider serialization. Add a provider-neutral media normalization boundary before image, audio, attachment, and WebChat upload parity spreads conversion policy across provider protocol modules and web handlers.",

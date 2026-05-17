@@ -4,6 +4,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
+use astrbot_media::{
+    MediaDownloadPolicy, MediaDownloadRequest, MediaDownloadService, ReqwestMediaDownloadService,
+};
 use async_trait::async_trait;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,7 +58,8 @@ impl AudioMediaConverter for UnsupportedAudioMediaConverter {
 
 #[derive(Clone)]
 pub struct AudioInputLoader {
-    client: reqwest::Client,
+    downloader: Arc<dyn MediaDownloadService>,
+    download_policy: MediaDownloadPolicy,
     converter: Arc<dyn AudioMediaConverter>,
 }
 
@@ -67,21 +71,26 @@ impl fmt::Debug for AudioInputLoader {
 
 impl AudioInputLoader {
     pub fn new(timeout: Duration) -> Result<Self> {
-        let client = reqwest::Client::builder()
-            .timeout(timeout)
-            .build()
-            .map_err(|err| {
-                AstrbotError::Provider(format!("failed to build HTTP audio client: {err}"))
-            })?;
+        let download_policy = MediaDownloadPolicy {
+            timeout,
+            max_bytes: None,
+        };
+        let downloader = Arc::new(ReqwestMediaDownloadService::new(download_policy.clone())?);
 
         Ok(Self {
-            client,
+            downloader,
+            download_policy,
             converter: Arc::new(UnsupportedAudioMediaConverter),
         })
     }
 
     pub fn with_converter(mut self, converter: Arc<dyn AudioMediaConverter>) -> Self {
         self.converter = converter;
+        self
+    }
+
+    pub fn with_downloader(mut self, downloader: Arc<dyn MediaDownloadService>) -> Self {
+        self.downloader = downloader;
         self
     }
 
@@ -129,27 +138,16 @@ impl AudioInputLoader {
     }
 
     async fn download(&self, audio_url: &str, provider_label: &str) -> Result<Vec<u8>> {
-        let response = self.client.get(audio_url).send().await.map_err(|err| {
-            AstrbotError::Provider(format!("{provider_label} audio download failed: {err}"))
-        })?;
-        let status = response.status();
-        let body = response.bytes().await.map_err(|err| {
-            AstrbotError::Provider(format!("failed to read audio download response: {err}"))
-        })?;
-        if !status.is_success() {
-            let body = String::from_utf8_lossy(&body);
-            return Err(AstrbotError::Provider(format!(
-                "{provider_label} audio download returned {status}: {}",
-                truncate(body.trim())
-            )));
-        }
-        if body.is_empty() {
-            return Err(AstrbotError::Provider(
-                "downloaded audio was empty".to_string(),
-            ));
-        }
-
-        Ok(body.to_vec())
+        self.downloader
+            .download(
+                MediaDownloadRequest::new(audio_url.to_string())
+                    .with_policy(self.download_policy.clone()),
+            )
+            .await
+            .map(|media| media.bytes)
+            .map_err(|err| {
+                AstrbotError::Provider(format!("{provider_label} audio download failed: {err}"))
+            })
     }
 }
 
@@ -170,13 +168,4 @@ pub fn detect_audio_conversion_requirement(audio_url: &str, audio: &[u8]) -> Opt
 
 fn is_http_url(value: &str) -> bool {
     value.starts_with("http://") || value.starts_with("https://")
-}
-
-fn truncate(text: &str) -> String {
-    const ERROR_TEXT_MAX_CHARS: usize = 4096;
-    if text.chars().count() <= ERROR_TEXT_MAX_CHARS {
-        return text.to_string();
-    }
-
-    text.chars().take(ERROR_TEXT_MAX_CHARS).collect()
 }

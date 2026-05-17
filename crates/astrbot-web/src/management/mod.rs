@@ -9,6 +9,7 @@ mod plugins;
 mod providers;
 mod skills;
 mod status;
+mod tools;
 
 use astrbot_platform::PlatformManager;
 use astrbot_plugin::PluginRegistry;
@@ -56,6 +57,10 @@ pub use skills::{
     ManagementSkillInstallPlanRequest, ManagementSkillInstallPlanResponse, ManagementSkillState,
 };
 pub use status::ManagementStatusResponse;
+pub use tools::{
+    ManagementToolCatalogResponse, ManagementToolDescriptor, ManagementToolState,
+    ManagementToolToggleRequest, ManagementToolToggleResponse,
+};
 
 #[derive(Clone, Debug)]
 pub struct ManagementApiState {
@@ -67,6 +72,7 @@ pub struct ManagementApiState {
     file_downloads: Option<ManagementFileDownloadState>,
     backup: Option<ManagementBackupState>,
     skills: Option<ManagementSkillState>,
+    tools: Option<ManagementToolState>,
 }
 
 impl ManagementApiState {
@@ -84,6 +90,7 @@ impl ManagementApiState {
             file_downloads: None,
             backup: None,
             skills: None,
+            tools: None,
         }
     }
 
@@ -109,6 +116,11 @@ impl ManagementApiState {
 
     pub fn with_skills(mut self, skills: ManagementSkillState) -> Self {
         self.skills = Some(skills);
+        self
+    }
+
+    pub fn with_tools(mut self, tools: ManagementToolState) -> Self {
+        self.tools = Some(tools);
         self
     }
 
@@ -156,6 +168,10 @@ impl ManagementApiState {
         self.skills.as_ref()
     }
 
+    pub fn tools(&self) -> Option<&ManagementToolState> {
+        self.tools.as_ref()
+    }
+
     pub fn status(&self) -> ManagementStatusResponse {
         ManagementStatusResponse::new(
             self.providers.clone(),
@@ -191,6 +207,8 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
+        .route("/api/management/tools", get(tools::catalog))
+        .route("/api/management/tools/toggle", post(tools::toggle))
         .route("/api/management/skills", get(skills::catalog))
         .route(
             "/api/management/skills/activation",

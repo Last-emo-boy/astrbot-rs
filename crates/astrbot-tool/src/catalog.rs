@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::ToolActivationPolicy;
+use crate::{ToolActivationPolicy, ToolSource, ToolSourceMetadata};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ToolDescriptor {
@@ -11,7 +11,7 @@ pub struct ToolDescriptor {
     #[serde(default = "default_parameters")]
     pub parameters: Value,
     #[serde(default)]
-    pub source: ToolSource,
+    pub source: ToolSourceMetadata,
     #[serde(default = "default_active")]
     pub active: bool,
 }
@@ -22,7 +22,7 @@ impl ToolDescriptor {
             name: name.into(),
             description: None,
             parameters: default_parameters(),
-            source: ToolSource::Plugin,
+            source: ToolSourceMetadata::new(ToolSource::Plugin),
             active: true,
         }
     }
@@ -39,6 +39,11 @@ impl ToolDescriptor {
     }
 
     pub fn with_source(mut self, source: ToolSource) -> Self {
+        self.source = ToolSourceMetadata::new(source);
+        self
+    }
+
+    pub fn with_source_metadata(mut self, source: ToolSourceMetadata) -> Self {
         self.source = source;
         self
     }
@@ -49,7 +54,7 @@ impl ToolDescriptor {
     }
 
     pub fn apply_policy(&self, policy: &ToolActivationPolicy) -> Option<Self> {
-        if !self.active || !policy.is_enabled(&self.name) {
+        if !self.active || !policy.is_enabled_for(self) {
             return None;
         }
 
@@ -59,17 +64,6 @@ impl ToolDescriptor {
         }
         Some(descriptor)
     }
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ToolSource {
-    #[default]
-    Plugin,
-    Internal,
-    Mcp,
-    Handoff,
-    Background,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -93,6 +87,10 @@ impl ToolCatalog {
 
     pub fn remove_tool(&mut self, name: &str) {
         self.tools.retain(|tool| tool.name != name);
+    }
+
+    pub fn tool(&self, name: &str) -> Option<&ToolDescriptor> {
+        self.tools.iter().find(|tool| tool.name == name)
     }
 
     pub fn tools(&self) -> &[ToolDescriptor] {

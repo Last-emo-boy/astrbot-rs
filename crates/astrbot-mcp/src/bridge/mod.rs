@@ -1,4 +1,4 @@
-use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSource};
+use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSourceMetadata};
 use serde_json::json;
 
 use crate::{
@@ -63,7 +63,7 @@ impl McpBridgeCatalogBuilder {
                     .unwrap_or_else(|| format!("MCP tool {}", tool.name)),
             )
             .with_parameters(tool.input_schema.as_json().clone())
-            .with_source(ToolSource::Mcp)
+            .with_source_metadata(ToolSourceMetadata::mcp(self.server_name.as_str()))
     }
 
     fn resource_descriptors(&self, include_templates: bool) -> Vec<ToolDescriptor> {
@@ -84,7 +84,7 @@ impl McpBridgeCatalogBuilder {
                 ToolDescriptor::new(name)
                     .with_description("Synthetic MCP resource bridge tool")
                     .with_parameters(parameters)
-                    .with_source(ToolSource::Mcp)
+                    .with_source_metadata(ToolSourceMetadata::mcp(self.server_name.as_str()))
             })
             .collect()
     }
@@ -99,7 +99,7 @@ impl McpBridgeCatalogBuilder {
                 ToolDescriptor::new(name)
                     .with_description("Synthetic MCP prompt bridge tool")
                     .with_parameters(McpJsonSchema::object().as_json().clone())
-                    .with_source(ToolSource::Mcp)
+                    .with_source_metadata(ToolSourceMetadata::mcp(self.server_name.as_str()))
             })
             .collect()
     }

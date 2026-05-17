@@ -1,4 +1,5 @@
 use crate::sandbox::{PluginPermission, ToolCapability};
+use astrbot_tool::{ToolSource, ToolSourceMetadata};
 
 use super::background::BackgroundTaskPolicy;
 use super::handoff::HandoffToolTarget;
@@ -79,5 +80,23 @@ impl PluginToolDeclaration {
 
     pub fn required_capabilities(&self) -> &[ToolCapability] {
         &self.required_capabilities
+    }
+
+    pub fn source_metadata(
+        &self,
+        plugin_id: impl Into<String>,
+        origin_name: impl Into<String>,
+    ) -> ToolSourceMetadata {
+        let plugin_id = plugin_id.into();
+        let origin_name = origin_name.into();
+        match &self.kind {
+            PluginToolKind::Local => ToolSourceMetadata::plugin(plugin_id, origin_name),
+            PluginToolKind::Mcp { server } => server
+                .as_deref()
+                .map(ToolSourceMetadata::mcp)
+                .unwrap_or_else(|| ToolSourceMetadata::new(ToolSource::Mcp)),
+            PluginToolKind::Handoff(target) => ToolSourceMetadata::subagent(&target.agent_name),
+            PluginToolKind::Background(_) => ToolSourceMetadata::background(plugin_id, origin_name),
+        }
     }
 }

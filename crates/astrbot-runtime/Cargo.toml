@@ -12,6 +12,7 @@ astrbot-pipeline = { path = "../astrbot-pipeline" }
 astrbot-platform = { path = "../astrbot-platform" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true

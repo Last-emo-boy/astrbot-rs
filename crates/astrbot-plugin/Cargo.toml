@@ -6,6 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 astrbot-core = { path = "../astrbot-core" }
+astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
 regex.workspace = true
 serde.workspace = true

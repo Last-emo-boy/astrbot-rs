@@ -21,6 +21,7 @@ use astrbot_storage::{
     BackupRepositoryPort, BackupTableDump, FileTokenRecord, FileTokenRepository, FileTokenScope,
     InMemoryFileTokenRepository,
 };
+use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSource, ToolSourceMetadata};
 use async_trait::async_trait;
 use axum::{
     body::to_bytes,
@@ -32,7 +33,8 @@ use tokio::sync::mpsc;
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
     ManagementFileDownloadState, ManagementSkillState, ManagementStatusResponse,
-    PluginMarketManagementState, management_router, management_router_with_auth,
+    ManagementToolState, PluginMarketManagementState, management_router,
+    management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -260,6 +262,45 @@ async fn management_skill_routes_reject_sandbox_only_local_mutations() {
 }
 
 #[tokio::test]
+async fn management_tool_routes_expose_sources_and_reject_internal_toggle() {
+    let state = management_state_fixture().with_tools(tool_management_state_fixture());
+    let router = management_router(state);
+
+    let catalog_response = get(router.clone(), "/api/management/tools").await;
+    assert_eq!(catalog_response.status(), StatusCode::OK);
+    let catalog: serde_json::Value = response_json(catalog_response).await;
+    assert_eq!(catalog["tools"][0]["name"], "astr_kb_search");
+    assert_eq!(catalog["tools"][0]["origin"], "internal");
+    assert_eq!(catalog["tools"][0]["origin_name"], "AstrBot");
+    assert_eq!(catalog["tools"][0]["user_toggle_allowed"], false);
+    assert_eq!(catalog["tools"][1]["name"], "weather");
+    assert_eq!(catalog["tools"][1]["origin"], "plugin");
+    assert_eq!(catalog["tools"][1]["origin_name"], "Weather Plugin");
+
+    let denied = post_json(
+        router.clone(),
+        "/api/management/tools/toggle",
+        json!({ "name": "astr_kb_search", "active": false }),
+    )
+    .await;
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+    let toggled = post_json(
+        router.clone(),
+        "/api/management/tools/toggle",
+        json!({ "name": "weather", "active": false }),
+    )
+    .await;
+    assert_eq!(toggled.status(), StatusCode::OK);
+    let response: serde_json::Value = response_json(toggled).await;
+    assert_eq!(response["active"], false);
+
+    let catalog_response = get(router, "/api/management/tools").await;
+    let catalog: serde_json::Value = response_json(catalog_response).await;
+    assert_eq!(catalog["tools"][1]["active"], false);
+}
+
+#[tokio::test]
 async fn management_file_download_route_consumes_scoped_file_token() {
     let path = temp_management_file_path("download.txt");
     let _ = fs::remove_file(&path);
@@ -476,6 +517,22 @@ fn skill_management_state_fixture() -> ManagementSkillState {
     ]);
 
     ManagementSkillState::new(catalog).with_sandbox_cache(sandbox_cache, true)
+}
+
+fn tool_management_state_fixture() -> ManagementToolState {
+    let mut catalog = ToolCatalog::new();
+    catalog.add_tool(
+        ToolDescriptor::new("weather")
+            .with_description("Weather lookup")
+            .with_source_metadata(ToolSourceMetadata::plugin("weather", "Weather Plugin")),
+    );
+    catalog.add_tool(
+        ToolDescriptor::new("astr_kb_search")
+            .with_description("Knowledge base search")
+            .with_source(ToolSource::Internal),
+    );
+
+    ManagementToolState::new(catalog)
 }
 
 fn temp_management_config_path(suffix: &str) -> std::path::PathBuf {

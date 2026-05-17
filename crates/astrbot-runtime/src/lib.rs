@@ -12,6 +12,7 @@ mod policy_config;
 mod ports;
 mod provider_config;
 mod provider_selection;
+mod tool_assembly;
 
 pub use config::{
     ConfigFieldSchema, ConfigUiControl, ConfigUiField, ConfigUiGroup, ConfigUiMetadata,
@@ -46,6 +47,9 @@ pub use provider_config::{
     RuntimeTextToSpeechProviderConfig,
 };
 pub use provider_selection::RuntimeProviderSelectionSnapshot;
+pub use tool_assembly::{
+    RuntimeInternalToolAssembly, runtime_internal_tool_catalog, runtime_internal_tool_registrations,
+};
 
 #[cfg(test)]
 mod tests;

@@ -17,11 +17,12 @@ async fn runtime_wires_mock_platform_provider_and_pipeline() {
     assert_eq!(sent[0].chain.plain_text(), DEFAULT_MOCK_RESPONSE);
     assert_eq!(runtime.platform_manager().platform_count(), 1);
     assert_eq!(runtime.provider_manager().chat_provider_count(), 1);
-    assert_eq!(runtime.scheduler().stage_count(), 8);
+    assert_eq!(runtime.scheduler().stage_count(), 9);
     assert_eq!(
         runtime.scheduler().stage_names(),
         vec![
             "wake".to_string(),
+            "preprocess".to_string(),
             "whitelist".to_string(),
             "session_status".to_string(),
             "rate_limit".to_string(),

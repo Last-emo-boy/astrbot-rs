@@ -13,6 +13,7 @@ astrbot-provider = { path = "../astrbot-provider" }
 astrbot-runtime = { path = "../astrbot-runtime" }
 astrbot-skill = { path = "../astrbot-skill" }
 astrbot-storage = { path = "../astrbot-storage" }
+astrbot-tool = { path = "../astrbot-tool" }
 axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::ToolDescriptor;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ToolActivationPolicy {
     disabled_tools: BTreeSet<String>,
@@ -19,6 +21,19 @@ impl ToolActivationPolicy {
         self
     }
 
+    pub fn enable(mut self, tool_name: impl AsRef<str>) -> Self {
+        self.disabled_tools.remove(tool_name.as_ref());
+        self
+    }
+
+    pub fn set_enabled(self, tool_name: impl Into<String>, enabled: bool) -> Self {
+        if enabled {
+            self.enable(tool_name.into())
+        } else {
+            self.disable(tool_name)
+        }
+    }
+
     pub fn rename(mut self, original: impl Into<String>, resolved: impl Into<String>) -> Self {
         let original = original.into();
         let resolved = resolved.into();
@@ -30,6 +45,10 @@ impl ToolActivationPolicy {
 
     pub fn is_enabled(&self, tool_name: &str) -> bool {
         !self.disabled_tools.contains(tool_name)
+    }
+
+    pub fn is_enabled_for(&self, tool: &ToolDescriptor) -> bool {
+        !self.disabled_tools.contains(&tool.name) || !tool.source.allows_user_toggle()
     }
 
     pub fn rename_for(&self, tool_name: &str) -> Option<&str> {

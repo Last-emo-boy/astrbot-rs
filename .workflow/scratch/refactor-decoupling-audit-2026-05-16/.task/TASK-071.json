@@ -1,7 +1,7 @@
 {
   "id": "TASK-071",
   "title": "Define internal tool provider source, registration, and management boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "internal-tool-provider-boundary",
   "description": "AstrBot registers built-in tools such as cron, KB query, send-message, and computer-use through FunctionToolManager, and dashboard tools distinguish internal, plugin, and MCP origins. Rust has tool schema/catalog and execution placeholders, but not an explicit internal-tool provider/source boundary.",
@@ -41,5 +41,43 @@
     ],
     "verification_command": "cargo test -p astrbot-tool && cargo test -p astrbot-plugin && cargo test -p astrbot-web && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "high"
+  "risk": "high",
+  "completed_at": "2026-05-17T12:41:31+08:00",
+  "files_modified": [
+    "Cargo.lock",
+    "crates/astrbot-tool/src/source.rs",
+    "crates/astrbot-tool/src/internal.rs",
+    "crates/astrbot-tool/src/catalog.rs",
+    "crates/astrbot-tool/src/activation.rs",
+    "crates/astrbot-tool/src/conflicts.rs",
+    "crates/astrbot-tool/src/lib.rs",
+    "crates/astrbot-tool/src/tests.rs",
+    "crates/astrbot-plugin/Cargo.toml",
+    "crates/astrbot-plugin/src/tool/declaration.rs",
+    "crates/astrbot-plugin/src/tests/tool.rs",
+    "crates/astrbot-mcp/src/bridge/mod.rs",
+    "crates/astrbot-agent/src/subagent/tool_bridge.rs",
+    "crates/astrbot-runtime/Cargo.toml",
+    "crates/astrbot-runtime/src/lib.rs",
+    "crates/astrbot-runtime/src/tool_assembly.rs",
+    "crates/astrbot-runtime/src/tests.rs",
+    "crates/astrbot-runtime/src/tests/tool_assembly.rs",
+    "crates/astrbot-runtime/src/tests/message_loop.rs",
+    "crates/astrbot-web/Cargo.toml",
+    "crates/astrbot-web/src/lib.rs",
+    "crates/astrbot-web/src/management/mod.rs",
+    "crates/astrbot-web/src/management/tools.rs",
+    "crates/astrbot-web/src/tests/management.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-tool",
+    "cargo test -p astrbot-plugin",
+    "cargo test -p astrbot-runtime",
+    "cargo test -p astrbot-web",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-mcp",
+    "cargo test -p astrbot-computer",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

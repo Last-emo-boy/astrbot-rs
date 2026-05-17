@@ -14,7 +14,7 @@ pub fn detect_tool_conflicts(tools: &[ToolDescriptor]) -> Vec<ToolConflict> {
         grouped
             .entry(tool.name.clone())
             .or_default()
-            .push(format!("{:?}", tool.source));
+            .push(tool.source.source_label().to_string());
     }
 
     grouped

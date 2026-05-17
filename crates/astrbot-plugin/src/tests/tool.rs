@@ -2,6 +2,7 @@ use crate::{
     BackgroundTaskPolicy, HandoffToolTarget, PluginPermission, PluginToolDeclaration,
     PluginToolKind,
 };
+use astrbot_tool::ToolSource;
 
 #[test]
 fn tool_declarations_model_handoff_and_background_boundaries() {
@@ -36,4 +37,29 @@ fn tool_declarations_model_handoff_and_background_boundaries() {
         }
         _ => panic!("expected background tool kind"),
     }
+}
+
+#[test]
+fn plugin_tool_declarations_project_tool_source_metadata() {
+    let local =
+        PluginToolDeclaration::local("local").source_metadata("plugin.weather", "Weather Plugin");
+    let mcp = PluginToolDeclaration::mcp("search", "docs-server")
+        .source_metadata("plugin.docs", "Docs Plugin");
+    let handoff = PluginToolDeclaration::handoff("delegate", HandoffToolTarget::new("writer"))
+        .source_metadata("plugin.agents", "Agent Plugin");
+    let background = PluginToolDeclaration::background("long-job", BackgroundTaskPolicy::new())
+        .source_metadata("plugin.jobs", "Jobs Plugin");
+
+    assert_eq!(local.kind, ToolSource::Plugin);
+    assert_eq!(local.plugin_id.as_deref(), Some("plugin.weather"));
+    assert_eq!(local.origin_name(), "Weather Plugin");
+
+    assert_eq!(mcp.kind, ToolSource::Mcp);
+    assert_eq!(mcp.mcp_server_name.as_deref(), Some("docs-server"));
+
+    assert_eq!(handoff.kind, ToolSource::Subagent);
+    assert_eq!(handoff.subagent_id.as_deref(), Some("writer"));
+
+    assert_eq!(background.kind, ToolSource::Background);
+    assert_eq!(background.plugin_id.as_deref(), Some("plugin.jobs"));
 }

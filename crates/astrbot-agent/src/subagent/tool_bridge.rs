@@ -1,4 +1,4 @@
-use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSource};
+use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSourceMetadata};
 
 use crate::{HandoffRegistration, HandoffToolSpec};
 
@@ -10,7 +10,7 @@ impl HandoffToolBridge {
         ToolDescriptor::new(spec.name.clone())
             .with_description(spec.description.clone())
             .with_parameters(spec.parameters.clone())
-            .with_source(ToolSource::Handoff)
+            .with_source_metadata(ToolSourceMetadata::subagent(&spec.agent_name))
     }
 
     pub fn descriptors(registration: &HandoffRegistration) -> Vec<ToolDescriptor> {

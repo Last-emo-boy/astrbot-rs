@@ -7,6 +7,7 @@ mod message_loop;
 mod platform;
 mod policy;
 mod provider_config;
+mod tool_assembly;
 
 use astrbot_platform::SentMessage;
 

@@ -175,6 +175,7 @@ name = "astrbot-plugin"
 version = "0.1.0"
 dependencies = [
  "astrbot-core",
+ "astrbot-tool",
  "async-trait",
  "regex",
  "serde",
@@ -218,6 +219,7 @@ dependencies = [
  "astrbot-platform",
  "astrbot-plugin",
  "astrbot-provider",
+ "astrbot-tool",
  "async-trait",
  "serde",
  "serde_json",
@@ -273,6 +275,7 @@ dependencies = [
  "astrbot-runtime",
  "astrbot-skill",
  "astrbot-storage",
+ "astrbot-tool",
  "async-trait",
  "axum",
  "reqwest",

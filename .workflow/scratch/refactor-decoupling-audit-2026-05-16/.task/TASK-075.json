@@ -1,7 +1,7 @@
 {
   "id": "TASK-075",
   "title": "Split MCP wire primitives, JSON values, pagination, and protocol errors",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "mcp-wire-types-boundary",
   "description": "TASK-029 defined MCP client/resource/prompt/sampling roots, and TASK-066 covers real transport. The current Rust MCP `types.rs` concentrates errors, names, URIs, JSON values, JSON schema, and pagination. Split wire primitives before JSON-RPC transport framing and bridge registration make the file a protocol catch-all.",
@@ -34,5 +34,22 @@
     ],
     "verification_command": "cargo test -p astrbot-mcp && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "medium"
+  "risk": "medium",
+  "completed_at": "2026-05-17T13:36:02+08:00",
+  "files_modified": [
+    "crates/astrbot-mcp/src/types.rs",
+    "crates/astrbot-mcp/src/types/mod.rs",
+    "crates/astrbot-mcp/src/types/error.rs",
+    "crates/astrbot-mcp/src/types/name.rs",
+    "crates/astrbot-mcp/src/types/json.rs",
+    "crates/astrbot-mcp/src/types/schema.rs",
+    "crates/astrbot-mcp/src/types/pagination.rs",
+    "crates/astrbot-mcp/src/types/protocol.rs",
+    "crates/astrbot-mcp/src/lib.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-mcp",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

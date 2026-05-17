@@ -1,140 +1,8 @@
 use std::collections::BTreeMap;
-use std::fmt;
 
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-pub type McpResult<T> = std::result::Result<T, McpError>;
-
-#[derive(Debug, Error, PartialEq, Eq)]
-pub enum McpError {
-    #[error("invalid MCP config: {0}")]
-    InvalidConfig(String),
-
-    #[error("MCP client is not connected: {0}")]
-    NotConnected(String),
-
-    #[error("unsupported MCP request: {0}")]
-    Unsupported(String),
-
-    #[error("MCP transport error: {0}")]
-    Transport(String),
-
-    #[error("MCP protocol error: {0}")]
-    Protocol(String),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct McpServerName(String);
-
-impl McpServerName {
-    pub fn new(value: impl Into<String>) -> McpResult<Self> {
-        let value = value.into().trim().to_string();
-        if value.is_empty() {
-            return Err(McpError::InvalidConfig(
-                "server name cannot be empty".to_string(),
-            ));
-        }
-        Ok(Self(value))
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for McpServerName {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-impl TryFrom<String> for McpServerName {
-    type Error = McpError;
-
-    fn try_from(value: String) -> McpResult<Self> {
-        Self::new(value)
-    }
-}
-
-impl TryFrom<&str> for McpServerName {
-    type Error = McpError;
-
-    fn try_from(value: &str) -> McpResult<Self> {
-        Self::new(value)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct McpUri(String);
-
-impl McpUri {
-    pub fn new(value: impl Into<String>) -> McpResult<Self> {
-        let value = value.into().trim().to_string();
-        if value.is_empty() {
-            return Err(McpError::InvalidConfig("uri cannot be empty".to_string()));
-        }
-        Ok(Self(value))
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for McpUri {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-impl TryFrom<String> for McpUri {
-    type Error = McpError;
-
-    fn try_from(value: String) -> McpResult<Self> {
-        Self::new(value)
-    }
-}
-
-impl TryFrom<&str> for McpUri {
-    type Error = McpError;
-
-    fn try_from(value: &str) -> McpResult<Self> {
-        Self::new(value)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct McpCursor(String);
-
-impl McpCursor {
-    pub fn new(value: impl Into<String>) -> Option<Self> {
-        let value = value.into().trim().to_string();
-        (!value.is_empty()).then_some(Self(value))
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct McpMimeType(String);
-
-impl McpMimeType {
-    pub fn new(value: impl Into<String>) -> Option<Self> {
-        let value = value.into().trim().to_string();
-        (!value.is_empty()).then_some(Self(value))
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
+use super::{McpError, McpResult};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -293,51 +161,38 @@ impl From<McpJsonObject> for serde_json::Value {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct McpJsonSchema(pub serde_json::Value);
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
 
-impl Default for McpJsonSchema {
-    fn default() -> Self {
-        Self::object()
-    }
-}
+    use super::{McpJsonObject, McpJsonValue};
 
-impl McpJsonSchema {
-    pub fn object() -> Self {
-        Self(serde_json::json!({
-            "type": "object",
-            "properties": {}
+    #[test]
+    fn json_value_round_trips_nested_objects_without_client_lifecycle() {
+        let value = McpJsonValue::try_from(json!({
+            "city": "Shanghai",
+            "days": 3,
+            "details": true,
+            "tags": ["weather"]
         }))
+        .expect("typed json should decode");
+
+        let object = value.as_object().expect("json should be object");
+        assert_eq!(
+            object.get("city").and_then(McpJsonValue::as_str),
+            Some("Shanghai")
+        );
+
+        let encoded = serde_json::Value::from(value);
+        assert_eq!(encoded["days"], 3);
+        assert_eq!(encoded["tags"][0], "weather");
     }
 
-    pub fn from_json(value: serde_json::Value) -> Self {
-        Self(value)
-    }
+    #[test]
+    fn json_object_ignores_blank_keys() {
+        let object = McpJsonObject::new().with(" ", true).with("ok", false);
 
-    pub fn as_json(&self) -> &serde_json::Value {
-        &self.0
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct McpListPage<T> {
-    pub items: Vec<T>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_cursor: Option<McpCursor>,
-}
-
-impl<T> McpListPage<T> {
-    pub fn new(items: Vec<T>) -> Self {
-        Self {
-            items,
-            next_cursor: None,
-        }
-    }
-
-    pub fn with_next_cursor(mut self, next_cursor: impl Into<String>) -> Self {
-        self.next_cursor = McpCursor::new(next_cursor);
-        self
+        assert_eq!(object.0.len(), 1);
+        assert_eq!(object.get("ok"), Some(&McpJsonValue::Bool(false)));
     }
 }

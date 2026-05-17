@@ -45,8 +45,8 @@ pub use transport::{
     McpTransportRuntime, McpTransportSession, mcp_reconnect_decision,
 };
 pub use types::{
-    McpCursor, McpError, McpJsonObject, McpJsonSchema, McpJsonValue, McpListPage, McpMimeType,
-    McpResult, McpServerName, McpUri,
+    MCP_JSONRPC_VERSION, McpCursor, McpError, McpJsonObject, McpJsonRpcErrorObject, McpJsonRpcId,
+    McpJsonSchema, McpJsonValue, McpListPage, McpMimeType, McpResult, McpServerName, McpUri,
 };
 
 #[cfg(test)]

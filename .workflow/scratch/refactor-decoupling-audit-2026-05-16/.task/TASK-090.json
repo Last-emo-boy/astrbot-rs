@@ -1,7 +1,7 @@
 {
   "id": "TASK-090",
   "title": "Split agent, MCP, and tool crate tests by behavior boundary",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "agent-mcp-tool-test-boundary",
   "description": "The remaining test facades for agent, MCP, and tool crates are still broad behavior aggregates. This is a low-risk decoupling pass that should split tests before request decoration, MCP runtime/transport, and tool reference/command work expand. The split should keep source behavior unchanged and only move tests plus shared test helpers.",
@@ -18,25 +18,25 @@
       "path": "crates/astrbot-agent/src/tests/mod.rs",
       "action": "create",
       "target": "agent test facade",
-      "change": "Move shared helpers such as NoopSink and test events into a support module."
+      "change": "Moved shared helpers such as NoopSink and test events into a support module."
     },
     {
       "path": "crates/astrbot-agent/src/tests/request_decorator.rs",
       "action": "create",
       "target": "request decorator tests",
-      "change": "Group preference, session context, quote context, persona, and envelope tests."
+      "change": "Grouped preference, session context, quote context, persona, and envelope tests."
     },
     {
       "path": "crates/astrbot-agent/src/tests/context.rs",
       "action": "create",
       "target": "context window tests",
-      "change": "Group token counting, truncation, compression, and context window decorator tests."
+      "change": "Grouped token counting, truncation, compression, and context window decorator tests."
     },
     {
       "path": "crates/astrbot-agent/src/tests/runner.rs",
       "action": "create",
       "target": "agent runner tests",
-      "change": "Group ChatAgentRunner success, fallback, and error propagation behavior."
+      "change": "Grouped ChatAgentRunner success, fallback, and error propagation behavior."
     },
     {
       "path": "crates/astrbot-mcp/src/tests/mod.rs",
@@ -48,7 +48,7 @@
       "path": "crates/astrbot-tool/src/tests/mod.rs",
       "action": "create",
       "target": "tool test facade",
-      "change": "Split catalog, provider schema serializer, command descriptor, and conflict detection tests."
+      "change": "Split catalog, provider schema serializer, command descriptor, conflict detection, source, internal provider, and reference tests."
     }
   ],
   "convergence": {

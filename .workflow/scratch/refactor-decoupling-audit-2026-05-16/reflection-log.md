@@ -555,3 +555,11 @@
 - AstrBot reference: `astr_main_agent.py`, `pipeline/process_stage/method/agent_request.py`, `pipeline/process_stage/method/agent_sub_stages/internal.py`, and `agent/context/manager.py`.
 - Adjustment: next implementation pointer moves to `TASK-090`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-agent`, `cargo test -p astrbot-pipeline`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 90 - TASK-090 Agent/MCP/Tool Test Boundary
+
+- Scope: split remaining broad test facades for `astrbot-agent`, `astrbot-mcp`, and `astrbot-tool` by behavior boundary.
+- Strategy: keep production source unchanged and move existing tests into focused modules with shared helpers where needed.
+- Result: agent tests now separate request decoration, context, runner, message/response/cache, and tool-loop behavior; MCP tests now separate bridge, config, elicitation, prompts/sampling, resources, roots, and tools; tool tests now separate catalog, schema, commands, conflicts, source/activation, internal providers, and references.
+- Adjustment: refactor decoupling audit now has no pending tasks.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-agent`, `cargo test -p astrbot-mcp`, `cargo test -p astrbot-tool`, and `cargo clippy --workspace -- -D warnings` passed.

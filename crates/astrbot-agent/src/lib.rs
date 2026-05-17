@@ -25,9 +25,9 @@ pub use fallback::AgentFallbackPolicy;
 pub use feedback::{
     AgentFeedbackEvent, AgentFeedbackEventKind, AgentStopSignal, AgentStopSignalPolicy,
     AgentStopSignalPort, AgentStopSignalReason, AgentStreamingFeedbackPolicy, EventStopSignalPort,
-    LiveVoiceFeedbackBridge, LiveVoiceFeedbackConfig, StaticStopSignalPort, ToolCallStatus,
-    ToolResultStatus, ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent,
-    VoiceFeedbackMode,
+    LiveTtsStreamFeedbackBridge, LiveTtsStreamFeedbackChunk, LiveVoiceFeedbackBridge,
+    LiveVoiceFeedbackConfig, StaticStopSignalPort, ToolCallStatus, ToolResultStatus,
+    ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent, VoiceFeedbackMode,
 };
 pub use memory::{AgentActiveReplyDecider, AgentMemoryContextPort, MemoryRequestDecorator};
 pub use multimodal::{

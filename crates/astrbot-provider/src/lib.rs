@@ -81,7 +81,12 @@ pub use registry::ProviderRegistry;
 pub use rerank::{RerankDocumentScore, RerankProvider, RerankRequest, RerankResponse};
 pub use selection::{ProviderSelection, ProviderSelectionScope, ProviderSelectionState};
 pub use speech::{SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
-pub use tts::{TextToSpeechProvider, TextToSpeechRequest, TextToSpeechResponse};
+pub use tts::{
+    FileSynthesisTextToSpeechStreamProvider, QueuedTextToSpeechAudioStream, TextToSpeechAudioChunk,
+    TextToSpeechAudioQueueItem, TextToSpeechAudioStream, TextToSpeechProvider, TextToSpeechRequest,
+    TextToSpeechResponse, TextToSpeechStreamProvider, TextToSpeechStreamRequest,
+    TextToSpeechStreamText,
+};
 pub use vllm_rerank::{VllmRerankConfig, VllmRerankProvider};
 pub use volcengine_tts::{VolcengineTextToSpeechConfig, VolcengineTextToSpeechProvider};
 pub use xinference_rerank::{XinferenceRerankConfig, XinferenceRerankProvider};

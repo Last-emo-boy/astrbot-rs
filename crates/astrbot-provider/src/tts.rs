@@ -2,6 +2,17 @@ use astrbot_core::Result;
 use async_trait::async_trait;
 
 use crate::chat::non_empty_option;
+
+pub mod audio_queue;
+pub mod stream;
+
+pub use audio_queue::{TextToSpeechAudioChunk, TextToSpeechAudioQueueItem};
+pub use stream::{
+    FileSynthesisTextToSpeechStreamProvider, QueuedTextToSpeechAudioStream,
+    TextToSpeechAudioStream, TextToSpeechStreamProvider, TextToSpeechStreamRequest,
+    TextToSpeechStreamText,
+};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextToSpeechRequest {
     pub provider_id: Option<String>,

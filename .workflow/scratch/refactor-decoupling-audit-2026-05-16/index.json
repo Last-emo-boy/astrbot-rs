@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T13:05:52+08:00",
+  "updated_at": "2026-05-17T13:18:31+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 72,
-    "pending_tasks": 18,
+    "completed_tasks": 73,
+    "pending_tasks": 17,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 72,
-    "current_task_id": "TASK-072",
-    "next_task": "TASK-073"
+    "reflection_rounds": 73,
+    "current_task_id": "TASK-073",
+    "next_task": "TASK-074"
   },
-  "latest_update": "TASK-072 introduced ChatUI project domain, project/session repository ports, and dashboard management routes. Project CRUD and session membership are separated from conversation history and WebChat transport, with creator ownership centralized in the conversation domain policy. Next pending task is TASK-073.",
+  "latest_update": "TASK-073 defined provider-neutral TTS stream request/audio stream ports and audio queue items for chunks, terminal markers, and stream errors. Live feedback can now consume streaming TTS through a provider-neutral bridge while file-based synthesis remains independently testable. Next pending task is TASK-074.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

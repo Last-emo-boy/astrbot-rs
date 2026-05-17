@@ -1,12 +1,12 @@
 {
   "id": "TASK-088",
   "title": "Split platform core contracts, build config, recording sink, and validation helpers",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "platform-core-contract-boundary",
   "description": "The Rust platform core facade now mixes platform type constants, adapter traits, build config, event-sender build context, recording sinks, conversation-history test storage, and platform ID validation in one file. AstrBot keeps platform metadata, message/session models, adapter base classes, register/manager code, and platform sources separated. Split this Rust core boundary before richer WeChat/QQ/Lark/Kook-style adapters add more metadata, sink, validation, and outbound behavior.",
   "read_first": [
-    "crates/astrbot-platform/src/core.rs",
+    "crates/astrbot-platform/src/core/mod.rs",
     "crates/astrbot-platform/src/built.rs",
     "crates/astrbot-platform/src/registry.rs",
     "crates/astrbot-platform/src/manager.rs",

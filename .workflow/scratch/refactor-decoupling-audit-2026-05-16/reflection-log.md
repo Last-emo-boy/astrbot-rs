@@ -537,3 +537,12 @@
 - AstrBot reference: `dashboard/routes/chat.py`, `dashboard/routes/live_chat.py`, `dashboard/routes/open_api.py`, and `builtin_stars/web_searcher/main.py`.
 - Adjustment: next implementation pointer moves to `TASK-088`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-tool`, `cargo test -p astrbot-agent`, `cargo test -p astrbot-storage`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 88 - TASK-088 Platform Core Contract Boundary
+
+- Scope: platform core facade split for adapter contracts, config/type constants, build context, recording sinks, sent/streamed message DTOs, and platform ID validation.
+- Strategy: follow AstrBot's separation of `platform.py`, `platform_metadata.py`, `register.py`, and `manager.py` by keeping Rust's crate-root exports stable while moving mixed core responsibilities into focused modules.
+- Result: replaced `core.rs` with `core/mod.rs`, added `core/{adapter,config,build_context,recording,validation}.rs`, and added a focused validation test module.
+- AstrBot reference: `core/platform/platform.py`, `core/platform/platform_metadata.py`, `core/platform/register.py`, and `core/platform/manager.py`.
+- Adjustment: next implementation pointer moves to `TASK-089`.
+- Verification: `cargo fmt --all --check`, `cargo test -p astrbot-platform`, `cargo clippy -p astrbot-platform -- -D warnings`, and `cargo test --workspace` passed.

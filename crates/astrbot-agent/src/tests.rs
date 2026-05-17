@@ -17,10 +17,10 @@ use crate::{
     AgentActiveReplyDecider, AgentContextCompressor, AgentContextWindow, AgentFallbackPolicy,
     AgentFeedbackEvent, AgentFeedbackEventKind, AgentHookEvent, AgentHookEventKind,
     AgentKnowledgeContextPort, AgentMemoryContextPort, AgentMessage, AgentMessageRole,
-    AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort, AgentResponseEvent,
-    AgentResponseEventKind, AgentResponseStats, AgentRunContext, AgentRunHook, AgentRunOutcome,
-    AgentRunner, AgentSessionContextPort, AgentTokenCounter, AgentTokenUsage, AgentToolCall,
-    ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
+    AgentPersona, AgentProviderPreferencePort, AgentQuoteContextPort, AgentReferenceDecorator,
+    AgentResponseEvent, AgentResponseEventKind, AgentResponseStats, AgentRunContext, AgentRunHook,
+    AgentRunOutcome, AgentRunner, AgentSessionContextPort, AgentTokenCounter, AgentTokenUsage,
+    AgentToolCall, ApproximateTokenCounter, ChatAgentRunner, CompositeProviderRequestDecorator,
     ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
     ContextWindowRequestDecorator, InMemoryToolImageCache, KnowledgeContextRequestDecorator,
     MemoryRequestDecorator, NoopContextCompressor, PersonaPromptDecorator,
@@ -30,6 +30,7 @@ use crate::{
 };
 use astrbot_memory::{ActiveReplyPolicy, MemorySessionKey, MemoryTranscriptRecord};
 use astrbot_provider::{ProviderReasoningMetadata, ProviderResponseMetadata};
+use astrbot_tool::ToolCallReferencePayload;
 
 struct NoopSink;
 
@@ -481,6 +482,36 @@ fn response_event_maps_feedback_and_stats_without_provider_dependency() {
     assert_eq!(stats.token_usage.expect("usage").total_tokens, 7);
     assert_eq!(stats.duration_ms, 10);
     assert_eq!(stats.time_to_first_token_ms, 2);
+}
+
+#[test]
+fn reference_decorator_attaches_tool_refs_to_response_event_metadata() {
+    let event = AgentResponseEvent::final_chain("Use <ref>abcd.1</ref>.");
+    let tool_result = serde_json::json!({
+        "results": [
+            {
+                "title": "AstrBot",
+                "url": "https://astrbot.app",
+                "snippet": "AstrBot docs",
+                "index": "abcd.1"
+            }
+        ]
+    })
+    .to_string();
+
+    let decorated = AgentReferenceDecorator::default().decorate_event(
+        event,
+        &[ToolCallReferencePayload::new(
+            "web_search_bocha",
+            tool_result,
+        )],
+    );
+
+    let refs = decorated
+        .references
+        .expect("referenced event should carry refs");
+    assert_eq!(refs.tool_refs.used.len(), 1);
+    assert_eq!(refs.tool_refs.used[0].title.as_deref(), Some("AstrBot"));
 }
 
 #[tokio::test]

@@ -8,6 +8,7 @@ mod memory;
 mod message;
 mod multimodal;
 mod persona;
+mod references;
 mod request_decorator;
 mod response;
 mod run_context;
@@ -49,6 +50,7 @@ pub use multimodal::{
     QuotedImageAttachmentResult,
 };
 pub use persona::{AgentPersona, PersonaPromptDecorator};
+pub use references::{AgentReferenceDecorator, AgentResponseReferences};
 pub use request_decorator::{
     AgentProviderPreferencePort, AgentQuoteContextPort, AgentSessionContextPort,
     CompositeProviderRequestDecorator, NoopProviderRequestDecorator,

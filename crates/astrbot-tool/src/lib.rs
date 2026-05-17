@@ -3,6 +3,7 @@ mod catalog;
 mod commands;
 mod conflicts;
 mod internal;
+mod reference;
 pub mod schema;
 mod source;
 
@@ -15,6 +16,10 @@ pub use conflicts::{
 pub use internal::{
     InternalToolProviderCatalog, InternalToolProviderDescriptor, InternalToolRegistration,
     builtin_internal_tool_catalog, builtin_internal_tool_registrations,
+};
+pub use reference::{
+    ToolCallReferencePayload, ToolReferenceExtractor, ToolReferenceItem, ToolReferenceSet,
+    ToolReferenceSource,
 };
 pub use schema::{ProviderToolSchemaFormat, ToolSchemaSerializer};
 pub use source::{ToolSource, ToolSourceMetadata, ToolUserTogglePolicy};

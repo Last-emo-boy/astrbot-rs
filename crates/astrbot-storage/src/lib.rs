@@ -4,6 +4,7 @@ pub mod backup;
 mod chat_project;
 mod config_snapshot;
 mod conversation;
+mod conversation_refs;
 mod file_token;
 mod kb_document;
 mod memory;
@@ -40,6 +41,10 @@ pub use config_snapshot::{
 };
 pub use conversation::{
     ConversationHistoryRepository, ConversationMessageRecord, InMemoryConversationHistoryRepository,
+};
+pub use conversation_refs::{
+    ConversationReferenceRecord, ConversationReferenceRepository,
+    InMemoryConversationReferenceRepository,
 };
 pub use file_token::{
     FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,

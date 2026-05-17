@@ -4,6 +4,7 @@ use astrbot_core::MessageChain;
 use serde::{Deserialize, Serialize};
 
 use crate::AgentFeedbackEvent;
+use crate::AgentResponseReferences;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -64,6 +65,8 @@ pub struct AgentResponseEvent {
     pub chain: MessageChain,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<AgentResponseStats>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub references: Option<AgentResponseReferences>,
 }
 
 impl AgentResponseEvent {
@@ -72,6 +75,7 @@ impl AgentResponseEvent {
             kind,
             chain: chain.into(),
             stats: None,
+            references: None,
         }
     }
 
@@ -88,11 +92,17 @@ impl AgentResponseEvent {
             kind: AgentResponseEventKind::Stats,
             chain: MessageChain::default(),
             stats: Some(stats),
+            references: None,
         }
     }
 
     pub fn with_stats(mut self, stats: AgentResponseStats) -> Self {
         self.stats = Some(stats);
+        self
+    }
+
+    pub fn with_references(mut self, references: AgentResponseReferences) -> Self {
+        self.references = (!references.is_empty()).then_some(references);
         self
     }
 }

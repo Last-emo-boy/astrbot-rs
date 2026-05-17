@@ -528,3 +528,12 @@
 - AstrBot reference: `core/utils/metrics.py`, `dashboard/routes/stat.py`, `core/agent/runners/tool_loop_agent_runner.py`, `core/astr_agent_run_util.py`, and `core/db/po.py`.
 - Adjustment: next implementation pointer moves to `TASK-087`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-metrics`, `cargo test -p astrbot-storage`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 87 - TASK-087 Tool Reference Boundary
+
+- Scope: route-independent citation extraction for tool outputs, agent response refs metadata, storage persistence, and web serialization.
+- Strategy: follow AstrBot dashboard `chat.py`, `live_chat.py`, `open_api.py`, and `builtin_stars/web_searcher/main.py`, but move duplicate route-local `web_search_tavily`/`web_search_bocha` parsing into Rust tool/agent/storage/web boundaries.
+- Result: added `ToolReferenceExtractor` for supported web search tool result payloads and `<ref>...</ref>` matching, `AgentReferenceDecorator` and `AgentResponseReferences`, `ConversationReferenceRepository`, and `WebChatReferenceResponse`.
+- AstrBot reference: `dashboard/routes/chat.py`, `dashboard/routes/live_chat.py`, `dashboard/routes/open_api.py`, and `builtin_stars/web_searcher/main.py`.
+- Adjustment: next implementation pointer moves to `TASK-088`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-tool`, `cargo test -p astrbot-agent`, `cargo test -p astrbot-storage`, `cargo test -p astrbot-web`, and `cargo clippy --workspace -- -D warnings` passed.

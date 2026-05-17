@@ -1,7 +1,7 @@
 {
   "id": "TASK-087",
   "title": "Define tool output reference, citation extraction, and route-independent refs boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "tool-reference-boundary",
   "description": "AstrBot dashboard chat, live_chat, and OpenAPI routes duplicate logic for collecting web_search tool results, matching <ref> tags, adding favicons, and saving refs in bot history. Rust should place tool-result reference extraction in a tool/agent boundary so WebChat, realtime, OpenAPI, and future dashboard history routes do not parse provider/tool output ad hoc.",

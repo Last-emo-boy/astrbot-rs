@@ -5,6 +5,7 @@ mod history;
 mod management;
 mod message_parts;
 mod realtime;
+mod reference;
 mod routes;
 mod server;
 
@@ -61,6 +62,7 @@ pub use realtime::{
     OpenApiChatResponseMode, OpenApiChatSubscriptionPlan, RealtimeConnectionSession,
     RealtimeProcessingState, RealtimeSubscription, required_openapi_chat_scopes,
 };
+pub use reference::{WebChatReferenceItem, WebChatReferenceResponse};
 pub use routes::webchat_router;
 pub use server::{
     serve_management, serve_management_with_auth, serve_management_with_auth_and_shutdown,

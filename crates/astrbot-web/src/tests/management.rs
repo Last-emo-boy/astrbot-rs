@@ -2,6 +2,7 @@ use std::{fs, sync::Arc};
 
 use astrbot_conversation::ChatProjectService;
 use astrbot_core::{MessageChain, MessageEvent, Result};
+use astrbot_maintenance::{MaintenanceMigrationCheck, RuntimeConfigMigrationDescriptor};
 use astrbot_platform::{PlatformBuildContext, PlatformConfig, PlatformManager, PlatformRegistry};
 use astrbot_plugin::{
     HandlerMetadata, PluginCompatibility, PluginControl, PluginEventType, PluginHandler,
@@ -37,6 +38,7 @@ use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
     ManagementChatProjectState, ManagementFileDownloadState, ManagementSessionRuleState,
     ManagementSkillState, ManagementStatusResponse, ManagementToolState,
+    ManagementMaintenanceState,
     PluginMarketManagementState, management_router, management_router_with_auth,
 };
 
@@ -301,6 +303,106 @@ async fn management_tool_routes_expose_sources_and_reject_internal_toggle() {
     let catalog_response = get(router, "/api/management/tools").await;
     let catalog: serde_json::Value = response_json(catalog_response).await;
     assert_eq!(catalog["tools"][1]["active"], false);
+}
+
+#[tokio::test]
+async fn management_update_routes_delegate_to_typed_maintenance_state() {
+    let migration_check = MaintenanceMigrationCheck {
+        runtime_config: RuntimeConfigMigrationDescriptor {
+            missing_default_keys: vec!["webchat_server.port".to_string()],
+        },
+        pending_storage_migrations: vec!["001-main-schema".to_string()],
+        legacy_data_migration_needed: true,
+    };
+    let state = management_state_fixture().with_maintenance(
+        ManagementMaintenanceState::new("v4.0.0")
+            .with_latest_version("v4.1.0")
+            .with_dashboard_version("v4.0.0")
+            .with_migration_check(migration_check),
+    );
+    let router = management_router(state);
+
+    let check_response = get(router.clone(), "/api/management/update/check").await;
+    assert_eq!(check_response.status(), StatusCode::OK);
+    let check: serde_json::Value = response_json(check_response).await;
+    assert_eq!(check["check"]["has_new_version"], true);
+    assert_eq!(check["check"]["dashboard_has_new_version"], false);
+
+    let project_response = post_json(
+        router.clone(),
+        "/api/management/update/project-plan",
+        json!({
+            "version": "v4.1.0",
+            "proxy": "https://proxy.example/",
+            "reboot": true
+        }),
+    )
+    .await;
+    assert_eq!(project_response.status(), StatusCode::OK);
+    let project: serde_json::Value = response_json(project_response).await;
+    assert_eq!(project["operation"]["kind"], "project_update");
+    assert_eq!(
+        project["operation"]["operation_id"],
+        "project-update-v4.1.0"
+    );
+    assert_eq!(project["operation"]["progress"]["status"], "running");
+
+    let operation_response = get(
+        router.clone(),
+        "/api/management/update/operations/project-update-v4.1.0",
+    )
+    .await;
+    assert_eq!(operation_response.status(), StatusCode::OK);
+
+    let dashboard_response = post_json(
+        router.clone(),
+        "/api/management/update/dashboard-plan",
+        json!({ "version": "v4.0.0" }),
+    )
+    .await;
+    assert_eq!(dashboard_response.status(), StatusCode::OK);
+    let dashboard: serde_json::Value = response_json(dashboard_response).await;
+    assert_eq!(dashboard["operation"]["kind"], "dashboard_update");
+
+    let package_response = post_json(
+        router.clone(),
+        "/api/management/update/package-plan",
+        json!({ "package": "requests==2.32.0", "mirror": "https://mirror.example/simple" }),
+    )
+    .await;
+    assert_eq!(package_response.status(), StatusCode::OK);
+    let package: serde_json::Value = response_json(package_response).await;
+    assert_eq!(package["plan"]["global_runtime_install"], true);
+    assert_eq!(package["plan"]["plugin_dependency_plan"], serde_json::Value::Null);
+
+    let migration_check_response = get(
+        router.clone(),
+        "/api/management/update/migration-check",
+    )
+    .await;
+    assert_eq!(migration_check_response.status(), StatusCode::OK);
+    let migration_check: serde_json::Value = response_json(migration_check_response).await;
+    assert_eq!(
+        migration_check["check"]["pending_storage_migrations"],
+        json!(["001-main-schema"])
+    );
+    assert_eq!(migration_check["check"]["legacy_data_migration_needed"], true);
+
+    let migration_response = post_json(
+        router,
+        "/api/management/update/migration-plan",
+        json!({
+            "confirmed": true,
+            "platform_id_map": {
+                "aiocqhttp": { "default": "onebot" }
+            }
+        }),
+    )
+    .await;
+    assert_eq!(migration_response.status(), StatusCode::OK);
+    let migration: serde_json::Value = response_json(migration_response).await;
+    assert_eq!(migration["operation"]["kind"], "migration");
+    assert_eq!(migration["operation"]["progress"]["status"], "completed");
 }
 
 #[tokio::test]

@@ -8,6 +8,7 @@ members = [
     "crates/astrbot-cron",
     "crates/astrbot-kb",
     "crates/astrbot-mcp",
+    "crates/astrbot-maintenance",
     "crates/astrbot-media",
     "crates/astrbot-memory",
     "crates/astrbot-observability",

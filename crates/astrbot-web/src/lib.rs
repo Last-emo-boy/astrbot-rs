@@ -15,9 +15,11 @@ pub use dto::{
 };
 pub use management::{
     ApiKeyAuthDecision, ApiKeyIssuer, ApiKeyRejectionReason, AuthRejectionReason,
-    DashboardAuthDecision, DashboardAuthPolicy, IssuedApiKey, ManagementApiState,
-    ManagementAuthState, ManagementBackupAbortRequest, ManagementBackupAbortResponse,
-    ManagementBackupChunkRequest, ManagementBackupChunkResponse, ManagementBackupCompleteRequest,
+    DashboardAuthDecision, DashboardAuthPolicy, DashboardUpdatePlanRequest, IssuedApiKey,
+    MaintenanceCheckResponse, MaintenanceMigrationCheckResponse, MaintenanceOperationResponse,
+    MaintenancePackagePlanResponse, ManagementApiState, ManagementAuthState,
+    ManagementBackupAbortRequest, ManagementBackupAbortResponse, ManagementBackupChunkRequest,
+    ManagementBackupChunkResponse, ManagementBackupCompleteRequest,
     ManagementBackupCompleteResponse, ManagementBackupExportRequest, ManagementBackupImportRequest,
     ManagementBackupJobResponse, ManagementBackupPrecheckRequest, ManagementBackupPrecheckResponse,
     ManagementBackupProgressResponse, ManagementBackupState, ManagementBackupUploadStartRequest,
@@ -28,7 +30,7 @@ pub use management::{
     ManagementChatProjectResponse, ManagementChatProjectSessionsResponse,
     ManagementChatProjectState, ManagementChatProjectUpdateRequest,
     ManagementConfigMutationRequest, ManagementConfigMutationResponse,
-    ManagementConfigSchemaResponse, ManagementFileDownloadState,
+    ManagementConfigSchemaResponse, ManagementFileDownloadState, ManagementMaintenanceState,
     ManagementPlatformSessionDescriptor, ManagementSessionRuleState,
     ManagementSkillActivationRequest, ManagementSkillActivationResponse,
     ManagementSkillCatalogResponse, ManagementSkillDeletePlanRequest,
@@ -38,9 +40,10 @@ pub use management::{
     ManagementToolState, ManagementToolToggleRequest, ManagementToolToggleResponse, OpenApiScope,
     OpenApiScopeSet, PlatformManagementResponse, PluginHandlerManagementResponse,
     PluginManagementResponse, PluginMarketCatalogResponse, PluginMarketManagementState,
-    PluginMarketPlanRequest, PluginMarketPlanResponse, PresentedApiKey, ProviderManagementResponse,
-    ScopedDownloadError, ScopedDownloadFile, authorize_api_key, extract_bearer_token,
-    extract_presented_api_key, hash_api_key, management_router, management_router_with_auth,
+    PluginMarketPlanRequest, PluginMarketPlanResponse, PresentedApiKey, ProjectUpdatePlanRequest,
+    ProviderManagementResponse, ScopedDownloadError, ScopedDownloadFile, authorize_api_key,
+    extract_bearer_token, extract_presented_api_key, hash_api_key, management_router,
+    management_router_with_auth,
 };
 pub use realtime::{
     DEFAULT_LIVE_AUDIO_FORMAT, LiveAudioBuffer, LiveAudioError, LiveAudioFormat, LiveAudioWavFile,

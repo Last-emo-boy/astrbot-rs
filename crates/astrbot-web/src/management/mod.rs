@@ -12,6 +12,7 @@ mod session_rules;
 mod skills;
 mod status;
 mod tools;
+mod update;
 
 use astrbot_platform::PlatformManager;
 use astrbot_plugin::PluginRegistry;
@@ -72,6 +73,11 @@ pub use tools::{
     ManagementToolCatalogResponse, ManagementToolDescriptor, ManagementToolState,
     ManagementToolToggleRequest, ManagementToolToggleResponse,
 };
+pub use update::{
+    DashboardUpdatePlanRequest, MaintenanceCheckResponse, MaintenanceMigrationCheckResponse,
+    MaintenanceOperationResponse, MaintenancePackagePlanResponse, ManagementMaintenanceState,
+    ProjectUpdatePlanRequest,
+};
 
 #[derive(Clone, Debug)]
 pub struct ManagementApiState {
@@ -86,6 +92,7 @@ pub struct ManagementApiState {
     session_rules: Option<ManagementSessionRuleState>,
     skills: Option<ManagementSkillState>,
     tools: Option<ManagementToolState>,
+    maintenance: Option<ManagementMaintenanceState>,
 }
 
 impl ManagementApiState {
@@ -106,6 +113,7 @@ impl ManagementApiState {
             session_rules: None,
             skills: None,
             tools: None,
+            maintenance: None,
         }
     }
 
@@ -146,6 +154,11 @@ impl ManagementApiState {
 
     pub fn with_tools(mut self, tools: ManagementToolState) -> Self {
         self.tools = Some(tools);
+        self
+    }
+
+    pub fn with_maintenance(mut self, maintenance: ManagementMaintenanceState) -> Self {
+        self.maintenance = Some(maintenance);
         self
     }
 
@@ -203,6 +216,10 @@ impl ManagementApiState {
 
     pub fn tools(&self) -> Option<&ManagementToolState> {
         self.tools.as_ref()
+    }
+
+    pub fn maintenance(&self) -> Option<&ManagementMaintenanceState> {
+        self.maintenance.as_ref()
     }
 
     pub fn status(&self) -> ManagementStatusResponse {
@@ -307,6 +324,26 @@ fn management_routes() -> Router<ManagementApiState> {
         )
         .route("/api/management/tools", get(tools::catalog))
         .route("/api/management/tools/toggle", post(tools::toggle))
+        .route("/api/management/update/check", get(update::check))
+        .route("/api/management/update/releases", get(update::releases))
+        .route("/api/management/update/project-plan", post(update::project_plan))
+        .route(
+            "/api/management/update/dashboard-plan",
+            post(update::dashboard_plan),
+        )
+        .route("/api/management/update/package-plan", post(update::package_plan))
+        .route(
+            "/api/management/update/migration-check",
+            get(update::migration_check),
+        )
+        .route(
+            "/api/management/update/migration-plan",
+            post(update::migration_plan),
+        )
+        .route(
+            "/api/management/update/operations/{operation_id}",
+            get(update::operation),
+        )
         .route("/api/management/skills", get(skills::catalog))
         .route(
             "/api/management/skills/activation",

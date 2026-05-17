@@ -42,7 +42,8 @@ pub(super) async fn run_provider_fallback(
 
     let runner = ChatAgentRunner::new(provider)
         .with_fallback_policy(agent_fallback_policy(ctx.provider_fallback()))
-        .with_request_decorator(agent_request_decorator(ctx));
+        .with_request_decorator(agent_request_decorator(ctx))
+        .with_hook(ctx.agent_run_hook());
 
     if let Some(result) = runner.run(event).await?.into_result() {
         event.set_result(result);

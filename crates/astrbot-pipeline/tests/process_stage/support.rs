@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use astrbot_agent::{AgentHookEvent, AgentRunHook};
 use astrbot_core::{
     AstrbotError, MessageChain, MessageEvent, MessageEventResult, MessageSender, MessageSession,
     ProviderContentPart, ProviderContextMessage, ProviderRequest, ProviderToolPlaceholder, Result,
@@ -106,5 +107,18 @@ impl PluginHandler for ProviderRequestHandler {
                 .with_tool_placeholder(ProviderToolPlaceholder::new("search")),
         );
         Ok(PluginControl::Continue)
+    }
+}
+
+#[derive(Default)]
+pub struct CapturingAgentHook {
+    pub events: Mutex<Vec<AgentHookEvent>>,
+}
+
+#[async_trait]
+impl AgentRunHook for CapturingAgentHook {
+    async fn on_event(&self, event: AgentHookEvent) -> Result<()> {
+        self.events.lock().await.push(event);
+        Ok(())
     }
 }

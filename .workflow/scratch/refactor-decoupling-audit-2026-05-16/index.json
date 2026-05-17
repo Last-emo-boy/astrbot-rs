@@ -3,20 +3,20 @@
   "scope": "workspace decoupling audit before continuing AstrBot parity",
   "status": "in_progress",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T13:46:14+08:00",
+  "updated_at": "2026-05-17T14:04:14+08:00",
   "milestone": "M7-platform-provider-dashboard-breadth",
   "plan": {
     "total_tasks": 90,
-    "completed_tasks": 76,
-    "pending_tasks": 14,
+    "completed_tasks": 77,
+    "pending_tasks": 13,
     "blocked_tasks": 0
   },
   "execution": {
-    "reflection_rounds": 76,
-    "current_task_id": "TASK-076",
-    "next_task": "TASK-077"
+    "reflection_rounds": 77,
+    "current_task_id": "TASK-077",
+    "next_task": "TASK-078"
   },
-  "latest_update": "TASK-076 introduced knowledge-base ingestion, document repository, media store, indexing progress, and vector persistence ports. Agent request decoration now consumes formatted KB context through a narrow port without owning ingestion or vector persistence. Next pending task is TASK-077.",
+  "latest_update": "TASK-077 defined agent lifecycle side-channel boundaries for run context, hook events, response events, message wrappers, and tool image cache ports. Pipeline provider fallback now forwards lifecycle observation through a typed agent hook port instead of embedding agent side effects. Next pending task is TASK-078.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/platform.py",
     "E:/Playground/Astrbot/astrbot/core/platform/register.py",

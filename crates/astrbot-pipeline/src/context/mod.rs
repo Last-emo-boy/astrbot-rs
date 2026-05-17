@@ -8,6 +8,7 @@ mod session;
 
 use std::sync::Arc;
 
+use astrbot_agent::{AgentRunHook, NoopAgentRunHook};
 use astrbot_plugin::PluginRegistry;
 use astrbot_provider::ChatProvider;
 
@@ -42,6 +43,7 @@ pub struct PipelineContext {
     session_context: Arc<dyn SessionContextPort>,
     provider_preference: Arc<dyn ProviderPreferencePort>,
     quote_context: Arc<dyn QuoteContextPolicy>,
+    agent_run_hook: Arc<dyn AgentRunHook>,
     rate_limit: RateLimitConfig,
     content_safety: ContentSafetyConfig,
     preprocess: PreprocessConfig,
@@ -60,6 +62,7 @@ impl Default for PipelineContext {
             session_context: Arc::new(EmptySessionContextPort),
             provider_preference: Arc::new(NoProviderPreferencePort),
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
+            agent_run_hook: Arc::new(NoopAgentRunHook),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
             preprocess: PreprocessConfig::default(),
@@ -84,6 +87,7 @@ impl PipelineContext {
             session_context: Arc::new(EmptySessionContextPort),
             provider_preference: Arc::new(NoProviderPreferencePort),
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
+            agent_run_hook: Arc::new(NoopAgentRunHook),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
             preprocess: PreprocessConfig::default(),
@@ -130,6 +134,11 @@ impl PipelineContext {
 
     pub fn with_quote_context_policy(mut self, quote_context: Arc<dyn QuoteContextPolicy>) -> Self {
         self.quote_context = quote_context;
+        self
+    }
+
+    pub fn with_agent_run_hook(mut self, agent_run_hook: Arc<dyn AgentRunHook>) -> Self {
+        self.agent_run_hook = agent_run_hook;
         self
     }
 
@@ -188,6 +197,10 @@ impl PipelineContext {
 
     pub fn quote_context(&self) -> Arc<dyn QuoteContextPolicy> {
         self.quote_context.clone()
+    }
+
+    pub fn agent_run_hook(&self) -> Arc<dyn AgentRunHook> {
+        self.agent_run_hook.clone()
     }
 
     pub fn rate_limit(&self) -> &RateLimitConfig {

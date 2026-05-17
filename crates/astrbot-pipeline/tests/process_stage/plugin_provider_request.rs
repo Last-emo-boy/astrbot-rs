@@ -1,3 +1,4 @@
+use astrbot_agent::{AgentHookEvent, AgentHookEventKind};
 use std::sync::Arc;
 
 use astrbot_core::{EventExecutor, MessageChain, MessageComponent};
@@ -11,8 +12,8 @@ use astrbot_plugin::{
 };
 
 use crate::support::{
-    CapturingProvider, NoopHandler, ProviderRequestHandler, StaticReplyHandler, direct_event,
-    event_with_chain,
+    CapturingAgentHook, CapturingProvider, NoopHandler, ProviderRequestHandler, StaticReplyHandler,
+    direct_event, event_with_chain,
 };
 
 #[tokio::test]
@@ -98,6 +99,7 @@ async fn process_stage_runs_plugin_generated_provider_request() {
 #[tokio::test]
 async fn process_stage_falls_back_to_provider_when_plugin_does_not_set_result() {
     let provider = Arc::new(CapturingProvider::default());
+    let agent_hook = Arc::new(CapturingAgentHook::default());
     let sink = Arc::new(RecordingSink::default());
     let mut plugins = PluginRegistry::new();
     plugins.register_handler(RegisteredHandler::new(
@@ -107,6 +109,7 @@ async fn process_stage_falls_back_to_provider_when_plugin_does_not_set_result() 
 
     let scheduler = PipelineScheduler::new(
         PipelineContext::with_chat_provider(provider.clone())
+            .with_agent_run_hook(agent_hook.clone())
             .with_plugin_registry(Arc::new(plugins)),
     )
     .with_stage(ProcessStage)
@@ -120,6 +123,14 @@ async fn process_stage_falls_back_to_provider_when_plugin_does_not_set_result() 
     let requests = provider.requests.lock().await;
     assert_eq!(requests.len(), 1);
     assert_eq!(requests[0].prompt, "hello");
+    let hook_events = agent_hook.events.lock().await;
+    assert_eq!(hook_events.len(), 2);
+    assert_eq!(hook_events[0].kind(), AgentHookEventKind::AgentBegin);
+    let AgentHookEvent::AgentDone(done) = &hook_events[1] else {
+        panic!("provider fallback should finish through typed agent hook");
+    };
+    assert_eq!(done.lifecycle.session_id, "conversation-1");
+    assert_eq!(done.chain.plain_text(), "mock-response");
     assert_eq!(sink.messages().await[0].chain.plain_text(), "mock-response");
 }
 

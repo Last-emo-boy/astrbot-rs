@@ -5,7 +5,8 @@ use astrbot_provider::{ChatProvider, ChatRequest};
 use async_trait::async_trait;
 
 use crate::{
-    AgentFallbackPolicy, AgentFeedbackEvent, NoopProviderRequestDecorator,
+    AgentDoneEvent, AgentFallbackPolicy, AgentFeedbackEvent, AgentHookEvent, AgentLifecycleEvent,
+    AgentRunContext, AgentRunHook, NoopAgentRunHook, NoopProviderRequestDecorator,
     ProviderRequestDecorator, ProviderRequestEnvelope,
 };
 
@@ -73,6 +74,7 @@ pub struct ChatAgentRunner {
     provider: Arc<dyn ChatProvider>,
     fallback_policy: AgentFallbackPolicy,
     request_decorator: Arc<dyn ProviderRequestDecorator>,
+    hook: Arc<dyn AgentRunHook>,
 }
 
 impl ChatAgentRunner {
@@ -81,6 +83,7 @@ impl ChatAgentRunner {
             provider,
             fallback_policy: AgentFallbackPolicy::default(),
             request_decorator: Arc::new(NoopProviderRequestDecorator),
+            hook: Arc::new(NoopAgentRunHook),
         }
     }
 
@@ -94,6 +97,11 @@ impl ChatAgentRunner {
         request_decorator: Arc<dyn ProviderRequestDecorator>,
     ) -> Self {
         self.request_decorator = request_decorator;
+        self
+    }
+
+    pub fn with_hook(mut self, hook: Arc<dyn AgentRunHook>) -> Self {
+        self.hook = hook;
         self
     }
 }
@@ -118,6 +126,12 @@ impl AgentRunner for ChatAgentRunner {
             return Ok(AgentRunOutcome::continue_without_result());
         }
 
+        let run_context = AgentRunContext::from_event(event);
+        let lifecycle = AgentLifecycleEvent::from_context(&run_context);
+        self.hook
+            .on_event(AgentHookEvent::AgentBegin(lifecycle.clone()))
+            .await?;
+
         self.request_decorator
             .decorate(event, &mut envelope.request)
             .await?;
@@ -137,6 +151,12 @@ impl AgentRunner for ChatAgentRunner {
                 )));
             }
         };
+        self.hook
+            .on_event(AgentHookEvent::AgentDone(AgentDoneEvent::new(
+                lifecycle,
+                response.chain.clone(),
+            )))
+            .await?;
 
         Ok(AgentRunOutcome::with_result(MessageEventResult::llm(
             response.chain,

@@ -1,7 +1,7 @@
 {
   "id": "TASK-077",
   "title": "Define agent hook, run-context, response event, and tool-image-cache boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "agent-run-context-hook-boundary",
   "description": "TASK-025 and TASK-028 created the runner, request decorator, persona, tool-loop policy, and context-window boundaries. AstrBot still separates run context, hooks, response/message event shapes, and tool-image cache behavior around the agent. Rust should define those boundaries before tool-loop, multimodal, live feedback, and plugin hooks expand the runner directly.",
@@ -36,5 +36,28 @@
     ],
     "verification_command": "cargo test -p astrbot-agent && cargo test -p astrbot-pipeline && cargo clippy --workspace -- -D warnings"
   },
-  "risk": "high"
+  "risk": "high",
+  "completed_at": "2026-05-17T14:04:14+08:00",
+  "files_modified": [
+    "crates/astrbot-agent/src/lib.rs",
+    "crates/astrbot-agent/src/runner.rs",
+    "crates/astrbot-agent/src/hook/mod.rs",
+    "crates/astrbot-agent/src/hook/event.rs",
+    "crates/astrbot-agent/src/message.rs",
+    "crates/astrbot-agent/src/run_context.rs",
+    "crates/astrbot-agent/src/response.rs",
+    "crates/astrbot-agent/src/tool_image_cache.rs",
+    "crates/astrbot-agent/src/tests.rs",
+    "crates/astrbot-pipeline/src/context/mod.rs",
+    "crates/astrbot-pipeline/src/stages/provider.rs",
+    "crates/astrbot-pipeline/tests/process_stage/fallback.rs",
+    "crates/astrbot-pipeline/tests/process_stage/plugin_provider_request.rs",
+    "crates/astrbot-pipeline/tests/process_stage/support.rs"
+  ],
+  "verification": [
+    "cargo fmt --all",
+    "cargo test -p astrbot-agent",
+    "cargo test -p astrbot-pipeline",
+    "cargo clippy --workspace -- -D warnings"
+  ]
 }

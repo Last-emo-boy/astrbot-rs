@@ -1,7 +1,7 @@
 {
   "id": "TASK-080",
   "title": "Define session rule, scoped preference, and batch session management boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "session-rule-preference-boundary",
   "description": "Rust currently has provider preference and session status ports, but AstrBot's session management routes support scoped session rules, provider preferences by capability, KB/plugin/service config, group management, and batch updates by unified message origin. Define a session rule boundary before dashboard session management or per-session feature toggles expand storage, pipeline, and web handlers independently.",

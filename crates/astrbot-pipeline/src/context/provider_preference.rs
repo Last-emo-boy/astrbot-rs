@@ -2,8 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use astrbot_core::{MessageEvent, Result};
+use astrbot_session::{ProviderCapability, SessionProviderPreference};
 use astrbot_storage::{
     InMemoryProviderPreferenceRepository, ProviderPreferenceRecord, ProviderPreferenceRepository,
+    SessionRuleRepository,
 };
 use async_trait::async_trait;
 
@@ -42,6 +44,14 @@ impl InMemoryProviderPreferencePort {
         Self { repository }
     }
 
+    pub fn with_session_rule_repository(repository: Arc<dyn SessionRuleRepository>) -> Self {
+        Self {
+            repository: Arc::new(InMemoryProviderPreferenceRepository::with_session_rules(
+                repository,
+            )),
+        }
+    }
+
     pub async fn set_preferred_chat_provider(
         &self,
         session_id: impl Into<String>,
@@ -72,6 +82,55 @@ impl ProviderPreferencePort for InMemoryProviderPreferencePort {
         );
         self.repository
             .preferred_chat_provider_id(&platform_session, &event.session.conversation_id)
+            .await
+    }
+}
+
+pub struct ScopedProviderPreferencePort {
+    repository: Arc<dyn SessionRuleRepository>,
+}
+
+impl ScopedProviderPreferencePort {
+    pub fn new(repository: Arc<dyn SessionRuleRepository>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn set_preferred_provider(
+        &self,
+        session_id: impl Into<String>,
+        capability: ProviderCapability,
+        provider_id: impl Into<String>,
+    ) -> Result<()> {
+        let session_id = session_id.into();
+        if let Some(preference) = SessionProviderPreference::new(capability, provider_id) {
+            self.repository
+                .set_provider_preference(&session_id, preference)
+                .await?;
+        }
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl ProviderPreferencePort for ScopedProviderPreferencePort {
+    async fn preferred_chat_provider_id(&self, event: &MessageEvent) -> Result<Option<String>> {
+        let platform_session = format!(
+            "{}:{}",
+            event.session.platform_id, event.session.conversation_id
+        );
+        if let Some(provider_id) = self
+            .repository
+            .provider_preference(&platform_session, ProviderCapability::ChatCompletion)
+            .await?
+        {
+            return Ok(Some(provider_id));
+        }
+
+        self.repository
+            .provider_preference(
+                &event.session.conversation_id,
+                ProviderCapability::ChatCompletion,
+            )
             .await
     }
 }

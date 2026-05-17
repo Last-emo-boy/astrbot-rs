@@ -8,6 +8,7 @@ mod platforms;
 mod plugin_market;
 mod plugins;
 mod providers;
+mod session_rules;
 mod skills;
 mod status;
 mod tools;
@@ -59,6 +60,7 @@ pub use plugin_market::{
 };
 pub use plugins::{PluginHandlerManagementResponse, PluginManagementResponse};
 pub use providers::ProviderManagementResponse;
+pub use session_rules::ManagementSessionRuleState;
 pub use skills::{
     ManagementSkillActivationRequest, ManagementSkillActivationResponse,
     ManagementSkillCatalogResponse, ManagementSkillDeletePlanRequest,
@@ -81,6 +83,7 @@ pub struct ManagementApiState {
     file_downloads: Option<ManagementFileDownloadState>,
     backup: Option<ManagementBackupState>,
     chat_projects: Option<ManagementChatProjectState>,
+    session_rules: Option<ManagementSessionRuleState>,
     skills: Option<ManagementSkillState>,
     tools: Option<ManagementToolState>,
 }
@@ -100,6 +103,7 @@ impl ManagementApiState {
             file_downloads: None,
             backup: None,
             chat_projects: None,
+            session_rules: None,
             skills: None,
             tools: None,
         }
@@ -127,6 +131,11 @@ impl ManagementApiState {
 
     pub fn with_chat_projects(mut self, chat_projects: ManagementChatProjectState) -> Self {
         self.chat_projects = Some(chat_projects);
+        self
+    }
+
+    pub fn with_session_rules(mut self, session_rules: ManagementSessionRuleState) -> Self {
+        self.session_rules = Some(session_rules);
         self
     }
 
@@ -184,6 +193,10 @@ impl ManagementApiState {
         self.chat_projects.as_ref()
     }
 
+    pub fn session_rules(&self) -> Option<&ManagementSessionRuleState> {
+        self.session_rules.as_ref()
+    }
+
     pub fn skills(&self) -> Option<&ManagementSkillState> {
         self.skills.as_ref()
     }
@@ -228,6 +241,42 @@ fn management_routes() -> Router<ManagementApiState> {
         .route("/api/management/config/apply", post(config::apply_update))
         .route("/api/management/plugin-market", get(plugin_market::catalog))
         .route("/api/management/chat-projects", post(chat_projects::list))
+        .route(
+            "/api/management/session-rules",
+            get(session_rules::list_rules),
+        )
+        .route(
+            "/api/management/session-rules/update",
+            post(session_rules::update_rule),
+        )
+        .route(
+            "/api/management/session-rules/delete",
+            post(session_rules::delete_rule),
+        )
+        .route(
+            "/api/management/session-rules/batch-service",
+            post(session_rules::batch_update_service),
+        )
+        .route(
+            "/api/management/session-rules/batch-provider",
+            post(session_rules::batch_update_provider),
+        )
+        .route(
+            "/api/management/session-rules/groups",
+            get(session_rules::list_groups),
+        )
+        .route(
+            "/api/management/session-rules/groups/upsert",
+            post(session_rules::upsert_group),
+        )
+        .route(
+            "/api/management/session-rules/groups/patch",
+            post(session_rules::patch_group),
+        )
+        .route(
+            "/api/management/session-rules/groups/delete",
+            post(session_rules::delete_group),
+        )
         .route(
             "/api/management/chat-projects/create",
             post(chat_projects::create),

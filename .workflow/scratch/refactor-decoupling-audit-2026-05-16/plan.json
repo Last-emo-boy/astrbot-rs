@@ -3,7 +3,7 @@
   "status": "in_progress",
   "strategy": "incremental, facade-preserving module splits; do not change public behavior in the first pass",
   "created_at": "2026-05-16T08:50:00+08:00",
-  "updated_at": "2026-05-17T14:30:08+08:00",
+  "updated_at": "2026-05-17T14:50:00+08:00",
   "total_tasks": 90,
   "ordering_rationale": "Split runtime and provider first because new parity work currently lands there. Then split web/core/pipeline boundaries that feed dashboard and platform work.",
   "tasks": [
@@ -254,7 +254,7 @@
       "priority": 11,
       "risk": "low",
       "category": "testability",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-pipeline/tests/process_stage.rs",
         "crates/astrbot-platform/src/tests.rs",

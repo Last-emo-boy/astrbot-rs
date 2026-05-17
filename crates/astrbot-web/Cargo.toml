@@ -11,6 +11,7 @@ astrbot-platform = { path = "../astrbot-platform" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
 astrbot-runtime = { path = "../astrbot-runtime" }
+astrbot-session = { path = "../astrbot-session" }
 astrbot-skill = { path = "../astrbot-skill" }
 astrbot-storage = { path = "../astrbot-storage" }
 astrbot-tool = { path = "../astrbot-tool" }

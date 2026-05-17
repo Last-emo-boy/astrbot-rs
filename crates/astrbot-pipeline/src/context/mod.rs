@@ -26,6 +26,7 @@ pub use preprocess::{
 };
 pub use provider_preference::{
     InMemoryProviderPreferencePort, NoProviderPreferencePort, ProviderPreferencePort,
+    ScopedProviderPreferencePort,
 };
 pub use quote::{NoQuoteContextPolicy, QuoteContextPolicy, SelectedTextQuoteContextPolicy};
 pub use result::ResultDecorateConfig;

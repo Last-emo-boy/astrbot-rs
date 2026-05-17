@@ -12,6 +12,7 @@ use astrbot_provider::{
     ChatProviderConfig, ProviderManager, ProviderManagerConfigSet, ProviderRegistry,
 };
 use astrbot_runtime::{RuntimeConfig, RuntimeConfigService};
+use astrbot_session::ProviderCapability;
 use astrbot_skill::{
     SkillCatalog, SkillDescriptor, SkillSandboxCache, SkillSandboxEntry, SkillSource,
 };
@@ -21,7 +22,7 @@ use astrbot_storage::{
     BackupImportPrecheck, BackupImportResult, BackupJobService, BackupManifest,
     BackupRepositoryPort, BackupTableDump, ChatProjectRepository, FileTokenRecord,
     FileTokenRepository, FileTokenScope, InMemoryChatProjectRepository,
-    InMemoryFileTokenRepository, PlatformSessionRecord,
+    InMemoryFileTokenRepository, InMemorySessionRuleRepository, PlatformSessionRecord,
 };
 use astrbot_tool::{ToolCatalog, ToolDescriptor, ToolSource, ToolSourceMetadata};
 use async_trait::async_trait;
@@ -34,9 +35,9 @@ use tokio::sync::mpsc;
 
 use crate::{
     DashboardAuthPolicy, ManagementApiState, ManagementAuthState, ManagementBackupState,
-    ManagementChatProjectState, ManagementFileDownloadState, ManagementSkillState,
-    ManagementStatusResponse, ManagementToolState, PluginMarketManagementState, management_router,
-    management_router_with_auth,
+    ManagementChatProjectState, ManagementFileDownloadState, ManagementSessionRuleState,
+    ManagementSkillState, ManagementStatusResponse, ManagementToolState,
+    PluginMarketManagementState, management_router, management_router_with_auth,
 };
 
 use super::support::{get, get_with_bearer, post_json, response_json};
@@ -388,6 +389,91 @@ async fn management_chat_project_routes_enforce_creator_ownership() {
     let sessions: serde_json::Value = response_json(sessions_response).await;
     assert_eq!(sessions["sessions"][0]["session_id"], "session-alice");
     assert_eq!(sessions["sessions"][0]["display_name"], "Alice chat");
+}
+
+#[tokio::test]
+async fn management_session_rule_routes_delegate_to_typed_repositories() {
+    let repository = Arc::new(InMemorySessionRuleRepository::new());
+    let state = management_state_fixture().with_session_rules(ManagementSessionRuleState::new(
+        repository.clone(),
+        repository,
+    ));
+    let router = management_router(state);
+
+    let update_response = post_json(
+        router.clone(),
+        "/api/management/session-rules/update",
+        json!({
+            "umo": "webchat:group:room-1",
+            "key": { "type": "service" },
+            "value": {
+                "kind": "service",
+                "session_enabled": true,
+                "llm_enabled": false,
+                "tts_enabled": true,
+                "custom_name": "Room One"
+            }
+        }),
+    )
+    .await;
+    assert_eq!(update_response.status(), StatusCode::OK);
+
+    let provider_batch = post_json(
+        router.clone(),
+        "/api/management/session-rules/batch-provider",
+        json!({
+            "scope": "all",
+            "all_umos": ["webchat:group:room-1", "webchat:private:user-1"],
+            "capability": ProviderCapability::ChatCompletion,
+            "provider_id": "provider-a"
+        }),
+    )
+    .await;
+    assert_eq!(provider_batch.status(), StatusCode::OK);
+    let batch_payload: serde_json::Value = response_json(provider_batch).await;
+    assert_eq!(batch_payload["success_count"], 2);
+
+    let create_group = post_json(
+        router.clone(),
+        "/api/management/session-rules/groups/upsert",
+        json!({
+            "id": "team",
+            "name": "Team",
+            "umos": ["webchat:group:room-1"]
+        }),
+    )
+    .await;
+    assert_eq!(create_group.status(), StatusCode::OK);
+
+    let service_batch = post_json(
+        router.clone(),
+        "/api/management/session-rules/batch-service",
+        json!({
+            "scope": { "custom_group": "team" },
+            "all_umos": [],
+            "patch": { "session_enabled": false }
+        }),
+    )
+    .await;
+    assert_eq!(service_batch.status(), StatusCode::OK);
+
+    let list_response = get(router.clone(), "/api/management/session-rules").await;
+    assert_eq!(list_response.status(), StatusCode::OK);
+    let list: serde_json::Value = response_json(list_response).await;
+    assert_eq!(list["rules"].as_array().expect("rules").len(), 2);
+    assert!(
+        list["available_rule_keys"]
+            .as_array()
+            .expect("keys")
+            .iter()
+            .any(|key| key == &json!({ "type": "provider", "capability": "chat_completion" }))
+    );
+
+    let groups_response = get(router, "/api/management/session-rules/groups").await;
+    assert_eq!(groups_response.status(), StatusCode::OK);
+    let groups: serde_json::Value = response_json(groups_response).await;
+    assert_eq!(groups["groups"][0]["id"], "team");
+    assert_eq!(groups["groups"][0]["umo_count"], 1);
 }
 
 #[tokio::test]

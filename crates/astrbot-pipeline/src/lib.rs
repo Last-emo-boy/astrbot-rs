@@ -14,8 +14,9 @@ pub use context::{
     NoopPreprocessPathMapper, PipelineContext, PreAckConfig, PreAckReactionSink, PrefixPathMapper,
     PrefixPathMapping, PreprocessConfig, PreprocessPathMapper, ProviderFallbackConfig,
     ProviderPreferencePort, QuoteContextPolicy, RateLimitConfig, RateLimitStrategy,
-    ResultDecorateConfig, SelectedTextQuoteContextPolicy, SessionContextPort, SessionStatusPort,
-    SpeechToTextPreprocessConfig, WakeCheckConfig, WhitelistPolicyConfig, strip_file_scheme,
+    ResultDecorateConfig, ScopedProviderPreferencePort, SelectedTextQuoteContextPolicy,
+    SessionContextPort, SessionStatusPort, SpeechToTextPreprocessConfig, WakeCheckConfig,
+    WhitelistPolicyConfig, strip_file_scheme,
 };
 pub use registry::{
     CONTENT_SAFETY_STAGE_ORDER, CONTENT_SAFETY_STAGE_TYPE, PLUGIN_STAGE_ORDER, PLUGIN_STAGE_TYPE,

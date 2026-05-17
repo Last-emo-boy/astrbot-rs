@@ -12,6 +12,7 @@ mod platform_binding;
 mod provider_preference;
 mod repository;
 mod schema;
+mod session_rule;
 mod sqlite;
 mod stats;
 mod temp_artifact;
@@ -63,6 +64,10 @@ pub use repository::{
     RepositoryBackendKind, RepositoryImplementationDescriptor, StorageRepositoryBoundary,
 };
 pub use schema::{StorageColumn, StorageColumnType, StorageSchema, StorageTable};
+pub use session_rule::{
+    InMemorySessionRuleRepository, SessionBatchUpdateReport, SessionGroupRepository,
+    SessionRuleRepository,
+};
 pub use sqlite::{SqlitePragma, SqliteStorageConfig, SqliteStoragePlan};
 pub use stats::{InMemoryPlatformStatsRepository, PlatformStatsRecord, PlatformStatsRepository};
 pub use temp_artifact::{

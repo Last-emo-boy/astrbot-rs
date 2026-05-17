@@ -1,8 +1,11 @@
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::Arc;
 
-use astrbot_core::{AstrbotError, Result};
+use astrbot_core::Result;
+use astrbot_session::{ProviderCapability, SessionProviderPreference, SessionRuleKey};
 use async_trait::async_trait;
+
+use crate::{InMemorySessionRuleRepository, SessionRuleRepository};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProviderPreferenceRecord {
@@ -37,14 +40,25 @@ pub trait ProviderPreferenceRepository: Send + Sync {
     ) -> Result<()>;
 }
 
-#[derive(Default)]
 pub struct InMemoryProviderPreferenceRepository {
-    chat_provider_ids: RwLock<HashMap<String, String>>,
+    session_rules: Arc<dyn SessionRuleRepository>,
 }
 
 impl InMemoryProviderPreferenceRepository {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            session_rules: Arc::new(InMemorySessionRuleRepository::new()),
+        }
+    }
+
+    pub fn with_session_rules(session_rules: Arc<dyn SessionRuleRepository>) -> Self {
+        Self { session_rules }
+    }
+}
+
+impl Default for InMemoryProviderPreferenceRepository {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -55,14 +69,17 @@ impl ProviderPreferenceRepository for InMemoryProviderPreferenceRepository {
         platform_session_id: &str,
         conversation_id: &str,
     ) -> Result<Option<String>> {
-        let preferences = self
-            .chat_provider_ids
-            .read()
-            .map_err(|err| AstrbotError::Pipeline(format!("provider preference lock: {err}")))?;
-        Ok(preferences
-            .get(platform_session_id)
-            .or_else(|| preferences.get(conversation_id))
-            .cloned())
+        if let Some(provider_id) = self
+            .session_rules
+            .provider_preference(platform_session_id, ProviderCapability::ChatCompletion)
+            .await?
+        {
+            return Ok(Some(provider_id));
+        }
+
+        self.session_rules
+            .provider_preference(conversation_id, ProviderCapability::ChatCompletion)
+            .await
     }
 
     async fn set_preferred_chat_provider(&self, record: ProviderPreferenceRecord) -> Result<()> {
@@ -72,29 +89,45 @@ impl ProviderPreferenceRepository for InMemoryProviderPreferenceRepository {
             return Ok(());
         }
 
-        self.chat_provider_ids
-            .write()
-            .map_err(|err| AstrbotError::Pipeline(format!("provider preference lock: {err}")))?
-            .insert(session_id, provider_id);
-        Ok(())
+        self.session_rules
+            .set_provider_preference(
+                &session_id,
+                SessionProviderPreference::new(ProviderCapability::ChatCompletion, provider_id)
+                    .expect("provider id was validated"),
+            )
+            .await
     }
 
     async fn snapshot_chat_provider_preferences(&self) -> Result<HashMap<String, String>> {
-        self.chat_provider_ids
-            .read()
-            .map_err(|err| AstrbotError::Pipeline(format!("provider preference lock: {err}")))
-            .map(|preferences| preferences.clone())
+        let mut preferences = HashMap::new();
+        for rule_set in self.session_rules.list_rule_sets().await? {
+            if let Some(provider_id) = rule_set.provider_for(ProviderCapability::ChatCompletion) {
+                preferences.insert(rule_set.umo.clone(), provider_id.to_string());
+            }
+        }
+        Ok(preferences)
     }
 
     async fn replace_chat_provider_preferences(
         &self,
         preferences: HashMap<String, String>,
     ) -> Result<()> {
-        let mut current = self
-            .chat_provider_ids
-            .write()
-            .map_err(|err| AstrbotError::Pipeline(format!("provider preference lock: {err}")))?;
-        *current = preferences;
+        for rule_set in self.session_rules.list_rule_sets().await? {
+            self.session_rules
+                .delete_rule(
+                    &rule_set.umo,
+                    SessionRuleKey::Provider(ProviderCapability::ChatCompletion),
+                )
+                .await?;
+        }
+
+        for (session_id, provider_id) in preferences {
+            self.set_preferred_chat_provider(ProviderPreferenceRecord::new(
+                session_id,
+                provider_id,
+            ))
+            .await?;
+        }
         Ok(())
     }
 }

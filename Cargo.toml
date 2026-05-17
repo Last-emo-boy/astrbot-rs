@@ -11,6 +11,7 @@ members = [
     "crates/astrbot-maintenance",
     "crates/astrbot-media",
     "crates/astrbot-memory",
+    "crates/astrbot-metrics",
     "crates/astrbot-net",
     "crates/astrbot-observability",
     "crates/astrbot-provider",

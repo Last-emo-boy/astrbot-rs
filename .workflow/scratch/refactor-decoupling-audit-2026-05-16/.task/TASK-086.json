@@ -1,7 +1,7 @@
 {
   "id": "TASK-086",
   "title": "Introduce metrics, usage accounting, installation identity, and stats sink boundaries",
-  "status": "pending",
+  "status": "completed",
   "type": "refactor",
   "category": "metrics-usage-boundary",
   "description": "TASK-040 covers trace/log/status events and TASK-078 covers provider response metadata. AstrBot also has a metrics surface for installation identity, remote metric upload, platform message counts, LLM/TTS stats, token usage persistence, and dashboard stat aggregation. Rust should keep metrics and usage accounting distinct from observability logs, provider parsers, platform adapters, and storage table helpers.",

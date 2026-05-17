@@ -519,3 +519,12 @@
 - AstrBot reference: `dashboard/routes/knowledge_base.py`, `core/knowledge_base/kb_mgr.py`, `core/knowledge_base/kb_helper.py`, and `core/knowledge_base/kb_db_sqlite.py`.
 - Adjustment: next implementation pointer moves to `TASK-086`.
 - Verification: `cargo fmt --all`, `cargo test -p astrbot-kb`, `cargo test -p astrbot-web`, `cargo test --workspace`, and `cargo clippy --workspace -- -D warnings` passed.
+
+## Round 86 - TASK-086 Metrics Usage Boundary
+
+- Scope: new `astrbot-metrics` crate for metric events, usage accounting, installation identity, local stats sinks, and optional remote upload payloads.
+- Strategy: follow AstrBot `Metric.upload`, dashboard `stat.py`, agent stats, TTS stats, and platform stats persistence, but keep metrics separate from observability logs/traces and avoid provider/platform/dashboard reverse dependencies.
+- Result: added route-independent `MetricEvent`, `UsageRecord`/`UsageAccountant`, `MetricSink` variants, `LocalPlatformStatsSink`, `InstallationIdentity`, `MetricRedactionPolicy`, `RemoteMetricUploader`, and `RemoteMetricSink`.
+- AstrBot reference: `core/utils/metrics.py`, `dashboard/routes/stat.py`, `core/agent/runners/tool_loop_agent_runner.py`, `core/astr_agent_run_util.py`, and `core/db/po.py`.
+- Adjustment: next implementation pointer moves to `TASK-087`.
+- Verification: `cargo fmt --all`, `cargo test -p astrbot-metrics`, `cargo test -p astrbot-storage`, and `cargo clippy --workspace -- -D warnings` passed.

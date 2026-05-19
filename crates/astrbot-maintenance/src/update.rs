@@ -262,6 +262,107 @@ fn normalize_version(version: &str) -> String {
     version.trim().trim_start_matches('v').to_string()
 }
 
+/// Fetch latest release metadata from a GitHub-shaped releases API.
+///
+/// Expects a JSON response shape compatible with
+/// `https://api.github.com/repos/{owner}/{repo}/releases/latest`:
+///
+/// ```json
+/// { "tag_name": "v4.1.0", "name": "release title", "body": "notes", "published_at": "2026-05-20T00:00:00Z" }
+/// ```
+///
+/// Networking is delegated to `reqwest`; pass a custom URL if you need to
+/// proxy or mock.
+#[derive(Clone, Debug)]
+pub struct GitHubReleaseFetcher {
+    url: String,
+    user_agent: String,
+    client: reqwest::Client,
+}
+
+impl GitHubReleaseFetcher {
+    /// Build a fetcher for `owner/repo` against the public GitHub API.
+    pub fn new(owner: impl AsRef<str>, repo: impl AsRef<str>) -> Self {
+        Self::with_url(format!(
+            "https://api.github.com/repos/{}/{}/releases/latest",
+            owner.as_ref(),
+            repo.as_ref()
+        ))
+    }
+
+    /// Build a fetcher against an arbitrary URL. The endpoint must return
+    /// JSON with at least `tag_name`.
+    pub fn with_url(url: impl Into<String>) -> Self {
+        Self {
+            url: url.into(),
+            user_agent: format!("astrbot-rs/{}", env!("CARGO_PKG_VERSION")),
+            client: reqwest::Client::new(),
+        }
+    }
+
+    /// Override the User-Agent header. GitHub requires a UA on API calls.
+    pub fn with_user_agent(mut self, user_agent: impl Into<String>) -> Self {
+        self.user_agent = user_agent.into();
+        self
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    /// Hit the configured endpoint and return parsed release metadata.
+    pub async fn fetch_latest(&self) -> Result<ReleaseMetadata> {
+        let response = self
+            .client
+            .get(&self.url)
+            .header("user-agent", &self.user_agent)
+            .header("accept", "application/vnd.github+json")
+            .send()
+            .await
+            .map_err(|err| {
+                AstrbotError::Pipeline(format!("GitHub release fetch failed: {err}"))
+            })?;
+        let status = response.status();
+        let body = response.text().await.map_err(|err| {
+            AstrbotError::Pipeline(format!("GitHub release body read failed: {err}"))
+        })?;
+        if !status.is_success() {
+            return Err(AstrbotError::Pipeline(format!(
+                "GitHub release fetch returned {status}: {body}"
+            )));
+        }
+        parse_release_metadata(&body)
+    }
+}
+
+fn parse_release_metadata(body: &str) -> Result<ReleaseMetadata> {
+    let value: serde_json::Value = serde_json::from_str(body)
+        .map_err(|err| AstrbotError::Pipeline(format!("release JSON invalid: {err}")))?;
+    let tag_name = value
+        .get("tag_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AstrbotError::Pipeline("release JSON missing tag_name".to_string()))?;
+    let mut metadata = ReleaseMetadata::new(tag_name);
+    if let Some(title) = value.get("name").and_then(|v| v.as_str()) {
+        metadata = metadata.with_title(title);
+    }
+    if let Some(notes) = value.get("body").and_then(|v| v.as_str()) {
+        let notes = notes.trim();
+        if !notes.is_empty() {
+            metadata.notes = Some(notes.to_string());
+        }
+    }
+    if let Some(published) = value.get("published_at").and_then(|v| v.as_str()) {
+        let published = published.trim();
+        if !published.is_empty() {
+            metadata.published_at = Some(published.to_string());
+        }
+    }
+    Ok(metadata)
+}
+
 fn non_empty(value: impl Into<String>) -> Option<String> {
     let value = value.into();
     (!value.trim().is_empty()).then_some(value)
@@ -274,7 +375,10 @@ fn to_metadata<T: Serialize>(value: &T) -> Result<serde_json::Value> {
 
 #[cfg(test)]
 mod tests {
-    use super::{PlannedReleaseUpdateService, ProjectUpdatePlan, ReleaseUpdateService};
+    use super::{
+        GitHubReleaseFetcher, PlannedReleaseUpdateService, ProjectUpdatePlan, ReleaseUpdateService,
+        parse_release_metadata,
+    };
     use crate::operation::InMemoryMaintenanceOperationStore;
 
     #[tokio::test]
@@ -302,5 +406,35 @@ mod tests {
 
         assert_eq!(summary.operation_id.as_str(), "project-update-v4.1.0");
         assert_eq!(summary.progress.events.len(), 4);
+    }
+
+    #[test]
+    fn github_fetcher_builds_expected_url() {
+        let fetcher = GitHubReleaseFetcher::new("Soulter", "AstrBot");
+        assert_eq!(
+            fetcher.url(),
+            "https://api.github.com/repos/Soulter/AstrBot/releases/latest"
+        );
+    }
+
+    #[test]
+    fn parse_release_metadata_extracts_tag_title_notes_published() {
+        let body = r#"{
+            "tag_name": "v4.1.0",
+            "name": "Release 4.1.0",
+            "body": "Lots of fixes.",
+            "published_at": "2026-05-20T00:00:00Z"
+        }"#;
+        let metadata = parse_release_metadata(body).unwrap();
+        assert_eq!(metadata.version, "v4.1.0");
+        assert_eq!(metadata.title.as_deref(), Some("Release 4.1.0"));
+        assert_eq!(metadata.notes.as_deref(), Some("Lots of fixes."));
+        assert_eq!(metadata.published_at.as_deref(), Some("2026-05-20T00:00:00Z"));
+    }
+
+    #[test]
+    fn parse_release_metadata_rejects_missing_tag() {
+        let body = r#"{ "name": "no tag" }"#;
+        assert!(parse_release_metadata(body).is_err());
     }
 }

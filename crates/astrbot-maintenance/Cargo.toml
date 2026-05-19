@@ -13,6 +13,7 @@ astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-runtime = { path = "../astrbot-runtime" }
 astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
+reqwest.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -2,6 +2,9 @@ mod booter;
 mod components;
 mod runtime;
 mod skill_sync;
+pub mod subprocess;
+
+pub use subprocess::{SubprocessOutcome, SubprocessSpec, run_subprocess};
 
 pub use booter::{
     BooterKind, BooterRegistry, BooterSession, ComputerBooter, ComputerRuntimeConfig,

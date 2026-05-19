@@ -598,7 +598,7 @@
       "title": "Computer Sandbox — 子进程 + OS 权限隔离骨架（shell / python / fs）",
       "category": "computer-sandbox",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-computer/src/runtime/process.rs",
         "crates/astrbot-computer/src/tools/shell.rs",
@@ -699,7 +699,7 @@
       "title": "Updater — 版本检查 + 拉取 + 重启编排",
       "category": "ops",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-maintenance/src/updater/",
         "crates/astrbot-cli/src/commands/update.rs"

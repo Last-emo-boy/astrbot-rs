@@ -1,0 +1,10 @@
+[package]
+name = "astrbot-plugin-sdk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Rust SDK for building AstrBot WASM plugins"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

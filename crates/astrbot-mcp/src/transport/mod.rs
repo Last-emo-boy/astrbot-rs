@@ -6,6 +6,12 @@ use serde_json::Value;
 
 use crate::{McpError, McpReconnectPolicy, McpResult, McpServerConfig, McpTransport};
 
+pub mod http;
+pub mod stdio;
+
+pub use http::{McpStreamableHttpSession, parse_frames_body};
+pub use stdio::{McpStdioSession, spawn_stdio_session};
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct McpProcessCommand {
     pub command: String,

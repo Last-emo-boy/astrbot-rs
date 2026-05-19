@@ -1,0 +1,11 @@
+[package]
+name = "echo-plugin"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+astrbot-plugin-sdk = { path = "../../../crates/astrbot-plugin-sdk" }

@@ -1,0 +1,7 @@
+id = "echo"
+version = "0.1.0"
+description = "Echo every argument back to the sender."
+abi_major = 1
+abi_minor = 0
+entry = "echo_plugin.wasm"
+capabilities = ["messaging"]

@@ -1,0 +1,754 @@
+{
+  "scope": "Close the parity gap with Python Astrbot. 36 tasks tagged P0/P1/P2.",
+  "status": "active",
+  "strategy": "P0 lands the WASM plugin sandbox foundation, fills five highest-value Wave1 platforms, completes Dashboard chat/config/forms surface, and brings MCP to functional parity (stdio + http). P1 migrates the 13 builtin_stars, deepens KB/memory/T2I, fleshes out remaining dashboard surfaces, and adds Pipeline safety-check depth. P2 covers Computer Sandbox (subprocess + OS isolation), third-party agent proxies, residual Wave1 adapters, Prometheus metrics, Updater, Skills system body, Playwright e2e, and the optional personal-WeChat adapter. Tasks are ordered so that scaffolding (WASM ABI, schema-form engine, MCP transport) precedes content (plugin migrations, individual pages, individual platforms).",
+  "created_at": "2026-05-20T00:00:00+08:00",
+  "updated_at": "2026-05-20T00:00:00+08:00",
+  "total_tasks": 36,
+  "ordering_rationale": "P0 first because it unblocks downstream P1/P2: WASM ABI must exist before any star migrates to it (TASK-P1-001..006); schema-form engine must exist before Provider/Platform pages get real forms (TASK-P0-012 unblocks TASK-P1-010..012); MCP transport must work before tools surfaced via MCP can be exercised. Within P0, sandbox + dashboard + platforms + MCP are roughly parallel; pick whichever has highest momentum. Within P1, builtin_stars come first because they unlock the largest user-visible behavior surface. P2 is acknowledged backlog, not a commitment.",
+  "tasks": [
+    {
+      "id": "TASK-P0-001",
+      "priority": "P0",
+      "title": "WASM Plugin Sandbox: wasmtime engine integration",
+      "category": "sandbox-foundation",
+      "risk": "high",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/Cargo.toml",
+        "crates/astrbot-plugin/src/wasm/",
+        "crates/astrbot-plugin/src/wasm/engine.rs",
+        "crates/astrbot-plugin/src/wasm/store.rs",
+        "crates/astrbot-plugin/src/wasm/resource_limits.rs"
+      ],
+      "deliverables": [
+        "wasmtime workspace dep added, default features only (no cranelift on miri)",
+        "Engine builder: epoch interruption + fuel metering + memory limit + table limit + instance limit configurable per plugin",
+        "Store wraps host context: Tokio handle, plugin id, scoped permissions",
+        "ResourceLimits enforced via ResourceLimiter trait; OOM → trap, not panic",
+        "Unit tests: oversize alloc traps, fuel exhaustion traps, epoch interrupt stops infinite loop"
+      ],
+      "verification": "cargo test -p astrbot-plugin wasm::engine 至少 3 用例通过",
+      "result": "wasmtime 44 added with cranelift+component-model+gc-drc+wat features. WasmEngine, WasmStoreContext, PluginResourceLimits/Limiter implemented. 8 tests pass: fuel_exhaustion_traps_infinite_loop / epoch_interruption_halts_infinite_loop / memory_growth_denied_above_limit + resource_limits suite. Full plugin crate: 53/53 tests green."
+    },
+    {
+      "id": "TASK-P0-002",
+      "priority": "P0",
+      "title": "WASM Plugin ABI: host functions + message types",
+      "category": "sandbox-foundation",
+      "risk": "high",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src/wasm/abi/mod.rs",
+        "crates/astrbot-plugin/src/wasm/abi/messages.rs",
+        "crates/astrbot-plugin/src/wasm/abi/host_fns.rs",
+        "crates/astrbot-plugin-sdk/"
+      ],
+      "deliverables": [
+        "ABI versioning (semver, plugin manifest 声明) + 拒载不兼容版本",
+        "Host fn surface (V1): log/emit, send_message, register_command, call_tool, kv_get/set, http_fetch (受 capability 控)",
+        "Message types passed as length-prefixed UTF-8 JSON or postcard (基准测后定)",
+        "astrbot-plugin-sdk crate (Rust): #[plugin_entry], #[command] 派生宏",
+        "ABI 文档（docs/wasm-plugin-abi.md）"
+      ],
+      "verification": "cargo test -p astrbot-plugin abi::*; 一个 hello-world Rust 插件 cargo build --target wasm32-wasip1 通过并被宿主加载",
+      "result": "ABI v1.0 implemented: ABI_VERSION_MAJOR/MINOR constants + pack/unpack helpers + AbiError. messages.rs: PluginInitRequest/Response, PluginEvent (Message/Command/Ping), PluginResponse (Replies/Pong/NoOp/Error), LogRecord/LogLevel as JSON wire types. host_state.rs: AbiHostState with capability gating + log/outbound buffers. host_fns.rs: Linker with host_log, host_send_message, host_abi_version + memory read helper. 11 abi tests pass (JSON roundtrip + capability deny/allow + version packing). astrbot-plugin-sdk crate + derive macros deferred to TASK-P0-004."
+    },
+    {
+      "id": "TASK-P0-003",
+      "priority": "P0",
+      "title": "WASM Plugin Loader: lifecycle + capability gating + hot reload",
+      "category": "sandbox-foundation",
+      "risk": "high",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin/src/wasm/loader.rs",
+        "crates/astrbot-plugin/src/wasm/manifest.rs",
+        "crates/astrbot-plugin/src/wasm/capability.rs",
+        "crates/astrbot-plugin/src/loader/",
+        "crates/astrbot-web/src/management/plugins.rs"
+      ],
+      "deliverables": [
+        "plugin.toml manifest 解析（id, version, abi_version, capabilities, entry）",
+        "Capability 模型: log/storage/network/messaging/tool 分级，未声明禁用",
+        "Loader: load → instantiate → init → ready → drain → unload；中断重启策略",
+        "File watcher: 监听 plugins/*.wasm 变更，graceful reload（旧 store drain → 新 store install）",
+        "/api/management/plugins 路由对接新 loader：列出、启停、重载、卸载"
+      ],
+      "verification": "cargo test -p astrbot-plugin loader::*; 集成测试：加载一插件 → 触发命令 → 替换 .wasm → 旧实例 drain → 新实例处理新请求",
+      "result": "Capability enum (Log/Messaging/Kv/HttpFetch/Tools) + CapabilitySet with deny-default. WasmPluginManifest parses flat TOML (id/version/abi_major/abi_minor/entry/capabilities) with strict validation. WasmPluginLoader: load_bytes/load_file/reload/unload with full astrbot_init round-trip — requires memory + astrbot_alloc + astrbot_init exports. WasmLifecycle (Instantiated/Ready/Failed/Unloaded). 14 new tests bring wasm:: total to 33 green. File watcher daemon + /api/management/plugins wiring deferred to follow-up."
+    },
+    {
+      "id": "TASK-P0-004",
+      "priority": "P0",
+      "title": "WASM Plugin SDK: Rust crate + 示例插件 + 文档",
+      "category": "sandbox-foundation",
+      "risk": "medium",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-plugin-sdk/Cargo.toml",
+        "crates/astrbot-plugin-sdk/src/lib.rs",
+        "crates/astrbot-plugin-sdk/src/macros.rs",
+        "examples/wasm-plugins/echo/",
+        "examples/wasm-plugins/web-search/",
+        "docs/wasm-plugin-guide.md"
+      ],
+      "deliverables": [
+        "astrbot-plugin-sdk: 高层 API (Plugin::register, Command::on, Context::send 等)",
+        "派生宏：#[astrbot::plugin(name, version)]、#[command(\"/echo\")]",
+        "examples/echo：30 行写一个 echo bot，cargo build 通过",
+        "examples/web-search：演示 http_fetch capability + 返回结构化消息",
+        "插件作者指南：cargo install cargo-component / wasm32-wasip1 工具链说明"
+      ],
+      "verification": "examples/wasm-plugins/echo 在主程序中加载并响应 /echo hello → 收到 hello",
+      "result": "astrbot-plugin-sdk crate created with: ABI_VERSION constants, wire types (PluginInitInfo/Response, PluginEvent, PluginResponse, OutboundMessage), Plugin trait with on_init/on_command/on_message, CommandHandlerResult helper, plugin_main! declarative macro auto-generating astrbot_alloc/_free/_init/_dispatch/_abi_version exports + bump allocator. 5 SDK tests pass. examples/wasm-plugins/echo/ delivers a 30-LOC #[no_std] echo plugin + plugin.toml. docs/wasm-plugin-abi.md documents the v1 ABI (memory protocol, required exports, host imports, capabilities, message types) with reference build commands. examples/web-search and proc-macro derive (#[plugin]/#[command]) deferred."
+    },
+    {
+      "id": "TASK-P0-005",
+      "priority": "P0",
+      "title": "Wave1 平台 — Telegram 适配器（Bot API + Long Polling/Webhook）",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/telegram.rs",
+        "crates/astrbot-platform/src/adapters/wave1/telegram_outbound.rs",
+        "crates/astrbot-platform/src/adapters/wave1/mod.rs"
+      ],
+      "deliverables": [
+        "Bot API client：getUpdates（long polling）+ webhook 双模",
+        "事件标准化：message / edited_message / callback_query → astrbot-core 事件",
+        "消息组件：text/photo/audio/video/document/sticker/voice/reply",
+        "出站：sendMessage/sendPhoto/sendAudio/sendVideo/sendDocument + parse_mode=MarkdownV2",
+        "Dashboard 平台配置 schema 暴露"
+      ],
+      "verification": "cargo test -p astrbot-platform adapters::wave1::telegram; 集成冒烟：echo 插件经 Telegram 收发",
+      "result": "已有通用 Wave1 webhook 路由 + 签名验签 + inbound JSON 解析（含 telegram update 路径）保持不变。新增 TelegramOutboundClient：endpoint_for(action) 拼 https://api.telegram.org/bot{TOKEN}/{action}；chat_id_from_session 抽取 conversation_id；requests_for_chain 把 MessageChain 拆分成 sendMessage（含 reply_to_message_id）+ sendPhoto / sendVoice / sendDocument / sendVideo。8 单元测试通过。集成到 Wave1Sink 的开关 + management/platforms 的 schema 暴露留作 follow-up。"
+    },
+    {
+      "id": "TASK-P0-006",
+      "priority": "P0",
+      "title": "Wave1 平台 — 微信公众号（weixin_official_account webhook）",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/weixin_official_account.rs",
+        "crates/astrbot-platform/src/adapters/wave1/weixin_official_account/"
+      ],
+      "deliverables": [
+        "URL 校验 (signature+timestamp+nonce+token)",
+        "XML 消息体解析（MsgType=text/image/voice/video/event）",
+        "回复 ≤ 5s 限制下的同步答复 + 客服消息异步推送",
+        "access_token 获取 + 主动定时刷新（含锁）",
+        "媒体素材上传 / 下载 API 客户端"
+      ],
+      "verification": "cargo test 公众号签名 + XML 序列化往返；集成：模拟微信回调端到端"
+    },
+    {
+      "id": "TASK-P0-007",
+      "priority": "P0",
+      "title": "Wave1 平台 — 企业微信（wecom）+ 企业微信智能机器人（wecom_ai_bot）",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/wecom.rs",
+        "crates/astrbot-platform/src/adapters/wave1/wecom_ai_bot.rs",
+        "crates/astrbot-platform/src/adapters/wave1/wecom/"
+      ],
+      "deliverables": [
+        "回调 URL 加解密（AES + PKCS#7 + base64）",
+        "应用消息接收 / 发送 client（corp_id + secret → access_token）",
+        "ai_bot 模式：webhook 拉群消息 + reply",
+        "成员/部门/外部联系人对应 astrbot UMO 映射"
+      ],
+      "verification": "cargo test wecom::crypt 加解密 + 签名；模拟回调端到端"
+    },
+    {
+      "id": "TASK-P0-008",
+      "priority": "P0",
+      "title": "Wave1 平台 — QQ 官方机器人 Webhook（qqofficial_webhook）",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/qq_official_webhook.rs",
+        "crates/astrbot-platform/src/adapters/wave1/qq_official_webhook/"
+      ],
+      "deliverables": [
+        "QQ 开放平台 webhook：sign 校验 (ed25519) + intents 路由",
+        "事件：AT_MESSAGE_CREATE / MESSAGE_CREATE / GROUP_AT_MESSAGE_CREATE / C2C_MESSAGE_CREATE",
+        "出站：通过 OpenAPI 回送（含图文 + markdown 消息）",
+        "频道 / 群 / C2C 三类 UMO 区分"
+      ],
+      "verification": "cargo test qqofficial_webhook::*; 集成：QQ 官方测试号回环"
+    },
+    {
+      "id": "TASK-P0-009",
+      "priority": "P0",
+      "title": "Wave1 平台 — QQ 频道 WSS（qqofficial，botpy 等价）",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/qq_official.rs",
+        "crates/astrbot-platform/src/adapters/wave1/qq_official/"
+      ],
+      "deliverables": [
+        "WSS gateway: identify / heartbeat / resume / reconnect backoff",
+        "intent shard 模型 + session_id 持久",
+        "Op codes：0/1/6/7/9/10/11；事件分发到 astrbot 事件",
+        "出站消息接口（频道公开消息 + 私信）"
+      ],
+      "verification": "cargo test qq_official::gateway; mock WSS 服务测试 resume 流程"
+    },
+    {
+      "id": "TASK-P0-010",
+      "priority": "P0",
+      "title": "Dashboard — MessagePartsRenderer + Markdown + KaTeX + 流式光标",
+      "category": "dashboard-functional",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/features/message-parts/",
+        "dashboard-next/src/features/message-parts/MessagePartsRenderer.tsx",
+        "dashboard-next/src/features/message-parts/ImageLightbox.tsx",
+        "dashboard-next/src/utils/markdown.ts",
+        "dashboard-next/src/utils/katex.ts",
+        "dashboard-next/src/utils/highlight.ts",
+        "dashboard-next/src/pages/chat/index.tsx",
+        "dashboard-next/src/pages/chatbox/index.tsx"
+      ],
+      "deliverables": [
+        "MessagePartsRenderer 处理 WebChatMessagePart 全部变体（Plain/Image/Reply/Record/Video/File）",
+        "Markdown 渲染：markdown-it + highlight.js + KaTeX，与 AstrBot Vue 渲染等价",
+        "Image lightbox / Video 内联 / Audio 播放器 / File 下载",
+        "Reply quoting 渲染（嵌套）+ 流式输出光标",
+        "ChatBox 单页与 Chat 多会话页共享 renderer"
+      ],
+      "verification": "Manual: 与 Python Vue 版同 conversation 截图对比；npx vite build OK；3 个固化样本快照测试"
+    },
+    {
+      "id": "TASK-P0-011",
+      "priority": "P0",
+      "title": "Dashboard — Config 树编辑器 + CodeMirror 6 + Schema 校验",
+      "category": "dashboard-functional",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/pages/config/index.tsx",
+        "dashboard-next/src/features/config-tree/",
+        "dashboard-next/src/features/config-tree/TreeView.tsx",
+        "dashboard-next/src/features/schema-form/",
+        "dashboard-next/src/features/schema-form/SchemaForm.tsx"
+      ],
+      "deliverables": [
+        "ConfigTree：与后端 management/config endpoint 对接，diff/save 语义同 legacy",
+        "CodeMirror 6 嵌入：YAML/JSON 内联编辑 + Lint",
+        "SchemaForm engine：基于 ts-rs 导出的 Schema 渲染字段（string/number/bool/enum/object/array）",
+        "字段级别 validation + dirty 状态 + 取消"
+      ],
+      "verification": "npx tsc --noEmit; npx vite build < 250KB gzip 主包；与 legacy 行为对比"
+    },
+    {
+      "id": "TASK-P0-012",
+      "priority": "P0",
+      "title": "Dashboard — Providers / Platforms / Persona / MCP / Cron Schema 表单（替换 JSON 文本框）",
+      "category": "dashboard-functional",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/pages/providers/index.tsx",
+        "dashboard-next/src/pages/platforms/index.tsx",
+        "dashboard-next/src/pages/persona/index.tsx",
+        "dashboard-next/src/pages/mcp/index.tsx",
+        "dashboard-next/src/pages/cron/index.tsx"
+      ],
+      "deliverables": [
+        "Providers：按 chat/STT/TTS/embedding/rerank bucket 分组 + 类型化字段表单 + Test-call 按钮",
+        "Platforms：15+ 适配器各自 schema 表单 + 启停按钮",
+        "Persona：字段化编辑（含 system prompt textarea + tool/mcp 启用列表）",
+        "MCP：stdio/http transport 类型化 + 工具列表预览",
+        "Cron：表达式 + 描述 + 模拟执行预览"
+      ],
+      "verification": "npx tsc --noEmit OK；3 个 provider 类型 + 3 个 platform 实测能 round-trip"
+    },
+    {
+      "id": "TASK-P0-013",
+      "priority": "P0",
+      "title": "MCP — Stdio 运输层 + JSON-RPC 容错 + 进程监督",
+      "category": "mcp-transport",
+      "risk": "high",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-mcp/src/transport/stdio.rs",
+        "crates/astrbot-mcp/src/transport/mod.rs",
+        "crates/astrbot-mcp/src/jsonrpc/",
+        "crates/astrbot-mcp/src/supervisor/"
+      ],
+      "deliverables": [
+        "Stdio transport：tokio::process::Command spawn + stdin/stdout 行帧 + framing 容错",
+        "JSON-RPC 2.0：id 关联、超时、并发请求池、notification fan-out",
+        "Supervisor：心跳、健康检查、指数退避重启、最大重启次数",
+        "工具/资源/提示生命周期事件 → astrbot-mcp 事件总线"
+      ],
+      "verification": "cargo test -p astrbot-mcp transport::stdio; mock server 端到端"
+    },
+    {
+      "id": "TASK-P0-014",
+      "priority": "P0",
+      "title": "MCP — HTTP 运输层（SSE / streaming HTTP）",
+      "category": "mcp-transport",
+      "risk": "medium",
+      "status": "completed",
+      "target_files": [
+        "crates/astrbot-mcp/src/transport/http.rs",
+        "crates/astrbot-mcp/src/transport/sse.rs"
+      ],
+      "deliverables": [
+        "HTTP transport：POST 单次请求 / SSE 双向流",
+        "Bearer 鉴权 + custom header 透传",
+        "Reconnect with Last-Event-ID",
+        "与 stdio transport 共享 jsonrpc 层"
+      ],
+      "verification": "cargo test http transport; 与本地 MCP HTTP server 端到端"
+    },
+    {
+      "id": "TASK-P1-001",
+      "priority": "P1",
+      "title": "builtin_stars 平移 — admin / alter_cmd / setunset / sid",
+      "category": "builtin-migration",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-plugin-sdk/src/builtin/admin.rs",
+        "examples/builtin-stars/admin/",
+        "examples/builtin-stars/alter_cmd/"
+      ],
+      "deliverables": [
+        "/help、/admin、/alter_cmd、/setunset、/sid 全部以 wasm 内置 star 提供",
+        "权限模型对齐：仅 admin UMO 可用",
+        "命令解析与 Python builtin_commands/*.py 等价（命令名 + 参数）"
+      ],
+      "verification": "cargo test 内置 star 集成；在 webchat 中 /help 列出所有命令"
+    },
+    {
+      "id": "TASK-P1-002",
+      "priority": "P1",
+      "title": "builtin_stars 平移 — conversation / persona / llm",
+      "category": "builtin-migration",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "examples/builtin-stars/conversation/",
+        "examples/builtin-stars/persona/",
+        "examples/builtin-stars/llm/"
+      ],
+      "deliverables": [
+        "/new、/del、/ls、/switch、/rename 对话管理",
+        "/persona <name>、/persona list 人设切换",
+        "/llm <provider>、/llm list、/llm reset 提供器切换"
+      ],
+      "verification": "对话切换不丢上下文；persona 切换出站系统提示词正确"
+    },
+    {
+      "id": "TASK-P1-003",
+      "priority": "P1",
+      "title": "builtin_stars 平移 — web_searcher (Bing / Sogou)",
+      "category": "builtin-migration",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "examples/builtin-stars/web_searcher/"
+      ],
+      "deliverables": [
+        "Bing Web Search API + Sogou 抓取双引擎",
+        "/websearch <query> 命令 + 工具暴露（Agent 可调用）",
+        "结果摘要 + 链接 + 时间戳"
+      ],
+      "verification": "Bing 模拟响应固化；插件作为工具被 Agent 调用流程通"
+    },
+    {
+      "id": "TASK-P1-004",
+      "priority": "P1",
+      "title": "builtin_stars 平移 — plugin / provider / help / tts / t2i 命令",
+      "category": "builtin-migration",
+      "risk": "low",
+      "status": "pending",
+      "target_files": [
+        "examples/builtin-stars/plugin/",
+        "examples/builtin-stars/provider/",
+        "examples/builtin-stars/help/",
+        "examples/builtin-stars/tts/",
+        "examples/builtin-stars/t2i/"
+      ],
+      "deliverables": [
+        "/plugin list/enable/disable/install/upgrade",
+        "/provider list / /provider health",
+        "/tts <text> 单次合成 + /tts on/off 自动语音",
+        "/t2i <prompt> / /t2i template <name> 出图"
+      ],
+      "verification": "每个命令 happy path 跑通；/help 输出全量"
+    },
+    {
+      "id": "TASK-P1-005",
+      "priority": "P1",
+      "title": "builtin_stars 平移 — session_controller（waking / sleeping / rate）",
+      "category": "builtin-migration",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "examples/builtin-stars/session_controller/"
+      ],
+      "deliverables": [
+        "/sleep <minutes>、/wake、/rate <limit/min> 命令",
+        "与 pipeline waking_check / rate_limit_check 阶段联动",
+        "session 级别覆盖全局策略"
+      ],
+      "verification": "命令生效后下条消息按新策略放行/拒绝"
+    },
+    {
+      "id": "TASK-P1-006",
+      "priority": "P1",
+      "title": "Long-term Memory 深度 — 群历史 + 图像描述 + 主动回复",
+      "category": "memory",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-memory/src/long_term/",
+        "crates/astrbot-memory/src/active_reply/",
+        "crates/astrbot-pipeline/src/stages/memory/"
+      ],
+      "deliverables": [
+        "群消息历史持久化（最近 N 条，可配置）",
+        "图像描述请求装饰：调用 VLM provider 把图片转描述存入记忆",
+        "主动回复触发器：消息密度 / 时间窗 / @ 触发",
+        "对话压缩：超出 token 后触发摘要 → 主线记忆"
+      ],
+      "verification": "群聊连续 100 条消息后压缩成功 + 关键事实保留"
+    },
+    {
+      "id": "TASK-P1-007",
+      "priority": "P1",
+      "title": "T2I 真正渲染 — headless browser 或服务端 Skia",
+      "category": "rendering",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-render/src/t2i/",
+        "crates/astrbot-render/src/t2i/engine.rs",
+        "crates/astrbot-render/src/t2i/templates/"
+      ],
+      "deliverables": [
+        "引擎选型决策（DECISION 节点）：headless chromium (chromiumoxide) vs femtovg+skia",
+        "默认 3 套模板（对话回顾 / 知识卡片 / 错误提示）渲染为 PNG/JPEG",
+        "T2I 命令 + Agent 工具暴露",
+        "Dashboard t2i-templates 页可预览"
+      ],
+      "verification": "3 模板渲染像素差 < 5% vs Python 版本基线"
+    },
+    {
+      "id": "TASK-P1-008",
+      "priority": "P1",
+      "title": "KB Parser 扩展 — PDF / Markdown / URL / OCR",
+      "category": "knowledge-base",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-kb/src/parser/",
+        "crates/astrbot-kb/src/parser/pdf.rs",
+        "crates/astrbot-kb/src/parser/markdown.rs",
+        "crates/astrbot-kb/src/parser/url.rs",
+        "crates/astrbot-kb/src/parser/ocr.rs"
+      ],
+      "deliverables": [
+        "PDF：lopdf / pdf-extract 文本抽取",
+        "Markdown：pulldown-cmark 结构化分块",
+        "URL：HTML → text（scraper + readability-fork）",
+        "OCR（可选）：tesseract-rs 绑定"
+      ],
+      "verification": "样本文档 ingest 后 chunks 数 + 召回率与 Python 等价"
+    },
+    {
+      "id": "TASK-P1-009",
+      "priority": "P1",
+      "title": "KB 向量后端扩展 — FAISS (via faiss-rs) + Qdrant 客户端",
+      "category": "knowledge-base",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-kb/src/vector_store/faiss.rs",
+        "crates/astrbot-kb/src/vector_store/qdrant.rs",
+        "crates/astrbot-kb/src/vector_store/mod.rs"
+      ],
+      "deliverables": [
+        "FaissVectorStore（feature = \"faiss\"）",
+        "QdrantVectorStore（REST + gRPC 二选一）",
+        "VectorStore trait 统一 insert/search/delete/persist",
+        "Dashboard knowledge 页可选择后端"
+      ],
+      "verification": "1k 向量 insert + top-k search 与 InMemory 结果近似（cosine ≥ 0.99）"
+    },
+    {
+      "id": "TASK-P1-010",
+      "priority": "P1",
+      "title": "Dashboard Knowledge — 上传分片 + 分块预览 + 重索引 + 检索高亮",
+      "category": "dashboard-functional",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/pages/knowledge/index.tsx",
+        "dashboard-next/src/features/uploads/",
+        "dashboard-next/src/features/uploads/ChunkedUploader.tsx"
+      ],
+      "deliverables": [
+        "分片上传（与 backup chunked upload 同一抽象）",
+        "文档详情：chunks 表格 + 单 chunk 文本预览 + reindex 按钮",
+        "检索结果高亮（与服务端返回 highlight 字段对齐）",
+        "Ingestion 状态实时（SSE）"
+      ],
+      "verification": "上传 10MB+ pdf 不中断；reindex 后 chunk 数变化即时反映"
+    },
+    {
+      "id": "TASK-P1-011",
+      "priority": "P1",
+      "title": "Dashboard Persona — 文件夹树 + 拖拽移动 + 面包屑",
+      "category": "dashboard-functional",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/pages/persona/index.tsx",
+        "dashboard-next/src/features/folder-tree/",
+        "dashboard-next/src/features/folder-tree/FolderTree.tsx"
+      ],
+      "deliverables": [
+        "三层嵌套文件夹 + 拖拽移动 persona / 文件夹",
+        "@thisbeyond/solid-dnd 接入",
+        "右键菜单：新建 / 重命名 / 删除（Kobalte ContextMenu）",
+        "面包屑导航 + 选中持久化"
+      ],
+      "verification": "拖拽 3 层嵌套移动正确；刷新后选中保留"
+    },
+    {
+      "id": "TASK-P1-012",
+      "priority": "P1",
+      "title": "Dashboard Observability — ECharts 图表 + Token / 提供器统计",
+      "category": "dashboard-functional",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/src/pages/observability/index.tsx",
+        "dashboard-next/src/features/charts/",
+        "dashboard-next/src/features/charts/EChartsWrapper.tsx"
+      ],
+      "deliverables": [
+        "echarts core + 按需引入 line/bar/pie（gzip < 80KB）",
+        "Token 用量曲线（按 provider/per-day）",
+        "调用次数 / 错误率柱状图",
+        "Trace 详情 drawer 关联图表点位"
+      ],
+      "verification": "1k 数据点交互流畅；首屏 bundle 仍 < 250KB"
+    },
+    {
+      "id": "TASK-P1-013",
+      "priority": "P1",
+      "title": "Pipeline 安全检查深度 — content_safety / whitelist / rate_limit 多策略",
+      "category": "pipeline-depth",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-pipeline/src/stages/safety/",
+        "crates/astrbot-pipeline/src/stages/safety/content/",
+        "crates/astrbot-pipeline/src/stages/safety/whitelist/",
+        "crates/astrbot-pipeline/src/stages/safety/rate_limit/"
+      ],
+      "deliverables": [
+        "content_safety：关键词 + 正则 + 远端 API（baidu/aliyun/openai moderation）多策略",
+        "whitelist：UMO / group / user / scope 嵌套规则 + 否定优先级",
+        "rate_limit：滑动窗 + 令牌桶 + 群级别 / 用户级别多维",
+        "策略可组合 + 命中策略可观测"
+      ],
+      "verification": "策略矩阵单测覆盖；与 Python 等价用例 round-trip"
+    },
+    {
+      "id": "TASK-P1-014",
+      "priority": "P1",
+      "title": "Provider 媒体转换 — SILK / AMR / Tencent",
+      "category": "provider-depth",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-provider/src/audio/silk.rs",
+        "crates/astrbot-provider/src/audio/amr.rs",
+        "crates/astrbot-provider/src/audio/converter.rs",
+        "crates/astrbot-media/src/"
+      ],
+      "deliverables": [
+        "SILK ↔ PCM/WAV（QQ / 微信语音）",
+        "AMR ↔ PCM/WAV",
+        "Tencent 云语音 client（互补 Azure/OpenAI）",
+        "Converter 自动选择：根据平台需要协商目标编码"
+      ],
+      "verification": "silk → wav → silk 往返 SNR 阈值；ffmpeg fallback 路径覆盖"
+    },
+    {
+      "id": "TASK-P2-001",
+      "priority": "P2",
+      "title": "Computer Sandbox — 子进程 + OS 权限隔离骨架（shell / python / fs）",
+      "category": "computer-sandbox",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-computer/src/runtime/process.rs",
+        "crates/astrbot-computer/src/tools/shell.rs",
+        "crates/astrbot-computer/src/tools/python.rs",
+        "crates/astrbot-computer/src/tools/fs.rs",
+        "crates/astrbot-computer/src/permissions.rs"
+      ],
+      "deliverables": [
+        "tokio::process::Command 包装 + 资源限制（Linux: cgroups v2 / Windows: Job Object / macOS: setrlimit）",
+        "shell 工具（白名单命令）+ python 工具（pinned interpreter + venv）",
+        "fs 工具：chrooted 根目录 + 读写白名单",
+        "权限模型与 Plugin WASM capability 系统统一抽象"
+      ],
+      "verification": "shell echo 跑通；越权访问 / 超 CPU / 超内存被拒"
+    },
+    {
+      "id": "TASK-P2-002",
+      "priority": "P2",
+      "title": "Computer Sandbox — Browser 工具（chromiumoxide / CDP）",
+      "category": "computer-sandbox",
+      "risk": "high",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-computer/src/tools/browser.rs"
+      ],
+      "deliverables": [
+        "chromiumoxide 客户端连接外部 chromium（不内嵌）",
+        "Page actions：navigate / click / type / screenshot / extract_text",
+        "Session 池 + 超时 + 内存上限",
+        "与 Agent tool 暴露对齐"
+      ],
+      "verification": "browser 截屏 + DOM 提取 happy path；崩溃后池自愈"
+    },
+    {
+      "id": "TASK-P2-003",
+      "priority": "P2",
+      "title": "第三方 Agent 代理 — Coze / Dify / DashScope Agent",
+      "category": "agent-proxies",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-agent/src/proxies/coze.rs",
+        "crates/astrbot-agent/src/proxies/dify.rs",
+        "crates/astrbot-agent/src/proxies/dashscope.rs"
+      ],
+      "deliverables": [
+        "三家 API client + SSE streaming",
+        "AgentRunner trait 共享实现（与 ToolLoopRunner 同层）",
+        "Dashboard providers 页可配置选择"
+      ],
+      "verification": "三家各跑通一次对话（mock 或真实）"
+    },
+    {
+      "id": "TASK-P2-004",
+      "priority": "P2",
+      "title": "Wave1 剩余适配器 — Discord / Slack / Lark / DingTalk / Kook / Misskey / Satori / LINE",
+      "category": "platform-parity",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-platform/src/adapters/wave1/discord.rs",
+        "crates/astrbot-platform/src/adapters/wave1/slack.rs",
+        "crates/astrbot-platform/src/adapters/wave1/lark.rs",
+        "crates/astrbot-platform/src/adapters/wave1/dingtalk.rs",
+        "crates/astrbot-platform/src/adapters/wave1/kook.rs",
+        "crates/astrbot-platform/src/adapters/wave1/misskey.rs",
+        "crates/astrbot-platform/src/adapters/wave1/satori.rs",
+        "crates/astrbot-platform/src/adapters/wave1/line.rs"
+      ],
+      "deliverables": [
+        "每个适配器：连接 + 事件流入 + 出站消息",
+        "复用 Wave1 共享 webhook 验签框架",
+        "Satori 作为统一协议优先（可代理多平台）"
+      ],
+      "verification": "每个适配器至少一次端到端 echo"
+    },
+    {
+      "id": "TASK-P2-005",
+      "priority": "P2",
+      "title": "Dashboard E2E — Playwright 覆盖 5 高频页 + bundle 报告",
+      "category": "qa",
+      "risk": "low",
+      "status": "pending",
+      "target_files": [
+        "dashboard-next/tests/playwright/",
+        "dashboard-next/playwright.config.ts"
+      ],
+      "deliverables": [
+        "覆盖：login + overview + chat + providers + platforms + plugins",
+        "Bundle 报告（vite-bundle-visualizer）入 CI",
+        "rollup chunk 拆分建议"
+      ],
+      "verification": "GitHub Actions CI 端到端 green"
+    },
+    {
+      "id": "TASK-P2-006",
+      "priority": "P2",
+      "title": "Updater — 版本检查 + 拉取 + 重启编排",
+      "category": "ops",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-maintenance/src/updater/",
+        "crates/astrbot-cli/src/commands/update.rs"
+      ],
+      "deliverables": [
+        "GitHub releases API client + signature 验证",
+        "原子替换二进制 + 数据迁移 hook + 回滚",
+        "Dashboard update 页：可用版本 / 进度 / 历史"
+      ],
+      "verification": "本地 mock release 升级闭环；失败回滚到上一版本"
+    },
+    {
+      "id": "TASK-P2-007",
+      "priority": "P2",
+      "title": "Metrics — Prometheus exporter + 关键业务指标",
+      "category": "observability",
+      "risk": "low",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-metrics/src/prometheus.rs",
+        "crates/astrbot-web/src/management/metrics.rs"
+      ],
+      "deliverables": [
+        "prometheus crate 集成 + /metrics HTTP endpoint",
+        "Token / 请求数 / 错误率 / 队列深度 / 插件耗时",
+        "Grafana dashboard JSON 模板",
+        "OpenTelemetry trace exporter（可选）"
+      ],
+      "verification": "/metrics 抓取通过 promtool 校验"
+    },
+    {
+      "id": "TASK-P2-008",
+      "priority": "P2",
+      "title": "Skills 系统填肉 — 多步工作流 / 库存渲染 / 激活策略",
+      "category": "skill-system",
+      "risk": "medium",
+      "status": "pending",
+      "target_files": [
+        "crates/astrbot-skill/src/runtime/",
+        "crates/astrbot-skill/src/inventory/",
+        "crates/astrbot-skill/src/activation/"
+      ],
+      "deliverables": [
+        "Skill = 多 step 工作流（DAG）+ 共享上下文",
+        "库存：包获取 + 缓存 + 元数据",
+        "激活策略：UMO / 关键词 / 时间窗",
+        "Dashboard skills 页对接"
+      ],
+      "verification": "1 个示例 skill（多步天气查询）端到端"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ pub mod sandbox;
 pub mod sdk;
 mod session_control;
 pub mod tool;
+pub mod wasm;
 
 pub use dependency::{
     DependencyConflictKind, DependencyConflictReport, DependencyErrorRedactor,
@@ -55,6 +56,10 @@ pub use tool::{
     BackgroundTaskPolicy, HandoffToolTarget, PluginToolDeclaration, PluginToolKind,
     SandboxedToolExecutor, ToolCapabilityDecision, ToolExecutionRequest, ToolExecutionResult,
     ToolExecutionStatus, ToolExecutor,
+};
+pub use wasm::{
+    PluginResourceLimiter, PluginResourceLimits, WasmEngine, WasmEngineConfig, WasmEngineError,
+    WasmStoreContext, new_plugin_store,
 };
 
 #[cfg(test)]

@@ -10,6 +10,7 @@ pub(crate) mod qq_official_webhook;
 pub(crate) mod satori;
 pub(crate) mod slack;
 pub(crate) mod telegram;
+pub mod telegram_outbound;
 pub(crate) mod wecom;
 pub(crate) mod wecom_ai_bot;
 pub(crate) mod wecom_kf;

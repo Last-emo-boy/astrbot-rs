@@ -275,3 +275,162 @@ async fn response_body_or_error(response: reqwest::Response, label: &str) -> Res
 fn default_content_safety_rejection_message() -> String {
     "你的消息或者大模型的响应中包含不适当的内容，已被屏蔽。".to_string()
 }
+
+/// 正则审核：任何匹配的命中都会拦截，比 `KeywordContentSafetyStrategy`
+/// 更灵活（支持词边界 / 替换 / 模糊匹配）。
+#[derive(Clone, Debug)]
+pub struct RegexContentSafetyStrategy {
+    patterns: Vec<regex::Regex>,
+}
+
+impl RegexContentSafetyStrategy {
+    pub fn new<I, S>(patterns: I) -> Result<Self>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        let mut compiled = Vec::new();
+        for raw in patterns {
+            let trimmed = raw.as_ref().trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let regex = regex::Regex::new(trimmed).map_err(|err| {
+                AstrbotError::Pipeline(format!(
+                    "regex content safety: invalid pattern `{trimmed}`: {err}"
+                ))
+            })?;
+            compiled.push(regex);
+        }
+        Ok(Self { patterns: compiled })
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.patterns.is_empty()
+    }
+}
+
+#[async_trait]
+impl ContentSafetyStrategy for RegexContentSafetyStrategy {
+    async fn check(&self, content: &str) -> Result<ContentSafetyVerdict> {
+        for pattern in &self.patterns {
+            if pattern.is_match(content) {
+                return Ok(ContentSafetyVerdict::blocked(format!(
+                    "content matched safety pattern `{}`",
+                    pattern.as_str()
+                )));
+            }
+        }
+        Ok(ContentSafetyVerdict::allowed())
+    }
+}
+
+/// 长度上限：用于挡住提示注入炸弹/超长复读机 payload。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LengthLimitContentSafetyStrategy {
+    max_chars: usize,
+}
+
+impl LengthLimitContentSafetyStrategy {
+    pub fn new(max_chars: usize) -> Self {
+        Self { max_chars }
+    }
+}
+
+#[async_trait]
+impl ContentSafetyStrategy for LengthLimitContentSafetyStrategy {
+    async fn check(&self, content: &str) -> Result<ContentSafetyVerdict> {
+        if self.max_chars == 0 {
+            return Ok(ContentSafetyVerdict::allowed());
+        }
+        let chars = content.chars().count();
+        if chars > self.max_chars {
+            return Ok(ContentSafetyVerdict::blocked(format!(
+                "content too long: {chars} chars > limit {}",
+                self.max_chars
+            )));
+        }
+        Ok(ContentSafetyVerdict::allowed())
+    }
+}
+
+/// `@` 提及数量上限：用于挡住大规模刷屏 @-attack。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MentionFloodContentSafetyStrategy {
+    max_mentions: usize,
+}
+
+impl MentionFloodContentSafetyStrategy {
+    pub fn new(max_mentions: usize) -> Self {
+        Self { max_mentions }
+    }
+}
+
+#[async_trait]
+impl ContentSafetyStrategy for MentionFloodContentSafetyStrategy {
+    async fn check(&self, content: &str) -> Result<ContentSafetyVerdict> {
+        if self.max_mentions == 0 {
+            return Ok(ContentSafetyVerdict::allowed());
+        }
+        let count = content.matches('@').count();
+        if count > self.max_mentions {
+            return Ok(ContentSafetyVerdict::blocked(format!(
+                "too many mentions: {count} > limit {}",
+                self.max_mentions
+            )));
+        }
+        Ok(ContentSafetyVerdict::allowed())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn regex_strategy_blocks_matching_content() {
+        let strategy = RegexContentSafetyStrategy::new(["(?i)forbidden"]).unwrap();
+        let verdict = strategy.check("This is FORBIDDEN stuff").await.unwrap();
+        assert!(!verdict.allowed);
+    }
+
+    #[tokio::test]
+    async fn regex_strategy_allows_clean_content() {
+        let strategy = RegexContentSafetyStrategy::new(["(?i)forbidden"]).unwrap();
+        let verdict = strategy.check("perfectly fine").await.unwrap();
+        assert!(verdict.allowed);
+    }
+
+    #[tokio::test]
+    async fn regex_strategy_rejects_invalid_pattern() {
+        assert!(RegexContentSafetyStrategy::new(["(unclosed"]).is_err());
+    }
+
+    #[tokio::test]
+    async fn length_limit_blocks_overlong_content() {
+        let strategy = LengthLimitContentSafetyStrategy::new(10);
+        let verdict = strategy.check("over the limit easily").await.unwrap();
+        assert!(!verdict.allowed);
+    }
+
+    #[tokio::test]
+    async fn length_limit_zero_disables_check() {
+        let strategy = LengthLimitContentSafetyStrategy::new(0);
+        let verdict = strategy.check(&"x".repeat(10_000)).await.unwrap();
+        assert!(verdict.allowed);
+    }
+
+    #[tokio::test]
+    async fn mention_flood_blocks_many_at_signs() {
+        let strategy = MentionFloodContentSafetyStrategy::new(3);
+        let verdict = strategy.check("@a @b @c @d @e").await.unwrap();
+        assert!(!verdict.allowed);
+    }
+
+    #[tokio::test]
+    async fn mention_flood_allows_below_threshold() {
+        let strategy = MentionFloodContentSafetyStrategy::new(3);
+        let verdict = strategy.check("@a @b @c").await.unwrap();
+        assert!(verdict.allowed);
+    }
+}

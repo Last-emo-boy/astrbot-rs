@@ -13,6 +13,7 @@ astrbot-render = { path = "../astrbot-render" }
 astrbot-session = { path = "../astrbot-session" }
 astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
+regex.workspace = true
 reqwest.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["time"] }

@@ -454,7 +454,7 @@
       "title": "KB Parser 扩展 — PDF / Markdown / URL / OCR",
       "category": "knowledge-base",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-kb/src/parser/",
         "crates/astrbot-kb/src/parser/pdf.rs",
@@ -556,7 +556,7 @@
       "title": "Pipeline 安全检查深度 — content_safety / whitelist / rate_limit 多策略",
       "category": "pipeline-depth",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-pipeline/src/stages/safety/",
         "crates/astrbot-pipeline/src/stages/safety/content/",
@@ -717,7 +717,7 @@
       "title": "Metrics — Prometheus exporter + 关键业务指标",
       "category": "observability",
       "risk": "low",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-metrics/src/prometheus.rs",
         "crates/astrbot-web/src/management/metrics.rs"

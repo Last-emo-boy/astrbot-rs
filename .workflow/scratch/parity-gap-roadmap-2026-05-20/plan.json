@@ -235,7 +235,7 @@
       "title": "Dashboard — Config 树编辑器 + CodeMirror 6 + Schema 校验",
       "category": "dashboard-functional",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/pages/config/index.tsx",
         "dashboard-next/src/features/config-tree/",
@@ -257,7 +257,7 @@
       "title": "Dashboard — Providers / Platforms / Persona / MCP / Cron Schema 表单（替换 JSON 文本框）",
       "category": "dashboard-functional",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/pages/providers/index.tsx",
         "dashboard-next/src/pages/platforms/index.tsx",

@@ -458,3 +458,72 @@ textarea.input {
 @keyframes message-cursor-blink {
   to { opacity: 0; }
 }
+
+/* ConfigTreeEditor */
+.config-tree {
+  font-size: 13px;
+}
+
+.config-object {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-2) 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.config-row__label {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.config-row__hint {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.config-row__value {
+  min-width: 0;
+}
+
+.config-array {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-3);
+}
+
+.config-array__row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* SchemaForm */
+.schema-form__object {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.schema-form__array {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-3);
+}
+
+.schema-form__array-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}

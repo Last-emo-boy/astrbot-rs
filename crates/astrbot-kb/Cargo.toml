@@ -9,6 +9,7 @@ astrbot-core = { path = "../astrbot-core" }
 astrbot-provider = { path = "../astrbot-provider" }
 astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 

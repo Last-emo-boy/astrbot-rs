@@ -8,6 +8,7 @@ pub mod management;
 pub mod media_store;
 pub mod parser;
 pub mod preflight;
+pub mod qdrant;
 pub mod rank_fusion;
 pub mod repository;
 pub mod retrieval;
@@ -37,10 +38,16 @@ pub use media_store::{
     InMemoryKnowledgeMediaStore, KnowledgeMediaStore, KnowledgeMediaWriteRequest,
     KnowledgeMediaWriteResult,
 };
-pub use parser::{DocumentParser, MediaItem, ParseResult, PlainTextParser};
+pub use parser::{
+    DocumentParser, HtmlTextParser, MarkdownParser, MediaItem, ParseResult, PlainTextParser,
+    strip_html, strip_markdown,
+};
 pub use preflight::{
     KnowledgeEmbeddingPreflight, KnowledgeProviderPreflightReport,
     KnowledgeProviderPreflightRequest, KnowledgeProviderPreflightService, KnowledgeRerankPreflight,
+};
+pub use qdrant::{
+    QdrantClient, QdrantDistance, QdrantPoint, QdrantSearchHit, QdrantSearchRequest,
 };
 pub use rank_fusion::{RankFusionHit, ReciprocalRankFusion};
 pub use repository::{

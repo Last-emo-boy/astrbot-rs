@@ -476,7 +476,7 @@
       "title": "KB 向量后端扩展 — FAISS (via faiss-rs) + Qdrant 客户端",
       "category": "knowledge-base",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-kb/src/vector_store/faiss.rs",
         "crates/astrbot-kb/src/vector_store/qdrant.rs",
@@ -638,7 +638,7 @@
       "title": "第三方 Agent 代理 — Coze / Dify / DashScope Agent",
       "category": "agent-proxies",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-agent/src/proxies/coze.rs",
         "crates/astrbot-agent/src/proxies/dify.rs",
@@ -681,7 +681,7 @@
       "title": "Dashboard E2E — Playwright 覆盖 5 高频页 + bundle 报告",
       "category": "qa",
       "risk": "low",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/tests/playwright/",
         "dashboard-next/playwright.config.ts"

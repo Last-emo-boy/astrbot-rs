@@ -6,6 +6,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{AgentFeedbackEvent, AgentFeedbackEventKind};
 
+pub mod agent_clients;
+
+pub use agent_clients::{
+    CozeAgentClient, CozeChatStarted, DashScopeAgentClient, DifyAgentClient, parse_dify_sse_event,
+};
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ExternalAgentConnectorKind {

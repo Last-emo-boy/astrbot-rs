@@ -536,7 +536,7 @@
       "title": "Dashboard Observability — ECharts 图表 + Token / 提供器统计",
       "category": "dashboard-functional",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/pages/observability/index.tsx",
         "dashboard-next/src/features/charts/",
@@ -577,7 +577,7 @@
       "title": "Provider 媒体转换 — SILK / AMR / Tencent",
       "category": "provider-depth",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-provider/src/audio/silk.rs",
         "crates/astrbot-provider/src/audio/amr.rs",

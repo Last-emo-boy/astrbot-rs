@@ -1,8 +1,13 @@
+mod converter;
 mod data_url;
 mod download;
 mod mime;
 mod resolver;
 
+pub use converter::{
+    AudioCodec, MediaConvertRequest, MediaConvertResponse, MediaConverter,
+    PassthroughMediaConverter,
+};
 pub use data_url::{DataUrl, encode_data_url};
 pub use download::{
     DownloadedMedia, MediaDownloadPolicy, MediaDownloadRequest, MediaDownloadService,

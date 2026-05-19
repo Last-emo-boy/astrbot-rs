@@ -131,7 +131,7 @@
       "title": "Wave1 平台 — 微信公众号（weixin_official_account webhook）",
       "category": "platform-parity",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters/wave1/weixin_official_account.rs",
         "crates/astrbot-platform/src/adapters/wave1/weixin_official_account/"
@@ -151,7 +151,7 @@
       "title": "Wave1 平台 — 企业微信（wecom）+ 企业微信智能机器人（wecom_ai_bot）",
       "category": "platform-parity",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters/wave1/wecom.rs",
         "crates/astrbot-platform/src/adapters/wave1/wecom_ai_bot.rs",
@@ -171,7 +171,7 @@
       "title": "Wave1 平台 — QQ 官方机器人 Webhook（qqofficial_webhook）",
       "category": "platform-parity",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters/wave1/qq_official_webhook.rs",
         "crates/astrbot-platform/src/adapters/wave1/qq_official_webhook/"
@@ -190,7 +190,7 @@
       "title": "Wave1 平台 — QQ 频道 WSS（qqofficial，botpy 等价）",
       "category": "platform-parity",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters/wave1/qq_official.rs",
         "crates/astrbot-platform/src/adapters/wave1/qq_official/"

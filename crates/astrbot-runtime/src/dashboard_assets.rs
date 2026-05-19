@@ -7,9 +7,15 @@ use crate::path_config::RuntimePathLayout;
 pub const DASHBOARD_INDEX_ROUTES: &[&str] = &[
     "/",
     "/auth/login",
+    "/main",
+    "/welcome",
     "/config",
+    "/normal",
+    "/system",
     "/logs",
     "/extension",
+    "/extension/skills",
+    "/extension/tools",
     "/dashboard/default",
     "/alkaid",
     "/alkaid/knowledge-base",
@@ -18,11 +24,21 @@ pub const DASHBOARD_INDEX_ROUTES: &[&str] = &[
     "/console",
     "/chat",
     "/settings",
+    "/settings/backup",
+    "/settings/update",
     "/platforms",
     "/providers",
     "/about",
     "/extension-marketplace",
     "/conversation",
+    "/chat/projects",
+    "/session-management",
+    "/persona",
+    "/subagent",
+    "/cron",
+    "/trace",
+    "/knowledge-base",
+    "/chatbox",
     "/tool-use",
 ];
 
@@ -146,6 +162,14 @@ pub fn is_dashboard_index_route(request_path: &str) -> bool {
     DASHBOARD_INDEX_ROUTES
         .iter()
         .any(|route| *route == normalized)
+        || is_dynamic_dashboard_route(&normalized)
+}
+
+fn is_dynamic_dashboard_route(normalized: &str) -> bool {
+    normalized.starts_with("/chat/")
+        || normalized.starts_with("/chatbox/")
+        || normalized.starts_with("/knowledge-base/")
+        || normalized.starts_with("/alkaid/")
 }
 
 fn normalize_route(request_path: &str) -> String {
@@ -224,6 +248,15 @@ mod tests {
         let selection = DashboardAssetPolicy::new("data/dist").select();
 
         assert!(is_dashboard_index_route("/chat"));
+        assert!(is_dashboard_index_route("/chat/conversation-1"));
+        assert!(is_dashboard_index_route("/chatbox/conversation-1"));
+        assert!(is_dashboard_index_route(
+            "/knowledge-base/kb-1/document/doc-1"
+        ));
+        assert!(is_dashboard_index_route("/logs"));
+        assert!(is_dashboard_index_route("/tool-use"));
+        assert!(is_dashboard_index_route("/alkaid/long-term-memory"));
+        assert!(!is_dashboard_index_route("/missing-route"));
         assert_eq!(
             selection.asset_path("/chat"),
             Some(PathBuf::from("data/dist/index.html"))

@@ -43,6 +43,7 @@ pub(super) async fn run_provider_fallback(
     let runner = ChatAgentRunner::new(provider)
         .with_fallback_policy(agent_fallback_policy(ctx.provider_fallback()))
         .with_request_decorator(agent_request_decorator(ctx))
+        .with_request_hook(ctx.provider_request_hook())
         .with_hook(ctx.agent_run_hook());
 
     if let Some(result) = runner.run(event).await?.into_result() {
@@ -59,6 +60,7 @@ fn agent_fallback_policy(config: &ProviderFallbackConfig) -> AgentFallbackPolicy
     };
     policy.require_wake = config.require_wake;
     policy.error_message = config.error_message.clone();
+    policy.provider_wake_prefix = config.provider_wake_prefix.clone();
     policy
 }
 

@@ -27,11 +27,9 @@ impl PipelineStage for ContentSafetyCheckStage {
             return Ok(PipelineControl::Continue);
         }
 
-        for strategy in config.strategies() {
-            let verdict = strategy.check(&content).await?;
-            if !verdict.allowed {
-                return block_event(event, config.rejection_message.clone(), verdict);
-            }
+        let verdict = config.check_text(&content).await?;
+        if !verdict.allowed {
+            return block_event(event, config.rejection_message.clone(), verdict);
         }
 
         Ok(PipelineControl::Continue)

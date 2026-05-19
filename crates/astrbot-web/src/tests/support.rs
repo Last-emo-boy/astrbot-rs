@@ -44,6 +44,112 @@ pub(super) async fn post_json(router: Router, uri: &str, payload: Value) -> Resp
         .expect("router should respond")
 }
 
+pub(super) async fn post_multipart(
+    router: Router,
+    uri: &str,
+    boundary: &str,
+    body: Vec<u8>,
+) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(uri)
+                .header(
+                    CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .body(Body::from(body))
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
+pub(super) async fn post_json_with_bearer(
+    router: Router,
+    uri: &str,
+    payload: Value,
+    token: &str,
+) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(uri)
+                .header(CONTENT_TYPE, "application/json")
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
+pub(super) async fn post_json_with_headers(
+    router: Router,
+    uri: &str,
+    payload: Value,
+    headers: &[(&str, &str)],
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method("POST")
+        .uri(uri)
+        .header(CONTENT_TYPE, "application/json");
+    for (name, value) in headers {
+        builder = builder.header(*name, *value);
+    }
+    router
+        .oneshot(
+            builder
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
+pub(super) async fn put_json(router: Router, uri: &str, payload: Value) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(uri)
+                .header(CONTENT_TYPE, "application/json")
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
+pub(super) async fn patch_json(router: Router, uri: &str, payload: Value) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(uri)
+                .header(CONTENT_TYPE, "application/json")
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
+pub(super) async fn delete(router: Router, uri: &str) -> Response<Body> {
+    router
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(uri)
+                .body(Body::empty())
+                .expect("request should build"),
+        )
+        .await
+        .expect("router should respond")
+}
+
 pub(super) async fn get(router: Router, uri: &str) -> Response<Body> {
     router
         .oneshot(

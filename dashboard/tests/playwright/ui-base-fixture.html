@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shared UI Base Fixture</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main id="fixture" class="content"></main>
+    <script type="module">
+      import { bindUiInteractions } from "/src/dom.js";
+      import { renderUiBaseShowcase } from "/src/render/shared.js";
+
+      document.getElementById("fixture").innerHTML = renderUiBaseShowcase();
+      bindUiInteractions(document);
+    </script>
+  </body>
+</html>

@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use astrbot_tool::{ToolActivationPolicy, ToolCatalog, ToolDescriptor};
 use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::ErrorResponse;
 
@@ -41,6 +41,12 @@ impl ManagementToolState {
             .collect();
 
         Ok(ManagementToolCatalogResponse { tools })
+    }
+
+    pub(crate) fn source_descriptors(&self) -> Result<Vec<ManagementToolDescriptor>, String> {
+        self.catalog_response()
+            .map(|catalog| catalog.tools)
+            .map_err(|error| format!("{error:?}"))
     }
 
     fn set_active(
@@ -164,6 +170,33 @@ pub async fn toggle(
         .set_active(request.name, request.active)
         .map(Json)
         .map_err(map_tool_error)
+}
+
+pub async fn legacy_catalog(
+    State(state): State<ManagementApiState>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let tools = state.tools().ok_or_else(tool_state_unavailable)?;
+    let catalog = tools.catalog_response().map_err(map_tool_error)?;
+    Ok(source_ok(json!(catalog.tools)))
+}
+
+pub async fn legacy_toggle(
+    State(state): State<ManagementApiState>,
+    Json(request): Json<ManagementToolToggleRequest>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let tools = state.tools().ok_or_else(tool_state_unavailable)?;
+    let response = tools
+        .set_active(request.name, request.active)
+        .map_err(map_tool_error)?;
+    Ok(source_ok(json!(response)))
+}
+
+fn source_ok(data: Value) -> Json<Value> {
+    Json(json!({
+        "status": "ok",
+        "message": "ok",
+        "data": data,
+    }))
 }
 
 fn tool_state_unavailable() -> (StatusCode, Json<ErrorResponse>) {

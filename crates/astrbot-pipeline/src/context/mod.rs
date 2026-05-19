@@ -8,12 +8,16 @@ mod session;
 
 use std::sync::Arc;
 
-use astrbot_agent::{AgentRunHook, NoopAgentRunHook};
+use astrbot_agent::{AgentRunHook, NoopAgentRunHook, NoopProviderRequestHook, ProviderRequestHook};
+use astrbot_core::Result;
 use astrbot_plugin::PluginRegistry;
-use astrbot_provider::ChatProvider;
+use astrbot_provider::{ChatProvider, TextToSpeechProvider};
+use astrbot_render::{RenderArtifact, T2iRenderer};
+use async_trait::async_trait;
 
 pub use content_safety::{
-    ContentSafetyConfig, ContentSafetyStrategy, ContentSafetyVerdict, KeywordContentSafetyStrategy,
+    BaiduAipContentSafetyStrategy, ContentSafetyConfig, ContentSafetyStrategy,
+    ContentSafetyVerdict, KeywordContentSafetyStrategy,
 };
 pub use policy::{
     ProviderFallbackConfig, RateLimitConfig, RateLimitStrategy, WakeCheckConfig,
@@ -29,7 +33,7 @@ pub use provider_preference::{
     ScopedProviderPreferencePort,
 };
 pub use quote::{NoQuoteContextPolicy, QuoteContextPolicy, SelectedTextQuoteContextPolicy};
-pub use result::ResultDecorateConfig;
+pub use result::{ResultDecorateConfig, TextToImageDecorateConfig, TextToSpeechDecorateConfig};
 pub use session::{
     AllowAllSessionStatusPort, EmptySessionContextPort, SessionContextPort, SessionStatusPort,
 };
@@ -45,11 +49,15 @@ pub struct PipelineContext {
     provider_preference: Arc<dyn ProviderPreferencePort>,
     quote_context: Arc<dyn QuoteContextPolicy>,
     agent_run_hook: Arc<dyn AgentRunHook>,
+    provider_request_hook: Arc<dyn ProviderRequestHook>,
     rate_limit: RateLimitConfig,
     content_safety: ContentSafetyConfig,
     preprocess: PreprocessConfig,
     provider_fallback: ProviderFallbackConfig,
     result_decorate: ResultDecorateConfig,
+    text_to_speech_provider: Option<Arc<dyn TextToSpeechProvider>>,
+    t2i_renderer: Option<Arc<dyn T2iRenderer>>,
+    result_file_service: Arc<dyn ResultFileService>,
 }
 
 impl Default for PipelineContext {
@@ -64,11 +72,15 @@ impl Default for PipelineContext {
             provider_preference: Arc::new(NoProviderPreferencePort),
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
             agent_run_hook: Arc::new(NoopAgentRunHook),
+            provider_request_hook: Arc::new(NoopProviderRequestHook),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
             preprocess: PreprocessConfig::default(),
             provider_fallback: ProviderFallbackConfig::default(),
             result_decorate: ResultDecorateConfig::default(),
+            text_to_speech_provider: None,
+            t2i_renderer: None,
+            result_file_service: Arc::new(NoopResultFileService),
         }
     }
 }
@@ -89,11 +101,15 @@ impl PipelineContext {
             provider_preference: Arc::new(NoProviderPreferencePort),
             quote_context: Arc::new(SelectedTextQuoteContextPolicy::default()),
             agent_run_hook: Arc::new(NoopAgentRunHook),
+            provider_request_hook: Arc::new(NoopProviderRequestHook),
             rate_limit: RateLimitConfig::default(),
             content_safety: ContentSafetyConfig::default(),
             preprocess: PreprocessConfig::default(),
             provider_fallback: ProviderFallbackConfig::default(),
             result_decorate: ResultDecorateConfig::default(),
+            text_to_speech_provider: None,
+            t2i_renderer: None,
+            result_file_service: Arc::new(NoopResultFileService),
         }
     }
 
@@ -143,6 +159,14 @@ impl PipelineContext {
         self
     }
 
+    pub fn with_provider_request_hook(
+        mut self,
+        provider_request_hook: Arc<dyn ProviderRequestHook>,
+    ) -> Self {
+        self.provider_request_hook = provider_request_hook;
+        self
+    }
+
     pub fn with_rate_limit(mut self, rate_limit: RateLimitConfig) -> Self {
         self.rate_limit = rate_limit;
         self
@@ -165,6 +189,21 @@ impl PipelineContext {
 
     pub fn with_result_decorate(mut self, result_decorate: ResultDecorateConfig) -> Self {
         self.result_decorate = result_decorate;
+        self
+    }
+
+    pub fn with_text_to_speech_provider(mut self, provider: Arc<dyn TextToSpeechProvider>) -> Self {
+        self.text_to_speech_provider = Some(provider);
+        self
+    }
+
+    pub fn with_t2i_renderer(mut self, renderer: Arc<dyn T2iRenderer>) -> Self {
+        self.t2i_renderer = Some(renderer);
+        self
+    }
+
+    pub fn with_result_file_service(mut self, service: Arc<dyn ResultFileService>) -> Self {
+        self.result_file_service = service;
         self
     }
 
@@ -204,6 +243,10 @@ impl PipelineContext {
         self.agent_run_hook.clone()
     }
 
+    pub fn provider_request_hook(&self) -> Arc<dyn ProviderRequestHook> {
+        self.provider_request_hook.clone()
+    }
+
     pub fn rate_limit(&self) -> &RateLimitConfig {
         &self.rate_limit
     }
@@ -222,5 +265,31 @@ impl PipelineContext {
 
     pub fn result_decorate(&self) -> &ResultDecorateConfig {
         &self.result_decorate
+    }
+
+    pub fn text_to_speech_provider(&self) -> Option<Arc<dyn TextToSpeechProvider>> {
+        self.text_to_speech_provider.clone()
+    }
+
+    pub fn t2i_renderer(&self) -> Option<Arc<dyn T2iRenderer>> {
+        self.t2i_renderer.clone()
+    }
+
+    pub fn result_file_service(&self) -> Arc<dyn ResultFileService> {
+        self.result_file_service.clone()
+    }
+}
+
+#[async_trait]
+pub trait ResultFileService: Send + Sync {
+    async fn public_url(&self, artifact: &RenderArtifact) -> Result<Option<String>>;
+}
+
+pub struct NoopResultFileService;
+
+#[async_trait]
+impl ResultFileService for NoopResultFileService {
+    async fn public_url(&self, _artifact: &RenderArtifact) -> Result<Option<String>> {
+        Ok(None)
     }
 }

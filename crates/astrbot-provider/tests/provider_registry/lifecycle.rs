@@ -127,6 +127,7 @@ async fn manager_terminates_configured_speech_to_text_providers() {
             api_key: None,
             timeout: std::time::Duration::from_secs(1),
             custom_headers: Default::default(),
+            provider_options: Default::default(),
             mock_text: None,
             launch_model_if_not_running: false,
         }],

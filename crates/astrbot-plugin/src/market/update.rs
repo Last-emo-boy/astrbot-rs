@@ -19,6 +19,7 @@ pub struct PluginMarketOperationPlan {
     pub requires_unpack: bool,
     pub requires_loader_reload: bool,
     pub compatibility: PluginCompatibility,
+    pub ignore_compatibility: bool,
     pub delete_config: bool,
     pub delete_data: bool,
 }
@@ -33,6 +34,7 @@ impl PluginMarketOperationPlan {
             requires_unpack: true,
             requires_loader_reload: true,
             compatibility: request.compatibility,
+            ignore_compatibility: request.ignore_compatibility,
             delete_config: false,
             delete_data: false,
         }
@@ -47,6 +49,7 @@ impl PluginMarketOperationPlan {
             requires_unpack: true,
             requires_loader_reload: true,
             compatibility: request.compatibility,
+            ignore_compatibility: request.ignore_compatibility,
             delete_config: false,
             delete_data: false,
         }
@@ -61,6 +64,7 @@ impl PluginMarketOperationPlan {
             requires_unpack: false,
             requires_loader_reload: true,
             compatibility: PluginCompatibility::unknown(),
+            ignore_compatibility: true,
             delete_config: request.delete_config,
             delete_data: request.delete_data,
         }
@@ -82,8 +86,21 @@ impl PluginMarketOperationPlan {
         }))
     }
 
+    pub fn update_from_market_entry(entry: &PluginMarketEntry) -> Option<Self> {
+        let install_plan = Self::from_market_entry(entry)?;
+        Some(Self {
+            action: PluginMarketAction::Update,
+            ..install_plan
+        })
+    }
+
     pub fn is_blocked_by_compatibility(&self) -> bool {
-        !self.compatibility.compatible
+        !self.compatibility.compatible && !self.ignore_compatibility
+    }
+
+    pub fn ignoring_compatibility(mut self) -> Self {
+        self.ignore_compatibility = true;
+        self
     }
 }
 
@@ -121,6 +138,7 @@ pub struct PluginUpdatePlan {
     pub plugin_id: String,
     pub package: PluginPackageDescriptor,
     pub compatibility: PluginCompatibility,
+    pub ignore_compatibility: bool,
 }
 
 impl PluginUpdatePlan {
@@ -129,11 +147,17 @@ impl PluginUpdatePlan {
             plugin_id: plugin_id.into(),
             package,
             compatibility: PluginCompatibility::unknown(),
+            ignore_compatibility: false,
         }
     }
 
     pub fn with_compatibility(mut self, compatibility: PluginCompatibility) -> Self {
         self.compatibility = compatibility;
+        self
+    }
+
+    pub fn ignore_compatibility(mut self) -> Self {
+        self.ignore_compatibility = true;
         self
     }
 }

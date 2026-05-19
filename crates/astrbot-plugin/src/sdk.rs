@@ -2,8 +2,12 @@ use async_trait::async_trait;
 
 use astrbot_core::Result;
 
+use crate::extension::{PluginPlatformExtension, PluginWebApiRoute};
+use crate::handler::RegisteredHandler;
+use crate::loader::PluginDependencyPlan;
 use crate::manifest::PluginManifest;
 use crate::sandbox::{PluginPermission, SandboxProfile, ToolCapability};
+use crate::tool::PluginToolDeclaration;
 
 pub const PLUGIN_SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -74,6 +78,30 @@ impl PluginContext {
 #[async_trait]
 pub trait PluginModule: Send + Sync {
     fn manifest(&self) -> &PluginManifest;
+
+    fn runtime_version_requirement(&self) -> Option<&str> {
+        None
+    }
+
+    fn dependency_plan(&self, plugin_id: &str) -> PluginDependencyPlan {
+        PluginDependencyPlan::new(plugin_id)
+    }
+
+    fn handlers(&self, _ctx: &PluginContext) -> Vec<RegisteredHandler> {
+        Vec::new()
+    }
+
+    fn tools(&self, _ctx: &PluginContext) -> Vec<PluginToolDeclaration> {
+        Vec::new()
+    }
+
+    fn web_routes(&self, _ctx: &PluginContext) -> Vec<PluginWebApiRoute> {
+        Vec::new()
+    }
+
+    fn platform_extensions(&self, _ctx: &PluginContext) -> Vec<PluginPlatformExtension> {
+        Vec::new()
+    }
 
     async fn on_load(&self, _ctx: &PluginContext) -> Result<()> {
         Ok(())

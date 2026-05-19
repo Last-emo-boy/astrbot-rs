@@ -144,6 +144,7 @@ pub struct ProviderFallbackConfig {
     pub enabled: bool,
     pub require_wake: bool,
     pub error_message: Option<String>,
+    pub provider_wake_prefix: Option<String>,
 }
 
 impl Default for ProviderFallbackConfig {
@@ -152,6 +153,7 @@ impl Default for ProviderFallbackConfig {
             enabled: true,
             require_wake: false,
             error_message: Some(default_provider_error_message()),
+            provider_wake_prefix: Some(String::new()),
         }
     }
 }
@@ -171,6 +173,32 @@ impl ProviderFallbackConfig {
 
     pub fn with_error_message(mut self, error_message: impl Into<String>) -> Self {
         self.error_message = non_empty_option(error_message);
+        self
+    }
+
+    pub fn with_provider_wake_prefix(mut self, provider_wake_prefix: impl Into<String>) -> Self {
+        self.provider_wake_prefix = Some(provider_wake_prefix.into().trim().to_string());
+        self
+    }
+
+    pub fn with_provider_wake_prefixes<I, S>(
+        mut self,
+        provider_wake_prefix: impl Into<String>,
+        bot_wake_prefixes: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        let mut provider_wake_prefix = provider_wake_prefix.into().trim().to_string();
+        for bot_wake_prefix in bot_wake_prefixes {
+            let bot_wake_prefix = bot_wake_prefix.as_ref();
+            if !bot_wake_prefix.is_empty() && provider_wake_prefix.starts_with(bot_wake_prefix) {
+                provider_wake_prefix = provider_wake_prefix[bot_wake_prefix.len()..].to_string();
+                break;
+            }
+        }
+        self.provider_wake_prefix = Some(provider_wake_prefix);
         self
     }
 

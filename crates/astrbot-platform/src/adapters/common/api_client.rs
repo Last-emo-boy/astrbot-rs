@@ -2,6 +2,10 @@ use std::time::Duration;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
+use reqwest::Method;
+use tokio::time;
+
+use super::retry::{PlatformRetryPolicy, PlatformRetryReason};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PlatformApiMethod {
@@ -211,12 +215,168 @@ pub trait PlatformApiClient: Send + Sync {
     async fn execute(&self, request: PlatformApiRequest) -> Result<PlatformApiResponse>;
 }
 
+#[derive(Clone, Debug)]
+pub struct ReqwestPlatformApiClient {
+    client: reqwest::Client,
+    retry_policy: PlatformRetryPolicy,
+}
+
+impl ReqwestPlatformApiClient {
+    pub fn new() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+            retry_policy: PlatformRetryPolicy::default(),
+        }
+    }
+
+    pub fn with_retry_policy(mut self, retry_policy: PlatformRetryPolicy) -> Self {
+        self.retry_policy = retry_policy;
+        self
+    }
+
+    async fn execute_once(&self, request: &PlatformApiRequest) -> Result<PlatformApiResponse> {
+        let method = reqwest_method(request.method)?;
+        let mut builder = self.client.request(method, &request.endpoint);
+        for (name, value) in &request.headers {
+            builder = builder.header(name, value);
+        }
+        if !request.body.is_empty() {
+            builder = builder.body(request.body.clone());
+        }
+
+        let response = builder.send().await.map_err(|err| {
+            PlatformApiError::new(
+                &request.platform_type,
+                &request.endpoint,
+                PlatformApiErrorKind::Connection,
+                err.to_string(),
+            )
+        })?;
+        let status = response.status().as_u16();
+        let headers = response
+            .headers()
+            .iter()
+            .filter_map(|(name, value)| {
+                value
+                    .to_str()
+                    .ok()
+                    .map(|value| (name.as_str().to_string(), value.to_string()))
+            })
+            .collect::<Vec<_>>();
+        let body = response
+            .bytes()
+            .await
+            .map_err(|err| {
+                PlatformApiError::new(
+                    &request.platform_type,
+                    &request.endpoint,
+                    PlatformApiErrorKind::InvalidResponse,
+                    err.to_string(),
+                )
+            })?
+            .to_vec();
+
+        Ok(PlatformApiResponse {
+            status,
+            headers,
+            body,
+        })
+    }
+}
+
+impl Default for ReqwestPlatformApiClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl PlatformApiClient for ReqwestPlatformApiClient {
+    async fn execute(&self, request: PlatformApiRequest) -> Result<PlatformApiResponse> {
+        if request.is_websocket() {
+            return Err(PlatformApiError::websocket(
+                &request.platform_type,
+                &request.endpoint,
+                "websocket requests must use LongConnectionClient",
+            )
+            .into());
+        }
+
+        let mut attempt = 1;
+        loop {
+            let response = self.execute_once(&request).await;
+            match response {
+                Ok(response) if response.is_success() => return Ok(response),
+                Ok(response) => {
+                    let mut error = PlatformApiError::from_status(
+                        &request.platform_type,
+                        &request.endpoint,
+                        response.status,
+                    );
+                    if let Some(retry_after) = response.retry_after() {
+                        error = error.with_retry_after(retry_after);
+                    }
+                    if let Some(reason) = PlatformRetryReason::from_api_error_kind(error.kind)
+                        && let Some(policy_delay) =
+                            self.retry_policy.delay_after_failure(attempt, reason)
+                    {
+                        let delay = error.retry_after.unwrap_or(policy_delay);
+                        time::sleep(delay).await;
+                        attempt += 1;
+                        continue;
+                    }
+                    return Err(error.into());
+                }
+                Err(error) => {
+                    let api_error = PlatformApiError::new(
+                        &request.platform_type,
+                        &request.endpoint,
+                        PlatformApiErrorKind::Connection,
+                        error.to_string(),
+                    );
+                    if let Some(reason) = PlatformRetryReason::from_api_error_kind(api_error.kind)
+                        && let Some(delay) = self.retry_policy.delay_after_failure(attempt, reason)
+                    {
+                        time::sleep(delay).await;
+                        attempt += 1;
+                        continue;
+                    }
+                    return Err(api_error.into());
+                }
+            }
+        }
+    }
+}
+
+fn reqwest_method(method: PlatformApiMethod) -> Result<Method> {
+    match method {
+        PlatformApiMethod::Get => Ok(Method::GET),
+        PlatformApiMethod::Post => Ok(Method::POST),
+        PlatformApiMethod::Put => Ok(Method::PUT),
+        PlatformApiMethod::Patch => Ok(Method::PATCH),
+        PlatformApiMethod::Delete => Ok(Method::DELETE),
+        PlatformApiMethod::WebSocketConnect => Err(PlatformApiError::websocket(
+            "platform",
+            "websocket",
+            "websocket method is not an HTTP API request",
+        )
+        .into()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::Duration;
+
+    use axum::{Router, routing::post};
+
     use super::{
-        PlatformApiError, PlatformApiErrorKind, PlatformApiMethod, PlatformApiRequest,
-        PlatformApiResponse,
+        PlatformApiClient, PlatformApiError, PlatformApiErrorKind, PlatformApiMethod,
+        PlatformApiRequest, PlatformApiResponse, ReqwestPlatformApiClient,
     };
+    use crate::PlatformRetryPolicy;
 
     #[test]
     fn api_request_keeps_client_details_outside_event_conversion() {
@@ -242,5 +402,53 @@ mod tests {
         assert_eq!(error.retry_after.expect("retry after").as_secs(), 3);
         assert_eq!(websocket.kind, PlatformApiErrorKind::WebSocket);
         assert!(websocket.is_retryable());
+    }
+
+    #[tokio::test]
+    async fn reqwest_api_client_retries_429_and_returns_success_body() {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let state = attempts.clone();
+        let app = Router::new().route(
+            "/send",
+            post(move || {
+                let state = state.clone();
+                async move {
+                    let attempt = state.fetch_add(1, Ordering::SeqCst);
+                    if attempt == 0 {
+                        (
+                            axum::http::StatusCode::TOO_MANY_REQUESTS,
+                            [("Retry-After", "0")],
+                            "rate limited",
+                        )
+                    } else {
+                        (axum::http::StatusCode::OK, [("Retry-After", "0")], "ok")
+                    }
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("listener");
+        let address = listener.local_addr().expect("local addr");
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+
+        let client = ReqwestPlatformApiClient::new().with_retry_policy(PlatformRetryPolicy::new(
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(1),
+        ));
+        let response = client
+            .execute(PlatformApiRequest::new(
+                "fake",
+                PlatformApiMethod::Post,
+                format!("http://{address}/send"),
+            ))
+            .await
+            .expect("request should retry and succeed");
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, b"ok");
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+        server.abort();
     }
 }

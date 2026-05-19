@@ -10,7 +10,8 @@ pub use context::{
     SessionContextRequestDecorator,
 };
 pub use decorator::{
-    CompositeProviderRequestDecorator, NoopProviderRequestDecorator, ProviderRequestDecorator,
+    CompositeProviderRequestDecorator, NoopProviderRequestDecorator, NoopProviderRequestHook,
+    ProviderRequestDecorator, ProviderRequestHook,
 };
 pub use envelope::ProviderRequestEnvelope;
 pub use ports::{AgentProviderPreferencePort, AgentQuoteContextPort, AgentSessionContextPort};

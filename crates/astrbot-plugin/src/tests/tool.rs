@@ -1,6 +1,6 @@
 use crate::{
     BackgroundTaskPolicy, HandoffToolTarget, PluginPermission, PluginToolDeclaration,
-    PluginToolKind,
+    PluginToolKind, ToolExecutionResult, ToolExecutionStatus,
 };
 use astrbot_tool::ToolSource;
 
@@ -62,4 +62,17 @@ fn plugin_tool_declarations_project_tool_source_metadata() {
 
     assert_eq!(background.kind, ToolSource::Background);
     assert_eq!(background.plugin_id.as_deref(), Some("plugin.jobs"));
+}
+
+#[test]
+fn background_tool_execution_result_models_python_accepted_result() {
+    let result =
+        ToolExecutionResult::accepted_background("Background task submitted. task_id=task-1", true);
+
+    assert_eq!(result.status, ToolExecutionStatus::AcceptedBackground);
+    assert_eq!(
+        result.content.as_deref(),
+        Some("Background task submitted. task_id=task-1")
+    );
+    assert!(result.wake_main_agent);
 }

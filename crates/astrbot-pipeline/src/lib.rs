@@ -8,15 +8,16 @@ pub mod stages;
 
 pub use builder::DefaultPipelineBuilder;
 pub use context::{
-    AllowAllSessionStatusPort, ContentSafetyConfig, ContentSafetyStrategy, ContentSafetyVerdict,
-    EmptySessionContextPort, InMemoryProviderPreferencePort, KeywordContentSafetyStrategy,
-    NoProviderPreferencePort, NoQuoteContextPolicy, NoopPreAckReactionSink,
-    NoopPreprocessPathMapper, PipelineContext, PreAckConfig, PreAckReactionSink, PrefixPathMapper,
-    PrefixPathMapping, PreprocessConfig, PreprocessPathMapper, ProviderFallbackConfig,
-    ProviderPreferencePort, QuoteContextPolicy, RateLimitConfig, RateLimitStrategy,
-    ResultDecorateConfig, ScopedProviderPreferencePort, SelectedTextQuoteContextPolicy,
-    SessionContextPort, SessionStatusPort, SpeechToTextPreprocessConfig, WakeCheckConfig,
-    WhitelistPolicyConfig, strip_file_scheme,
+    AllowAllSessionStatusPort, BaiduAipContentSafetyStrategy, ContentSafetyConfig,
+    ContentSafetyStrategy, ContentSafetyVerdict, EmptySessionContextPort,
+    InMemoryProviderPreferencePort, KeywordContentSafetyStrategy, NoProviderPreferencePort,
+    NoQuoteContextPolicy, NoopPreAckReactionSink, NoopPreprocessPathMapper, NoopResultFileService,
+    PipelineContext, PreAckConfig, PreAckReactionSink, PrefixPathMapper, PrefixPathMapping,
+    PreprocessConfig, PreprocessPathMapper, ProviderFallbackConfig, ProviderPreferencePort,
+    QuoteContextPolicy, RateLimitConfig, RateLimitStrategy, ResultDecorateConfig,
+    ResultFileService, ScopedProviderPreferencePort, SelectedTextQuoteContextPolicy,
+    SessionContextPort, SessionStatusPort, SpeechToTextPreprocessConfig, TextToImageDecorateConfig,
+    TextToSpeechDecorateConfig, WakeCheckConfig, WhitelistPolicyConfig, strip_file_scheme,
 };
 pub use registry::{
     CONTENT_SAFETY_STAGE_ORDER, CONTENT_SAFETY_STAGE_TYPE, PLUGIN_STAGE_ORDER, PLUGIN_STAGE_TYPE,

@@ -18,6 +18,7 @@ pub fn personas_table() -> StorageTable {
             StorageColumn::new("begin_dialogs", StorageColumnType::Json).nullable(),
             StorageColumn::new("tools", StorageColumnType::Json).nullable(),
             StorageColumn::new("skills", StorageColumnType::Json).nullable(),
+            StorageColumn::new("custom_error_message", StorageColumnType::Text).nullable(),
             StorageColumn::new("folder_id", StorageColumnType::Text).nullable(),
             StorageColumn::new("sort_order", StorageColumnType::Integer).default_value("0"),
         ],

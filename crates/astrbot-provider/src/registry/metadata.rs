@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use astrbot_core::Result;
 
-use crate::capability::{ProviderAdapterMetadata, ProviderCapability};
+use crate::capability::{
+    ProviderAdapterMetadata, ProviderCapability, ProviderModelDiscoverySupport, ProviderModelInfo,
+};
 
 use super::errors::duplicate_provider_type;
 
@@ -26,6 +28,18 @@ impl ProviderMetadataIndex {
             ProviderAdapterMetadata::new(provider_type, capability),
         );
         Ok(())
+    }
+
+    pub(super) fn set_model_metadata(
+        &mut self,
+        provider_type: &str,
+        support: ProviderModelDiscoverySupport,
+        candidates: Vec<ProviderModelInfo>,
+    ) {
+        if let Some(metadata) = self.adapters.get_mut(provider_type) {
+            metadata.model_discovery = support;
+            metadata.model_candidates = candidates;
+        }
     }
 
     pub(super) fn get(&self, provider_type: &str) -> Option<&ProviderAdapterMetadata> {

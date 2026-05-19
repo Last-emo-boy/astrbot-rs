@@ -124,9 +124,11 @@ async fn process_stage_falls_back_to_provider_when_plugin_does_not_set_result() 
     assert_eq!(requests.len(), 1);
     assert_eq!(requests[0].prompt, "hello");
     let hook_events = agent_hook.events.lock().await;
-    assert_eq!(hook_events.len(), 2);
+    assert_eq!(hook_events.len(), 4);
     assert_eq!(hook_events[0].kind(), AgentHookEventKind::AgentBegin);
-    let AgentHookEvent::AgentDone(done) = &hook_events[1] else {
+    assert_eq!(hook_events[1].kind(), AgentHookEventKind::WaitingLlmRequest);
+    assert_eq!(hook_events[2].kind(), AgentHookEventKind::LlmRequest);
+    let AgentHookEvent::AgentDone(done) = &hook_events[3] else {
         panic!("provider fallback should finish through typed agent hook");
     };
     assert_eq!(done.lifecycle.session_id, "conversation-1");

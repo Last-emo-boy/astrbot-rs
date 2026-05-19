@@ -5,8 +5,8 @@ use astrbot_core::{MessageEvent, Result};
 use async_trait::async_trait;
 
 use crate::{
-    HandlerMetadata, PluginControl, PluginEventType, PluginHandler, PluginRegistry,
-    RegisteredHandler,
+    CommandFilter, HandlerMetadata, PermissionFilter, PermissionScope, PluginControl,
+    PluginEventType, PluginHandler, PluginRegistry, RegisteredHandler,
 };
 
 use super::event;
@@ -88,4 +88,42 @@ async fn registry_terminates_registered_handlers() {
         .expect("registry should terminate handlers");
 
     assert_eq!(terminate_count.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn registry_builds_command_descriptors_from_filters_and_permissions() {
+    let mut registry = PluginRegistry::new();
+    registry.register_handler(
+        RegisteredHandler::new(
+            HandlerMetadata::new(
+                "builtin_commands",
+                "plugin_ls",
+                PluginEventType::AdapterMessage,
+            )
+            .with_description("list plugins"),
+            Arc::new(CountingHandler {
+                calls: Arc::new(AtomicUsize::new(0)),
+                control: PluginControl::Continue,
+            }),
+        )
+        .with_filter(CommandFilter::sub_command("plugin", "ls").with_alias("list"))
+        .with_filter(PermissionFilter::admin(PermissionScope::new())),
+    );
+
+    let descriptors = registry.command_descriptors();
+
+    assert_eq!(descriptors.len(), 1);
+    assert_eq!(
+        descriptors[0].handler_full_name,
+        "builtin_commands.plugin_ls"
+    );
+    assert_eq!(descriptors[0].effective_command(), "plugin ls");
+    assert_eq!(descriptors[0].effective_aliases(), vec!["plugin list"]);
+    assert_eq!(descriptors[0].description, "list plugins");
+    assert_eq!(
+        descriptors[0].permission,
+        astrbot_tool::CommandPermission::Admin
+    );
+    assert!(descriptors[0].reserved);
+    assert!(registry.command_conflicts().is_empty());
 }

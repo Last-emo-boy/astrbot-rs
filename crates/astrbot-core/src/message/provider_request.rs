@@ -143,6 +143,25 @@ impl ProviderRequest {
         }
         self
     }
+
+    pub fn strip_prompt_prefix(&mut self, prefix: &str) -> bool {
+        if prefix.is_empty() {
+            return false;
+        }
+
+        let Some(prompt) = self.prompt.as_mut() else {
+            return false;
+        };
+        let trimmed = prompt.trim_start();
+        if trimmed.is_empty() {
+            return false;
+        }
+        let Some(stripped) = trimmed.strip_prefix(prefix) else {
+            return false;
+        };
+        *prompt = stripped.trim_start().to_string();
+        true
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -31,6 +31,7 @@ mod tests {
         assert!(schema.table("conversation_messages").is_some());
         assert!(schema.table("provider_preferences").is_some());
         assert!(schema.table("attachments").is_some());
+        assert!(schema.table("file_tokens").is_some());
         assert!(schema.table("config_snapshots").is_some());
         assert!(schema.table("api_keys").is_some());
     }
@@ -48,6 +49,9 @@ mod tests {
         assert!(schema.table("api_keys").is_some());
         assert!(schema.table("cron_jobs").is_some());
         assert!(schema.table("command_configs").is_some());
+        assert!(schema.table("file_tokens").is_some());
+        assert!(schema.table("session_rule_sets").is_some());
+        assert!(schema.table("kb_profiles").is_some());
     }
 
     #[test]
@@ -63,21 +67,32 @@ mod tests {
             vec![
                 "conversations",
                 "conversation_messages",
-                "provider_preferences",
                 "attachments",
+                "conversation_references",
+                "memory_records",
+                "platform_bindings",
+                "file_tokens",
+                "provider_preferences",
                 "config_snapshots",
                 "platform_stats",
                 "preferences",
-                "personas",
-                "persona_folders",
                 "platform_message_history",
                 "platform_sessions",
-                "api_keys",
-                "cron_jobs",
                 "chatui_projects",
                 "session_project_relations",
+                "session_rule_sets",
+                "session_groups",
+                "kb_profiles",
+                "kb_documents",
+                "kb_media",
+                "kb_chunks",
+                "personas",
+                "persona_folders",
                 "command_configs",
                 "command_conflicts",
+                "api_keys",
+                "cron_jobs",
+                "storage_migrations",
             ]
         );
     }

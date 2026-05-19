@@ -26,6 +26,22 @@ pub(crate) fn default_chat_providers() -> Vec<RuntimeChatProviderConfig> {
     )]
 }
 
+pub(crate) fn default_dashboard_username() -> String {
+    "astrbot".to_string()
+}
+
+pub(crate) fn default_dashboard_password() -> String {
+    "77b90590a8945a7d36c963981a307dc9".to_string()
+}
+
+pub(crate) fn default_dashboard_jwt_secret() -> String {
+    "astrbot-rs-dashboard-secret".to_string()
+}
+
+pub(crate) fn default_dashboard_token_ttl_seconds() -> u64 {
+    7 * 24 * 60 * 60
+}
+
 pub(crate) fn default_provider_error_message_option() -> Option<String> {
     Some("LLM 请求失败，请稍后再试。".to_string())
 }

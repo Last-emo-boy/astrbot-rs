@@ -14,10 +14,14 @@ pub(crate) use rerank::{
     build_bailian_rerank_provider, build_vllm_rerank_provider, build_xinference_rerank_provider,
 };
 pub(crate) use speech::{
-    build_openai_speech_to_text_provider, build_xinference_speech_to_text_provider,
+    build_openai_speech_to_text_provider, build_openai_whisper_selfhost_speech_to_text_provider,
+    build_sensevoice_selfhost_speech_to_text_provider, build_xinference_speech_to_text_provider,
 };
 pub(crate) use tts::{
-    build_gemini_text_to_speech_provider, build_gsvi_text_to_speech_provider,
+    build_azure_text_to_speech_provider, build_dashscope_text_to_speech_provider,
+    build_edge_text_to_speech_provider, build_fishaudio_text_to_speech_provider,
+    build_gemini_text_to_speech_provider, build_genie_text_to_speech_provider,
+    build_gsv_selfhost_text_to_speech_provider, build_gsvi_text_to_speech_provider,
     build_minimax_text_to_speech_provider, build_openai_text_to_speech_provider,
     build_volcengine_text_to_speech_provider,
 };

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -87,6 +88,8 @@ pub struct BackupManifest {
     pub checksums: BTreeMap<String, String>,
     pub table_statistics: BTreeMap<String, BTreeMap<String, usize>>,
     pub directory_statistics: BTreeMap<String, BackupDirectoryStat>,
+    #[serde(default, skip_serializing, skip_deserializing)]
+    pub source_path: Option<PathBuf>,
 }
 
 impl BackupManifest {
@@ -102,6 +105,7 @@ impl BackupManifest {
             checksums: BTreeMap::new(),
             table_statistics: BTreeMap::new(),
             directory_statistics: BTreeMap::new(),
+            source_path: None,
         }
     }
 
@@ -137,6 +141,11 @@ impl BackupManifest {
             self.directories.push(name.clone());
         }
         self.directory_statistics.insert(name, stat);
+    }
+
+    pub fn with_source_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.source_path = Some(path.into());
+        self
     }
 }
 

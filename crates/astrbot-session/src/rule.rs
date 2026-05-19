@@ -174,6 +174,7 @@ impl SessionPluginRule {
 pub struct SessionKnowledgeBaseRule {
     pub kb_ids: Vec<String>,
     pub top_k: Option<u32>,
+    pub enable_rerank: Option<bool>,
 }
 
 impl SessionKnowledgeBaseRule {
@@ -188,6 +189,11 @@ impl SessionKnowledgeBaseRule {
 
     pub fn with_top_k(mut self, top_k: u32) -> Self {
         self.top_k = Some(top_k);
+        self
+    }
+
+    pub fn with_enable_rerank(mut self, enable_rerank: bool) -> Self {
+        self.enable_rerank = Some(enable_rerank);
         self
     }
 }

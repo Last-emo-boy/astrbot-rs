@@ -119,3 +119,86 @@ fn manager_builds_xinference_speech_to_text_provider_from_registry() {
         Some("xinference-stt")
     );
 }
+
+#[tokio::test]
+async fn manager_builds_whisper_selfhost_speech_to_text_provider_from_registry() {
+    let audio = TempAudioFile::wav("provider-registry-whisper-selfhost", b"RIFF selfhost audio");
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let base_url = serve_sequence(
+        vec![TestResponse::json(
+            "200 OK",
+            r#"{"text":"selfhost transcript"}"#,
+        )],
+        captured.clone(),
+    )
+    .await;
+    let registry = ProviderRegistry::with_builtin_providers();
+    let manager = ProviderManager::from_speech_to_text_configs(
+        &registry,
+        vec![
+            SpeechToTextProviderConfig::openai_whisper_selfhost(
+                "whisper-selfhost",
+                base_url,
+                "tiny",
+            )
+            .with_header("x-provider", "selfhost"),
+        ],
+        Some("whisper-selfhost".to_string()),
+    )
+    .expect("speech-to-text manager should build");
+
+    let response = manager
+        .transcribe(SpeechToTextRequest::new(audio.path_string()))
+        .await
+        .expect("selfhost Whisper provider should respond");
+
+    assert_eq!(response.text, "selfhost transcript");
+    let requests = captured.lock().await.clone();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("POST /audio/transcriptions HTTP/1.1"));
+    assert!(requests[0].contains("name=\"model\""));
+    assert!(requests[0].contains("tiny"));
+    assert!(has_header(&requests[0], "x-provider", "selfhost"));
+}
+
+#[tokio::test]
+async fn manager_builds_sensevoice_selfhost_speech_to_text_provider_from_registry() {
+    let audio = TempAudioFile::wav("provider-registry-sensevoice-selfhost", b"RIFF sense audio");
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let base_url = serve_sequence(
+        vec![TestResponse::json(
+            "200 OK",
+            r#"{"text":"sense transcript"}"#,
+        )],
+        captured.clone(),
+    )
+    .await;
+    let registry = ProviderRegistry::with_builtin_providers();
+    let manager = ProviderManager::from_speech_to_text_configs(
+        &registry,
+        vec![
+            SpeechToTextProviderConfig::sensevoice_selfhost(
+                "sensevoice-selfhost",
+                base_url,
+                "iic/SenseVoiceSmall",
+            )
+            .with_option("is_emotion", "true"),
+        ],
+        Some("sensevoice-selfhost".to_string()),
+    )
+    .expect("speech-to-text manager should build");
+
+    let response = manager
+        .transcribe(SpeechToTextRequest::new(audio.path_string()))
+        .await
+        .expect("selfhost SenseVoice provider should respond");
+
+    assert_eq!(response.text, "sense transcript");
+    let requests = captured.lock().await.clone();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("POST /audio/transcriptions HTTP/1.1"));
+    assert!(requests[0].contains("name=\"stt_model\""));
+    assert!(requests[0].contains("iic/SenseVoiceSmall"));
+    assert!(requests[0].contains("name=\"is_emotion\""));
+    assert!(requests[0].contains("true"));
+}

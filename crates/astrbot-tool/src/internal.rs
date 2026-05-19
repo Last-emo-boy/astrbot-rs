@@ -1,6 +1,9 @@
 use serde_json::{Value, json};
 
-use crate::{ToolCatalog, ToolDescriptor, ToolSourceMetadata};
+use crate::{
+    FETCH_URL_TOOL, TAVILY_EXTRACT_TOOL, ToolCatalog, ToolDescriptor, ToolSourceMetadata,
+    WEB_SEARCH_BOCHA_TOOL, WEB_SEARCH_TAVILY_TOOL, WEB_SEARCH_TOOL,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InternalToolRegistration {
@@ -108,6 +111,7 @@ pub fn builtin_internal_tool_catalog() -> InternalToolProviderCatalog {
         cron_provider(),
         knowledge_base_provider(),
         send_message_provider(),
+        web_searcher_provider(),
         computer_use_provider(),
     ])
 }
@@ -219,52 +223,245 @@ fn send_message_provider() -> InternalToolProviderDescriptor {
         )
 }
 
+fn web_searcher_provider() -> InternalToolProviderDescriptor {
+    InternalToolProviderDescriptor::new("web_searcher", "astrbot.builtin_stars.web_searcher.main")
+        .with_registration(
+            InternalToolRegistration::new(
+                "web_searcher",
+                WEB_SEARCH_TOOL,
+                "Search the web with the default search engine provider and summarize fetched page snippets.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "max_results": {"type": "integer", "default": 5}
+                    },
+                    "required": ["query"]
+                }),
+            )
+            .with_handler_name("WebSearchDefaultTool"),
+        )
+        .with_registration(
+            InternalToolRegistration::new(
+                "web_searcher",
+                FETCH_URL_TOOL,
+                "Fetch readable text content from a web URL.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"}
+                    },
+                    "required": ["url"]
+                }),
+            )
+            .with_handler_name("FetchUrlTool"),
+        )
+        .with_registration(
+            InternalToolRegistration::new(
+                "web_searcher",
+                WEB_SEARCH_TAVILY_TOOL,
+                "Search the web with Tavily and return indexed JSON results for citations.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "max_results": {"type": "integer", "default": 7},
+                        "search_depth": {"type": "string", "enum": ["basic", "advanced"], "default": "basic"},
+                        "topic": {"type": "string", "enum": ["general", "news"], "default": "general"},
+                        "days": {"type": "integer", "default": 3},
+                        "time_range": {"type": "string"},
+                        "start_date": {"type": "string"},
+                        "end_date": {"type": "string"}
+                    },
+                    "required": ["query"]
+                }),
+            )
+            .with_handler_name("TavilySearchTool"),
+        )
+        .with_registration(
+            InternalToolRegistration::new(
+                "web_searcher",
+                TAVILY_EXTRACT_TOOL,
+                "Extract readable page content with Tavily.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "extract_depth": {"type": "string", "enum": ["basic", "advanced"], "default": "basic"}
+                    },
+                    "required": ["url"]
+                }),
+            )
+            .with_handler_name("TavilyExtractTool"),
+        )
+        .with_registration(
+            InternalToolRegistration::new(
+                "web_searcher",
+                WEB_SEARCH_BOCHA_TOOL,
+                "Search the web with Bocha and return indexed JSON results for citations.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "freshness": {"type": "string", "default": "noLimit"},
+                        "summary": {"type": "boolean", "default": false},
+                        "include": {"type": "string"},
+                        "exclude": {"type": "string"},
+                        "count": {"type": "integer", "default": 10}
+                    },
+                    "required": ["query"]
+                }),
+            )
+            .with_handler_name("BochaSearchTool"),
+        )
+}
+
 fn computer_use_provider() -> InternalToolProviderDescriptor {
     InternalToolProviderDescriptor::new(
         "computer_use",
         "astrbot.core.computer.computer_tool_provider",
     )
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_execute_shell",
         "Execute a command in the configured computer-use shell.",
+        json!({
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The shell command to execute in the current runtime shell."
+                },
+                "background": {
+                    "type": "boolean",
+                    "description": "Whether to run the command in the background.",
+                    "default": false
+                },
+                "env": {
+                    "type": "object",
+                    "description": "Optional environment variables for the command.",
+                    "additionalProperties": { "type": "string" },
+                    "default": {}
+                }
+            },
+            "required": ["command"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_execute_ipython",
         "Run code in the configured computer-use Python environment.",
+        json!({
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Python code to execute."
+                },
+                "silent": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "required": ["code"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_upload_file",
         "Upload a local file to the sandbox filesystem.",
+        json!({
+            "type": "object",
+            "properties": {
+                "local_path": {
+                    "type": "string",
+                    "description": "Local file path to upload."
+                },
+                "remote_path": {
+                    "type": "string",
+                    "description": "Optional destination path in the sandbox."
+                }
+            },
+            "required": ["local_path"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_download_file",
         "Download a file from the sandbox filesystem.",
+        json!({
+            "type": "object",
+            "properties": {
+                "remote_path": {
+                    "type": "string",
+                    "description": "Sandbox file path to download."
+                },
+                "also_send_to_user": {
+                    "type": "boolean",
+                    "default": true
+                }
+            },
+            "required": ["remote_path"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_execute_browser",
         "Execute one browser automation command in the sandbox.",
+        json!({
+            "type": "object",
+            "properties": {
+                "cmd": { "type": "string", "description": "Browser command to execute." },
+                "timeout": { "type": "integer", "default": 30 },
+                "description": { "type": "string" },
+                "tags": { "type": "string" },
+                "learn": { "type": "boolean", "default": false },
+                "include_trace": { "type": "boolean", "default": false }
+            },
+            "required": ["cmd"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_execute_browser_batch",
         "Execute a browser command batch in the sandbox.",
+        json!({
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Ordered browser commands."
+                },
+                "timeout": { "type": "integer", "default": 60 },
+                "stop_on_error": { "type": "boolean", "default": true },
+                "description": { "type": "string" },
+                "tags": { "type": "string" },
+                "learn": { "type": "boolean", "default": false },
+                "include_trace": { "type": "boolean", "default": false }
+            },
+            "required": ["commands"]
+        }),
     ))
-    .with_registration(empty_computer_registration(
+    .with_registration(computer_registration(
         "astrbot_run_browser_skill",
         "Run a released browser skill in the sandbox by skill key.",
+        json!({
+            "type": "object",
+            "properties": {
+                "skill_key": { "type": "string" },
+                "timeout": { "type": "integer", "default": 60 },
+                "stop_on_error": { "type": "boolean", "default": true },
+                "include_trace": { "type": "boolean", "default": false },
+                "description": { "type": "string" },
+                "tags": { "type": "string" }
+            },
+            "required": ["skill_key"]
+        }),
     ))
 }
 
-fn empty_computer_registration(
+fn computer_registration(
     name: impl Into<String>,
     description: impl Into<String>,
+    parameters: Value,
 ) -> InternalToolRegistration {
-    InternalToolRegistration::new(
-        "computer_use",
-        name,
-        description,
-        json!({
-            "type": "object",
-            "properties": {}
-        }),
-    )
+    let mut registration =
+        InternalToolRegistration::new("computer_use", name, description, parameters);
+    registration.descriptor.active = false;
+    registration
 }

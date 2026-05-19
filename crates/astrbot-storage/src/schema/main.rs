@@ -10,29 +10,11 @@ pub fn astrbot_main_v4() -> StorageSchema {
 }
 
 pub fn astrbot_main_v4_tables() -> Vec<StorageTable> {
-    let conversation = conversation_tables();
-    let provider = provider_tables();
-    let platform = platform_tables();
-    let persona_skill = persona_skill_tables();
-    let ops = ops_tables();
-
-    vec![
-        conversation[0].clone(),
-        conversation[1].clone(),
-        provider[0].clone(),
-        conversation[2].clone(),
-        provider[1].clone(),
-        platform[0].clone(),
-        platform[1].clone(),
-        persona_skill[0].clone(),
-        persona_skill[1].clone(),
-        platform[2].clone(),
-        platform[3].clone(),
-        ops[0].clone(),
-        ops[1].clone(),
-        platform[4].clone(),
-        platform[5].clone(),
-        persona_skill[2].clone(),
-        persona_skill[3].clone(),
-    ]
+    let mut tables = Vec::new();
+    tables.extend(conversation_tables());
+    tables.extend(provider_tables());
+    tables.extend(platform_tables());
+    tables.extend(persona_skill_tables());
+    tables.extend(ops_tables());
+    tables
 }

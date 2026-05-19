@@ -5,15 +5,19 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-computer = { path = "../astrbot-computer" }
 astrbot-core = { path = "../astrbot-core" }
+astrbot-kb = { path = "../astrbot-kb" }
 astrbot-memory = { path = "../astrbot-memory" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
 astrbot-skill = { path = "../astrbot-skill" }
 astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
+astrbot-mcp = { path = "../astrbot-mcp" }
 tokio.workspace = true

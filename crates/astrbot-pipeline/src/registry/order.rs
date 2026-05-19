@@ -11,11 +11,11 @@ pub const PROVIDER_STAGE_TYPE: &str = "provider";
 pub const RESPOND_STAGE_TYPE: &str = "respond";
 
 pub const WAKE_STAGE_ORDER: i32 = 100;
-pub const PREPROCESS_STAGE_ORDER: i32 = 150;
 pub const WHITELIST_STAGE_ORDER: i32 = 200;
 pub const SESSION_STATUS_STAGE_ORDER: i32 = 300;
 pub const RATE_LIMIT_STAGE_ORDER: i32 = 400;
 pub const CONTENT_SAFETY_STAGE_ORDER: i32 = 500;
+pub const PREPROCESS_STAGE_ORDER: i32 = 550;
 pub const PROCESS_STAGE_ORDER: i32 = 600;
 pub const PLUGIN_STAGE_ORDER: i32 = 610;
 pub const PROVIDER_STAGE_ORDER: i32 = 620;

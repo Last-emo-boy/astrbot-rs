@@ -9,6 +9,8 @@ pub struct RuntimeProviderFallbackConfig {
     pub enabled: bool,
     #[serde(default)]
     pub require_wake: bool,
+    #[serde(default)]
+    pub wake_prefix: String,
     #[serde(default = "default_provider_error_message_option")]
     pub error_message: Option<String>,
 }
@@ -18,6 +20,7 @@ impl Default for RuntimeProviderFallbackConfig {
         Self {
             enabled: true,
             require_wake: false,
+            wake_prefix: String::new(),
             error_message: default_provider_error_message_option(),
         }
     }
@@ -31,6 +34,7 @@ impl From<RuntimeProviderFallbackConfig> for ProviderFallbackConfig {
             ProviderFallbackConfig::disabled()
         };
         provider_fallback.require_wake = config.require_wake;
+        provider_fallback = provider_fallback.with_provider_wake_prefix(config.wake_prefix);
         provider_fallback.error_message = config.error_message;
         provider_fallback
     }

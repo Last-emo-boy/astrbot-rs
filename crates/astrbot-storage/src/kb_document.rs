@@ -4,6 +4,8 @@ use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+use crate::SqliteJsonStore;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KbProfileRecord {
     pub kb_id: String,
@@ -58,6 +60,17 @@ pub struct InMemoryKbDocumentRepository {
     profiles: RwLock<Vec<KbProfileRecord>>,
     documents: RwLock<Vec<KbDocumentRecord>>,
     media: RwLock<Vec<KbMediaRecord>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SqliteKbDocumentRepository {
+    store: SqliteJsonStore,
+}
+
+impl SqliteKbDocumentRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
 }
 
 impl InMemoryKbDocumentRepository {
@@ -152,11 +165,53 @@ impl KbDocumentRepository for InMemoryKbDocumentRepository {
     }
 }
 
+#[async_trait]
+impl KbDocumentRepository for SqliteKbDocumentRepository {
+    async fn upsert_profile(&self, profile: KbProfileRecord) -> Result<()> {
+        self.store
+            .put_json("kb_document_profiles", &profile.kb_id, &profile)
+    }
+
+    async fn get_profile(&self, kb_id: &str) -> Result<Option<KbProfileRecord>> {
+        self.store.get_json("kb_document_profiles", kb_id)
+    }
+
+    async fn upsert_document(&self, document: KbDocumentRecord) -> Result<()> {
+        self.store
+            .put_json("kb_document_records", &document.doc_id, &document)
+    }
+
+    async fn list_documents(&self, kb_id: &str) -> Result<Vec<KbDocumentRecord>> {
+        Ok(self
+            .store
+            .list_json::<KbDocumentRecord>("kb_document_records")?
+            .into_iter()
+            .filter(|document| document.kb_id == kb_id)
+            .collect())
+    }
+
+    async fn upsert_media(&self, media: KbMediaRecord) -> Result<()> {
+        self.store
+            .put_json("kb_media_records", &media.media_id, &media)
+    }
+
+    async fn list_media(&self, doc_id: &str) -> Result<Vec<KbMediaRecord>> {
+        Ok(self
+            .store
+            .list_json::<KbMediaRecord>("kb_media_records")?
+            .into_iter()
+            .filter(|record| record.doc_id == doc_id)
+            .collect())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         InMemoryKbDocumentRepository, KbDocumentRecord, KbDocumentRepository, KbProfileRecord,
+        SqliteKbDocumentRepository,
     };
+    use crate::SqliteJsonStore;
 
     #[tokio::test]
     async fn kb_document_repository_keeps_metadata_outside_dashboard_routes() {
@@ -202,6 +257,34 @@ mod tests {
                 .expect("documents should list")
                 .len(),
             1
+        );
+    }
+
+    #[tokio::test]
+    async fn sqlite_kb_document_repository_keeps_metadata() {
+        let repository = SqliteKbDocumentRepository::new(
+            SqliteJsonStore::open_in_memory().expect("sqlite store should open"),
+        );
+        repository
+            .upsert_profile(KbProfileRecord {
+                kb_id: "kb-1".to_string(),
+                name: "Docs".to_string(),
+                description: None,
+                embedding_provider_id: "embedding".to_string(),
+                doc_count: 0,
+                chunk_count: 0,
+            })
+            .await
+            .expect("profile should store");
+
+        assert_eq!(
+            repository
+                .get_profile("kb-1")
+                .await
+                .expect("profile should load")
+                .expect("profile should exist")
+                .name,
+            "Docs"
         );
     }
 }

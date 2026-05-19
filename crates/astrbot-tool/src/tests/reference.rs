@@ -57,3 +57,43 @@ fn tool_reference_extractor_ignores_unsupported_tools_and_invalid_json() {
 
     assert!(refs.is_empty());
 }
+
+#[test]
+fn tool_reference_extractor_merges_tavily_and_bocha_json_refs() {
+    let tavily = json!({
+        "results": [
+            {
+                "title": "Tavily",
+                "url": "https://tavily.example",
+                "snippet": "Tavily snippet",
+                "index": "tvly.1"
+            }
+        ]
+    })
+    .to_string();
+    let bocha = json!({
+        "results": [
+            {
+                "title": "Bocha",
+                "url": "https://bocha.example",
+                "snippet": "Bocha snippet",
+                "index": "boch.1"
+            }
+        ]
+    })
+    .to_string();
+
+    let refs = ToolReferenceExtractor::default().extract_from_tool_calls(
+        "Use <ref>boch.1</ref> and <ref>tvly.1</ref>.",
+        &[
+            ToolCallReferencePayload::new("web_search_tavily", tavily),
+            ToolCallReferencePayload::new("web_search_bocha", bocha),
+        ],
+    );
+
+    assert_eq!(refs.used.len(), 2);
+    assert_eq!(refs.used[0].index, "boch.1");
+    assert_eq!(refs.used[0].title.as_deref(), Some("Bocha"));
+    assert_eq!(refs.used[1].index, "tvly.1");
+    assert_eq!(refs.used[1].title.as_deref(), Some("Tavily"));
+}

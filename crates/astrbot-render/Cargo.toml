@@ -10,6 +10,7 @@ astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+reqwest.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

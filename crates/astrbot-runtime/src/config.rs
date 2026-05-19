@@ -23,8 +23,9 @@ pub use ui_metadata::{
 
 use crate::config_io::read_runtime_config;
 use crate::defaults::{
-    default_chat_provider_id, default_chat_providers, default_event_queue_capacity,
-    default_platforms,
+    default_chat_provider_id, default_chat_providers, default_dashboard_jwt_secret,
+    default_dashboard_password, default_dashboard_token_ttl_seconds, default_dashboard_username,
+    default_event_queue_capacity, default_platforms,
 };
 use crate::path_config::RuntimePathConfig;
 use crate::platform_config::{
@@ -37,7 +38,7 @@ use crate::policy_config::{
 };
 use crate::provider_config::{
     RuntimeChatProviderConfig, RuntimeEmbeddingProviderConfig, RuntimeExternalAgentConfig,
-    RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
+    RuntimeProviderSourceConfig, RuntimeRerankProviderConfig, RuntimeSpeechToTextProviderConfig,
     RuntimeTextToSpeechProviderConfig,
 };
 
@@ -51,6 +52,8 @@ pub struct RuntimeConfig {
     pub default_chat_provider_id: String,
     #[serde(default = "default_chat_providers")]
     pub chat_providers: Vec<RuntimeChatProviderConfig>,
+    #[serde(default)]
+    pub provider_sources: Vec<RuntimeProviderSourceConfig>,
     #[serde(default)]
     pub default_speech_to_text_provider_id: Option<String>,
     #[serde(default)]
@@ -88,9 +91,41 @@ pub struct RuntimeConfig {
     #[serde(default)]
     pub state_policy: RuntimeStatePolicyConfig,
     #[serde(default)]
+    pub dashboard_auth: RuntimeDashboardAuthConfig,
+    #[serde(default)]
     pub webchat_server: RuntimeWebChatServerConfig,
     #[serde(default)]
     pub command_plugins: Vec<RuntimeCommandPluginConfig>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDashboardAuthConfig {
+    #[serde(default = "default_dashboard_username")]
+    pub username: String,
+    #[serde(default = "default_dashboard_password")]
+    pub password: String,
+    #[serde(default = "default_dashboard_jwt_secret")]
+    pub jwt_secret: String,
+    #[serde(default = "default_dashboard_token_ttl_seconds")]
+    pub token_ttl_seconds: u64,
+}
+
+impl Default for RuntimeDashboardAuthConfig {
+    fn default() -> Self {
+        Self {
+            username: default_dashboard_username(),
+            password: default_dashboard_password(),
+            jwt_secret: default_dashboard_jwt_secret(),
+            token_ttl_seconds: default_dashboard_token_ttl_seconds(),
+        }
+    }
+}
+
+impl RuntimeDashboardAuthConfig {
+    pub fn is_default_credential(&self) -> bool {
+        self.username == default_dashboard_username()
+            && self.password == default_dashboard_password()
+    }
 }
 
 impl Default for RuntimeConfig {
@@ -100,6 +135,7 @@ impl Default for RuntimeConfig {
             paths: RuntimePathConfig::default(),
             default_chat_provider_id: default_chat_provider_id(),
             chat_providers: default_chat_providers(),
+            provider_sources: Vec::new(),
             default_speech_to_text_provider_id: None,
             speech_to_text_providers: Vec::new(),
             default_text_to_speech_provider_id: None,
@@ -118,6 +154,7 @@ impl Default for RuntimeConfig {
             provider_fallback: RuntimeProviderFallbackConfig::default(),
             result_decorate: RuntimeResultDecorateConfig::default(),
             state_policy: RuntimeStatePolicyConfig::default(),
+            dashboard_auth: RuntimeDashboardAuthConfig::default(),
             webchat_server: RuntimeWebChatServerConfig::default(),
             command_plugins: Vec::new(),
         }

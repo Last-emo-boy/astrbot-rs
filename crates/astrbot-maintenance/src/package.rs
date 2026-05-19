@@ -6,6 +6,8 @@ pub struct MaintenancePackageInstallRequest {
     pub package: Option<String>,
     pub requirements_path: Option<String>,
     pub mirror: Option<String>,
+    #[serde(default)]
+    pub confirmed: bool,
 }
 
 impl MaintenancePackageInstallRequest {
@@ -14,6 +16,7 @@ impl MaintenancePackageInstallRequest {
             package: Some(package.into()),
             requirements_path: None,
             mirror: None,
+            confirmed: false,
         }
     }
 
@@ -22,6 +25,7 @@ impl MaintenancePackageInstallRequest {
             package: None,
             requirements_path: Some(requirements_path.into()),
             mirror: None,
+            confirmed: false,
         }
     }
 
@@ -101,6 +105,7 @@ impl MaintenancePackageInstallPlan {
                 package: None,
                 requirements_path: None,
                 mirror: None,
+                confirmed: false,
             },
             plugin_dependency_plan: Some((&plugin_dependency_plan).into()),
             global_runtime_install: false,

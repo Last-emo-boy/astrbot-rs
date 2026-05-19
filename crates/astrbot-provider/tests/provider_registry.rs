@@ -6,24 +6,27 @@ use astrbot_provider::{
     ChatProvider, ChatProviderConfig, ChatRequest, ChatResponse, EmbeddingProvider,
     EmbeddingProviderConfig, EmbeddingRequest, EmbeddingResponse, GEMINI_EMBEDDING_PROVIDER_TYPE,
     GEMINI_TEXT_TO_SPEECH_PROVIDER_TYPE, GOOGLE_GENAI_CHAT_PROVIDER_TYPE,
-    GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE, MINIMAX_TEXT_TO_SPEECH_PROVIDER_TYPE,
-    MOCK_CHAT_PROVIDER_TYPE, MOCK_EMBEDDING_PROVIDER_TYPE, MOCK_RERANK_PROVIDER_TYPE,
-    MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE, MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE,
-    OPENAI_COMPATIBLE_CHAT_PROVIDER_TYPES, OPENAI_EMBEDDING_PROVIDER_TYPE,
-    OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE, OPENAI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE, GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    MINIMAX_TEXT_TO_SPEECH_PROVIDER_TYPE, MOCK_CHAT_PROVIDER_TYPE, MOCK_EMBEDDING_PROVIDER_TYPE,
+    MOCK_RERANK_PROVIDER_TYPE, MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE, OPENAI_COMPATIBLE_CHAT_PROVIDER_TYPES,
+    OPENAI_EMBEDDING_PROVIDER_TYPE, OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    OPENAI_TEXT_TO_SPEECH_PROVIDER_TYPE, OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE,
     OPENROUTER_CHAT_PROVIDER_TYPE, ProviderCapability, ProviderManager, ProviderManagerConfigSet,
     ProviderRegistry, RerankDocumentScore, RerankProvider, RerankProviderConfig, RerankRequest,
-    RerankResponse, SpeechToTextProvider, SpeechToTextProviderConfig, SpeechToTextRequest,
-    SpeechToTextResponse, TextToSpeechProvider, TextToSpeechProviderConfig, TextToSpeechRequest,
-    TextToSpeechResponse, VLLM_RERANK_PROVIDER_TYPE, VOLCENGINE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    RerankResponse, SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE, SpeechToTextProvider,
+    SpeechToTextProviderConfig, SpeechToTextRequest, SpeechToTextResponse, TextToSpeechProvider,
+    TextToSpeechProviderConfig, TextToSpeechRequest, TextToSpeechResponse,
+    VLLM_RERANK_PROVIDER_TYPE, VOLCENGINE_TEXT_TO_SPEECH_PROVIDER_TYPE,
     XINFERENCE_RERANK_PROVIDER_TYPE, XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE,
 };
 use async_trait::async_trait;
+use base64::Engine as _;
 use tokio::sync::Mutex;
 
 mod support;
 use support::captured_request::has_header;
-use support::http_server::serve_once;
+use support::http_server::{TestResponse, serve_once, serve_sequence};
 use support::media_fixture::{GeneratedAudioFile, TempAudioFile};
 
 #[path = "provider_registry/chat.rs"]

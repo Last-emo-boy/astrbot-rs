@@ -4,3 +4,4 @@ mod request_decorator;
 mod runner;
 mod support;
 mod tool_loop;
+mod web_search;

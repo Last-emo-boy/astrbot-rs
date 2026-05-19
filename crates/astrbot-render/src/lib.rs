@@ -15,7 +15,7 @@ pub use local::{
 pub use markdown::{InlineSpan, MarkdownBlock, MarkdownDocument};
 pub use network::{
     DEFAULT_T2I_ENDPOINT, NetworkT2iClient, NetworkT2iEndpointCatalog, NetworkT2iRenderOutput,
-    NetworkT2iRenderer, OfficialT2iEndpointDescriptor, T2iEndpoint,
+    NetworkT2iRenderer, OfficialT2iEndpointDescriptor, ReqwestNetworkT2iClient, T2iEndpoint,
 };
 pub use t2i::{
     RenderArtifact, RenderArtifactKind, RenderFormat, RenderMode, RenderOptions, RenderStrategy,

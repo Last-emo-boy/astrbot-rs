@@ -9,9 +9,9 @@ use astrbot_provider::{ChatProvider, ChatRequest, ChatResponse};
 use async_trait::async_trait;
 
 use crate::{
-    AgentHookEvent, AgentHookEventKind, AgentKnowledgeContextPort, AgentMemoryContextPort,
-    AgentProviderPreferencePort, AgentQuoteContextPort, AgentRunHook, AgentSessionContextPort,
-    AgentTokenCounter,
+    AgentHookEvent, AgentHookEventKind, AgentKnowledgeContextPort, AgentKnowledgeContextSelection,
+    AgentKnowledgeSelectionPort, AgentMemoryContextPort, AgentProviderPreferencePort,
+    AgentQuoteContextPort, AgentRunHook, AgentSessionContextPort, AgentTokenCounter,
 };
 use astrbot_provider::{ProviderReasoningMetadata, ProviderResponseMetadata};
 
@@ -94,6 +94,33 @@ pub(super) struct StaticKnowledgeContext;
 impl AgentKnowledgeContextPort for StaticKnowledgeContext {
     async fn formatted_knowledge_context(&self, _event: &MessageEvent) -> Result<Option<String>> {
         Ok(Some("【知识 1】\n内容: Rust boundary".to_string()))
+    }
+}
+
+pub(super) struct StaticKnowledgeSelection {
+    selection: AgentKnowledgeContextSelection,
+}
+
+impl StaticKnowledgeSelection {
+    pub(super) fn new(selection: AgentKnowledgeContextSelection) -> Self {
+        Self { selection }
+    }
+}
+
+#[async_trait]
+impl AgentKnowledgeSelectionPort for StaticKnowledgeSelection {
+    async fn selection_for_event(
+        &self,
+        _event: &MessageEvent,
+    ) -> Result<Option<AgentKnowledgeContextSelection>> {
+        Ok(Some(self.selection.clone()))
+    }
+
+    async fn selection_for_session(
+        &self,
+        _session_id: &str,
+    ) -> Result<Option<AgentKnowledgeContextSelection>> {
+        Ok(Some(self.selection.clone()))
     }
 }
 

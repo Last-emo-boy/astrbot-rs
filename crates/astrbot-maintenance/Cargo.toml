@@ -5,11 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-conversation = { path = "../astrbot-conversation" }
 astrbot-core = { path = "../astrbot-core" }
+astrbot-cron = { path = "../astrbot-cron" }
+astrbot-persona = { path = "../astrbot-persona" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-runtime = { path = "../astrbot-runtime" }
 astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
+rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+zip.workspace = true

@@ -5,9 +5,22 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-agent = { path = "../astrbot-agent" }
+astrbot-core = { path = "../astrbot-core" }
+astrbot-cron = { path = "../astrbot-cron" }
+astrbot-maintenance = { path = "../astrbot-maintenance" }
+astrbot-metrics = { path = "../astrbot-metrics" }
+astrbot-observability = { path = "../astrbot-observability" }
+astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-platform = { path = "../astrbot-platform" }
+astrbot-persona = { path = "../astrbot-persona" }
 astrbot-runtime = { path = "../astrbot-runtime" }
+astrbot-conversation = { path = "../astrbot-conversation" }
+astrbot-skill = { path = "../astrbot-skill" }
+astrbot-storage = { path = "../astrbot-storage" }
 astrbot-web = { path = "../astrbot-web" }
+async-trait.workspace = true
+serde_json.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]

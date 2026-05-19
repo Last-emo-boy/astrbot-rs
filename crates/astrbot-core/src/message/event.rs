@@ -113,7 +113,6 @@ impl MessageEvent {
     }
 
     pub fn set_result(&mut self, result: MessageEventResult) {
-        self.stopped = result.is_stopped();
         self.result = Some(result);
     }
 

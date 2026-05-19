@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use astrbot_provider::ChatProviderConfig;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::defaults::{DEFAULT_MOCK_RESPONSE, default_provider_timeout_secs, default_true};
 
@@ -22,6 +23,16 @@ pub struct RuntimeChatProviderConfig {
     pub timeout_secs: u64,
     #[serde(default)]
     pub mock_response: Option<String>,
+    #[serde(default)]
+    pub provider_source_id: Option<String>,
+    #[serde(default)]
+    pub provider: Option<String>,
+    #[serde(default)]
+    pub modalities: Vec<String>,
+    #[serde(default)]
+    pub custom_extra_body: Value,
+    #[serde(default)]
+    pub max_context_tokens: Option<u64>,
 }
 
 impl RuntimeChatProviderConfig {
@@ -35,6 +46,11 @@ impl RuntimeChatProviderConfig {
             api_key: None,
             timeout_secs: 120,
             mock_response: Some(response.into()),
+            provider_source_id: None,
+            provider: None,
+            modalities: Vec::new(),
+            custom_extra_body: Value::Null,
+            max_context_tokens: None,
         }
     }
 
@@ -52,6 +68,11 @@ impl RuntimeChatProviderConfig {
             api_key: None,
             timeout_secs: 120,
             mock_response: None,
+            provider_source_id: None,
+            provider: Some("openai".to_string()),
+            modalities: Vec::new(),
+            custom_extra_body: Value::Null,
+            max_context_tokens: None,
         }
     }
 
@@ -80,6 +101,11 @@ impl RuntimeChatProviderConfig {
             api_key: None,
             timeout_secs: 120,
             mock_response: None,
+            provider_source_id: None,
+            provider: Some("anthropic".to_string()),
+            modalities: Vec::new(),
+            custom_extra_body: Value::Null,
+            max_context_tokens: None,
         }
     }
 
@@ -97,6 +123,11 @@ impl RuntimeChatProviderConfig {
             api_key: None,
             timeout_secs: 120,
             mock_response: None,
+            provider_source_id: None,
+            provider: Some("google".to_string()),
+            modalities: Vec::new(),
+            custom_extra_body: Value::Null,
+            max_context_tokens: None,
         }
     }
 

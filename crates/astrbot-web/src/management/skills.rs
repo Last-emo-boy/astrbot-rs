@@ -1,11 +1,18 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
 
 use astrbot_skill::{
     SkillActivationChange, SkillActivationConfig, SkillCatalog, SkillDescriptor,
-    SkillPackageDeletePlan, SkillPackageError, SkillPackageInstallPlan, SkillSandboxCache,
+    SkillPackageDeletePlan, SkillPackageError, SkillPackageInstallPlan, SkillRuntimeInstallRequest,
+    SkillRuntimeSnapshot, SkillSandboxCache,
 };
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Query, State},
+    http::StatusCode,
+};
 use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 
 use crate::ErrorResponse;
 
@@ -20,27 +27,32 @@ impl ManagementSkillState {
     pub fn new(catalog: SkillCatalog) -> Self {
         Self {
             inner: Arc::new(RwLock::new(ManagementSkillSnapshot {
-                catalog,
-                activation: SkillActivationConfig::new(),
-                sandbox_cache: None,
-                sandbox_cache_exists: false,
+                runtime: SkillRuntimeSnapshot::new(catalog),
             })),
         }
     }
 
     pub fn with_activation_config(self, activation: SkillActivationConfig) -> Self {
         if let Ok(mut snapshot) = self.inner.write() {
-            snapshot.activation = activation;
+            snapshot.runtime.activation = activation;
         }
         self
     }
 
     pub fn with_sandbox_cache(self, sandbox_cache: SkillSandboxCache, exists: bool) -> Self {
         if let Ok(mut snapshot) = self.inner.write() {
-            snapshot.sandbox_cache = Some(sandbox_cache);
-            snapshot.sandbox_cache_exists = exists;
+            snapshot
+                .runtime
+                .replace_sandbox_cache(sandbox_cache, exists);
         }
         self
+    }
+
+    pub fn runtime_snapshot(&self) -> Result<SkillRuntimeSnapshot, String> {
+        self.inner
+            .read()
+            .map_err(|error| format!("skill management state lock: {error}"))
+            .map(|snapshot| snapshot.runtime.clone())
     }
 
     fn catalog_response(&self) -> Result<ManagementSkillCatalogResponse, String> {
@@ -48,21 +60,22 @@ impl ManagementSkillState {
             .inner
             .read()
             .map_err(|error| format!("skill management state lock: {error}"))?;
-        let catalog = snapshot.catalog_with_sandbox();
+        let catalog = snapshot.runtime.catalog_with_sandbox();
         let skills = catalog
             .skills()
             .iter()
             .map(|skill| {
                 ManagementSkillDescriptor::from_descriptor(
                     skill,
-                    skill.active && snapshot.activation.is_active(&skill.name),
+                    skill.active && snapshot.runtime.activation.is_active(&skill.name),
                 )
             })
             .collect();
         let sandbox_cache = snapshot
+            .runtime
             .sandbox_cache
             .as_ref()
-            .map(|cache| cache.status(snapshot.sandbox_cache_exists));
+            .map(|cache| cache.status(snapshot.runtime.sandbox_cache_exists));
 
         Ok(ManagementSkillCatalogResponse {
             skills,
@@ -78,43 +91,64 @@ impl ManagementSkillState {
         let mut snapshot = self.inner.write().map_err(|error| {
             SkillPackageError::invalid_skill_name(format!("skill state lock: {error}"))
         })?;
-        let catalog = snapshot.catalog_with_sandbox();
-        snapshot.activation.set_active(&catalog, name, active)
+        snapshot.runtime.set_active(name, active)
     }
 
     fn delete_plan(&self, name: String) -> Result<SkillPackageDeletePlan, SkillPackageError> {
         let snapshot = self.inner.read().map_err(|error| {
             SkillPackageError::invalid_skill_name(format!("skill state lock: {error}"))
         })?;
-        SkillPackageDeletePlan::from_catalog(&snapshot.catalog_with_sandbox(), name)
+        SkillPackageDeletePlan::from_catalog(&snapshot.runtime.catalog_with_sandbox(), name)
+    }
+
+    fn install(
+        &self,
+        request: ManagementSkillInstallPlanRequest,
+    ) -> Result<ManagementSkillInstallResponse, SkillPackageError> {
+        let entries = request.entries;
+        let overwrite = request.overwrite;
+        let plan = SkillPackageInstallPlan::from_zip_entries(entries.clone(), overwrite)?;
+        let mut snapshot = self.inner.write().map_err(|error| {
+            SkillPackageError::invalid_skill_name(format!("skill state lock: {error}"))
+        })?;
+        let outcome = snapshot
+            .runtime
+            .install_package(SkillRuntimeInstallRequest {
+                entries,
+                overwrite,
+                description: Some("Installed from dashboard upload".to_string()),
+                manifest_path: Some(format!("skills/{}/SKILL.md", plan.skill_name)),
+            })?;
+
+        Ok(ManagementSkillInstallResponse {
+            plan: outcome.plan,
+            skill: ManagementSkillDescriptor::from_descriptor(&outcome.skill, true),
+        })
+    }
+
+    fn delete(&self, name: String) -> Result<ManagementSkillDeleteResponse, SkillPackageError> {
+        let mut snapshot = self.inner.write().map_err(|error| {
+            SkillPackageError::invalid_skill_name(format!("skill state lock: {error}"))
+        })?;
+        let outcome = snapshot.runtime.delete_package(name)?;
+        let remaining_skill = outcome.remaining_skill.as_ref().map(|skill| {
+            ManagementSkillDescriptor::from_descriptor(
+                skill,
+                skill.active && snapshot.runtime.activation.is_active(&skill.name),
+            )
+        });
+
+        Ok(ManagementSkillDeleteResponse {
+            plan: outcome.plan,
+            deleted: outcome.deleted,
+            remaining_skill,
+        })
     }
 }
 
 #[derive(Clone, Debug)]
 struct ManagementSkillSnapshot {
-    catalog: SkillCatalog,
-    activation: SkillActivationConfig,
-    sandbox_cache: Option<SkillSandboxCache>,
-    sandbox_cache_exists: bool,
-}
-
-impl ManagementSkillSnapshot {
-    fn catalog_with_sandbox(&self) -> SkillCatalog {
-        let mut catalog = self.catalog.clone();
-        let Some(cache) = self.sandbox_cache.as_ref() else {
-            return catalog;
-        };
-
-        for sandbox_skill in cache.as_descriptors() {
-            if let Some(existing) = catalog.skill(&sandbox_skill.name).cloned() {
-                catalog.add_skill(existing.with_source(astrbot_skill::SkillSource::Synced));
-            } else {
-                catalog.add_skill(sandbox_skill);
-            }
-        }
-
-        catalog
-    }
+    runtime: SkillRuntimeSnapshot,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -175,6 +209,12 @@ pub struct ManagementSkillInstallPlanResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ManagementSkillInstallResponse {
+    pub plan: SkillPackageInstallPlan,
+    pub skill: ManagementSkillDescriptor,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ManagementSkillDeletePlanRequest {
     pub name: String,
 }
@@ -182,6 +222,14 @@ pub struct ManagementSkillDeletePlanRequest {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ManagementSkillDeletePlanResponse {
     pub plan: SkillPackageDeletePlan,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ManagementSkillDeleteResponse {
+    pub plan: SkillPackageDeletePlan,
+    pub deleted: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remaining_skill: Option<ManagementSkillDescriptor>,
 }
 
 pub async fn catalog(
@@ -216,6 +264,16 @@ pub async fn install_plan(
     Ok(Json(ManagementSkillInstallPlanResponse { plan }))
 }
 
+pub async fn install(
+    State(state): State<ManagementApiState>,
+    Json(request): Json<ManagementSkillInstallPlanRequest>,
+) -> Result<Json<ManagementSkillInstallResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let response = skills.install(request).map_err(map_skill_package_error)?;
+
+    Ok(Json(response))
+}
+
 pub async fn delete_plan(
     State(state): State<ManagementApiState>,
     Json(request): Json<ManagementSkillDeletePlanRequest>,
@@ -228,8 +286,200 @@ pub async fn delete_plan(
     Ok(Json(ManagementSkillDeletePlanResponse { plan }))
 }
 
+pub async fn delete(
+    State(state): State<ManagementApiState>,
+    Json(request): Json<ManagementSkillDeletePlanRequest>,
+) -> Result<Json<ManagementSkillDeleteResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let response = skills
+        .delete(request.name)
+        .map_err(map_skill_package_error)?;
+
+    Ok(Json(response))
+}
+
+pub async fn legacy_catalog(
+    State(state): State<ManagementApiState>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let catalog = skills.catalog_response().map_err(skill_state_error)?;
+    Ok(source_ok(json!({
+        "skills": catalog.skills,
+        "runtime": "local",
+        "sandbox_cache": catalog.sandbox_cache,
+    })))
+}
+
+pub async fn legacy_upload(
+    State(state): State<ManagementApiState>,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    legacy_install_from_payload(state, payload).await
+}
+
+pub async fn legacy_batch_upload(
+    State(state): State<ManagementApiState>,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let response = legacy_install_from_payload(state, payload).await?;
+    Ok(source_ok(json!({
+        "succeeded": [response.0["data"].clone()],
+        "failed": [],
+    })))
+}
+
+pub async fn legacy_update(
+    State(state): State<ManagementApiState>,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let name = payload
+        .get("name")
+        .or_else(|| payload.get("skill_name"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    error: "skill name is required".to_string(),
+                }),
+            )
+        })?;
+    let active = payload
+        .get("active")
+        .and_then(Value::as_bool)
+        .or_else(|| payload.get("enabled").and_then(Value::as_bool))
+        .unwrap_or(true);
+    let change = skills
+        .set_active(name.to_string(), active)
+        .map_err(map_skill_package_error)?;
+    Ok(source_ok(json!({ "change": change })))
+}
+
+pub async fn legacy_delete(
+    State(state): State<ManagementApiState>,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let name = payload
+        .get("name")
+        .or_else(|| payload.get("skill_name"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    error: "skill name is required".to_string(),
+                }),
+            )
+        })?;
+    let response = skills
+        .delete(name.to_string())
+        .map_err(map_skill_package_error)?;
+    Ok(source_ok(json!(response)))
+}
+
+pub async fn legacy_download(
+    Query(query): Query<BTreeMap<String, String>>,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    Ok(source_ok(json!({
+        "name": query.get("name").cloned().unwrap_or_default(),
+        "download_url": Value::Null,
+        "message": "skill download is not backed by a file service in this management facade",
+    })))
+}
+
+pub async fn legacy_neo_candidates() -> Json<Value> {
+    source_ok(json!({
+        "items": [],
+        "configured": false,
+        "message": "Shipyard Neo client is not configured in this Rust management facade",
+    }))
+}
+
+pub async fn legacy_neo_releases() -> Json<Value> {
+    source_ok(json!({
+        "items": [],
+        "configured": false,
+        "message": "Shipyard Neo client is not configured in this Rust management facade",
+    }))
+}
+
+pub async fn legacy_neo_payload(Query(query): Query<BTreeMap<String, String>>) -> Json<Value> {
+    source_ok(json!({
+        "candidate_id": query.get("candidate_id").cloned(),
+        "release_id": query.get("release_id").cloned(),
+        "payload": Value::Null,
+        "configured": false,
+    }))
+}
+
+pub async fn legacy_neo_action(Json(payload): Json<Value>) -> Json<Value> {
+    source_ok(json!({
+        "accepted": false,
+        "payload": payload,
+        "message": "Shipyard Neo mutation is capability-only until a Neo client is configured",
+    }))
+}
+
 fn default_overwrite() -> bool {
     true
+}
+
+async fn legacy_install_from_payload(
+    state: ManagementApiState,
+    payload: Value,
+) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
+    let skills = state.skills().ok_or_else(skill_state_unavailable)?;
+    let entries = skill_entries_from_payload(&payload)?;
+    let overwrite = payload
+        .get("overwrite")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let response = skills
+        .install(ManagementSkillInstallPlanRequest { entries, overwrite })
+        .map_err(map_skill_package_error)?;
+    Ok(source_ok(json!(response)))
+}
+
+fn skill_entries_from_payload(
+    payload: &Value,
+) -> Result<Vec<String>, (StatusCode, Json<ErrorResponse>)> {
+    if let Some(entries) = payload.get("entries").and_then(Value::as_array) {
+        let entries = entries
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|entry| !entry.is_empty())
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+        if !entries.is_empty() {
+            return Ok(entries);
+        }
+    }
+    if let Some(name) = payload
+        .get("name")
+        .or_else(|| payload.get("skill_name"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+    {
+        return Ok(vec![format!("{name}/SKILL.md")]);
+    }
+    Err((
+        StatusCode::BAD_REQUEST,
+        Json(ErrorResponse {
+            error: "skill upload requires entries or name".to_string(),
+        }),
+    ))
+}
+
+fn source_ok(data: Value) -> Json<Value> {
+    Json(json!({
+        "status": "ok",
+        "message": "ok",
+        "data": data,
+    }))
 }
 
 fn skill_state_unavailable() -> (StatusCode, Json<ErrorResponse>) {
@@ -251,6 +501,7 @@ fn skill_state_error(message: String) -> (StatusCode, Json<ErrorResponse>) {
 fn map_skill_package_error(error: SkillPackageError) -> (StatusCode, Json<ErrorResponse>) {
     let status = match &error {
         SkillPackageError::SandboxOnlyMutation { .. } => StatusCode::FORBIDDEN,
+        SkillPackageError::SkillAlreadyExists { .. } => StatusCode::CONFLICT,
         SkillPackageError::SkillNotFound { .. } => StatusCode::NOT_FOUND,
         _ => StatusCode::BAD_REQUEST,
     };

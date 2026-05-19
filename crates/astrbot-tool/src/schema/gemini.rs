@@ -34,8 +34,23 @@ fn convert_schema(schema: &Value) -> Value {
         return json!({ "type": "null" });
     };
 
+    if let Some(any_of) = input.get("anyOf").and_then(Value::as_array) {
+        return json!({
+            "anyOf": any_of.iter().map(convert_schema).collect::<Vec<_>>()
+        });
+    }
+
     let mut output = Map::new();
-    output.insert("type".to_string(), normalized_type(schema));
+    let schema_type = normalized_type(schema);
+    output.insert("type".to_string(), schema_type.clone());
+    if let (Some(kind), Some(format)) = (
+        schema_type.as_str(),
+        input.get("format").and_then(Value::as_str),
+    ) {
+        if supports_format(kind, format) {
+            output.insert("format".to_string(), json!(format));
+        }
+    }
 
     for key in [
         "title",
@@ -105,4 +120,16 @@ fn supported_type(kind: &str) -> Value {
         }
         _ => json!("null"),
     }
+}
+
+fn supports_format(kind: &str, format: &str) -> bool {
+    matches!(
+        (kind, format),
+        ("string", "enum")
+            | ("string", "date-time")
+            | ("integer", "int32")
+            | ("integer", "int64")
+            | ("number", "float")
+            | ("number", "double")
+    )
 }

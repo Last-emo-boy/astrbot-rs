@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use crate::constants::{
     MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE, OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE,
-    XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE,
+    SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE, XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE,
 };
 
 #[derive(Clone)]
@@ -17,6 +18,7 @@ pub struct SpeechToTextProviderConfig {
     pub api_key: Option<String>,
     pub timeout: Duration,
     pub custom_headers: HashMap<String, String>,
+    pub provider_options: HashMap<String, String>,
     pub mock_text: Option<String>,
     pub launch_model_if_not_running: bool,
 }
@@ -32,6 +34,7 @@ impl SpeechToTextProviderConfig {
             api_key: None,
             timeout: Duration::from_secs(120),
             custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: Some(text.into()),
             launch_model_if_not_running: false,
         }
@@ -51,6 +54,7 @@ impl SpeechToTextProviderConfig {
             api_key: None,
             timeout: Duration::from_secs(120),
             custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: None,
             launch_model_if_not_running: false,
         }
@@ -70,6 +74,47 @@ impl SpeechToTextProviderConfig {
             api_key: None,
             timeout: Duration::from_secs(180),
             custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
+            mock_text: None,
+            launch_model_if_not_running: false,
+        }
+    }
+
+    pub fn openai_whisper_selfhost(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some(model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(120),
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
+            mock_text: None,
+            launch_model_if_not_running: false,
+        }
+    }
+
+    pub fn sensevoice_selfhost(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some(model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(120),
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: None,
             launch_model_if_not_running: false,
         }
@@ -95,6 +140,11 @@ impl SpeechToTextProviderConfig {
         self
     }
 
+    pub fn with_option(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.provider_options.insert(key.into(), value.into());
+        self
+    }
+
     pub fn with_launch_model_if_not_running(mut self, launch_model_if_not_running: bool) -> Self {
         self.launch_model_if_not_running = launch_model_if_not_running;
         self
@@ -114,6 +164,10 @@ impl fmt::Debug for SpeechToTextProviderConfig {
             .field(
                 "custom_headers",
                 &self.custom_headers.keys().collect::<Vec<_>>(),
+            )
+            .field(
+                "provider_options",
+                &self.provider_options.keys().collect::<Vec<_>>(),
             )
             .field("mock_text", &self.mock_text.as_ref().map(|_| "<redacted>"))
             .field(

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use astrbot_provider::SpeechToTextProviderConfig;
@@ -21,6 +22,10 @@ pub struct RuntimeSpeechToTextProviderConfig {
     #[serde(default = "default_provider_timeout_secs")]
     pub timeout_secs: u64,
     #[serde(default)]
+    pub custom_headers: HashMap<String, String>,
+    #[serde(default)]
+    pub provider_options: HashMap<String, String>,
+    #[serde(default)]
     pub mock_text: Option<String>,
     #[serde(default)]
     pub launch_model_if_not_running: bool,
@@ -36,6 +41,8 @@ impl RuntimeSpeechToTextProviderConfig {
             api_base: None,
             api_key: None,
             timeout_secs: 120,
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: Some(text.into()),
             launch_model_if_not_running: false,
         }
@@ -54,6 +61,8 @@ impl RuntimeSpeechToTextProviderConfig {
             api_base: Some(api_base.into()),
             api_key: None,
             timeout_secs: 120,
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: None,
             launch_model_if_not_running: false,
         }
@@ -72,6 +81,50 @@ impl RuntimeSpeechToTextProviderConfig {
             api_base: Some(api_base.into()),
             api_key: None,
             timeout_secs: 180,
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
+            mock_text: None,
+            launch_model_if_not_running: false,
+        }
+    }
+
+    pub fn openai_whisper_selfhost(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE
+                .to_string(),
+            enabled: true,
+            model: Some(model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 120,
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
+            mock_text: None,
+            launch_model_if_not_running: false,
+        }
+    }
+
+    pub fn sensevoice_selfhost(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        stt_model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE
+                .to_string(),
+            enabled: true,
+            model: Some(stt_model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 120,
+            custom_headers: HashMap::new(),
+            provider_options: HashMap::new(),
             mock_text: None,
             launch_model_if_not_running: false,
         }
@@ -84,6 +137,16 @@ impl RuntimeSpeechToTextProviderConfig {
 
     pub fn with_timeout_secs(mut self, timeout_secs: u64) -> Self {
         self.timeout_secs = timeout_secs;
+        self
+    }
+
+    pub fn with_header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.custom_headers.insert(key.into(), value.into());
+        self
+    }
+
+    pub fn with_option(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.provider_options.insert(key.into(), value.into());
         self
     }
 
@@ -118,6 +181,26 @@ impl From<RuntimeSpeechToTextProviderConfig> for SpeechToTextProviderConfig {
                     config.model.unwrap_or_default(),
                 )
             }
+            astrbot_provider::OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE => {
+                SpeechToTextProviderConfig::openai_whisper_selfhost(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "http://127.0.0.1:8000".to_string()),
+                    config.model.unwrap_or_else(|| "tiny".to_string()),
+                )
+            }
+            astrbot_provider::SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE => {
+                SpeechToTextProviderConfig::sensevoice_selfhost(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "http://127.0.0.1:8000".to_string()),
+                    config
+                        .model
+                        .unwrap_or_else(|| "iic/SenseVoiceSmall".to_string()),
+                )
+            }
             _ => SpeechToTextProviderConfig {
                 id: config.id,
                 provider_type: config.provider_type,
@@ -126,7 +209,8 @@ impl From<RuntimeSpeechToTextProviderConfig> for SpeechToTextProviderConfig {
                 api_base: config.api_base,
                 api_key: None,
                 timeout: Duration::from_secs(config.timeout_secs),
-                custom_headers: Default::default(),
+                custom_headers: config.custom_headers.clone(),
+                provider_options: config.provider_options.clone(),
                 mock_text: config.mock_text,
                 launch_model_if_not_running: config.launch_model_if_not_running,
             },
@@ -136,6 +220,8 @@ impl From<RuntimeSpeechToTextProviderConfig> for SpeechToTextProviderConfig {
         provider_config.timeout = Duration::from_secs(config.timeout_secs);
         provider_config.api_key = config.api_key;
         provider_config.launch_model_if_not_running = config.launch_model_if_not_running;
+        provider_config.custom_headers = config.custom_headers;
+        provider_config.provider_options = config.provider_options;
         provider_config
     }
 }

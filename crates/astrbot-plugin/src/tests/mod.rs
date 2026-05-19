@@ -33,4 +33,5 @@ mod manifest_sdk;
 mod market;
 mod registry;
 mod sandbox;
+mod session_control;
 mod tool;

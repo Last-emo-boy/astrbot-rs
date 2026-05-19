@@ -32,6 +32,10 @@ impl McpJsonRpcErrorObject {
 }
 
 pub const MCP_JSONRPC_VERSION: &str = "2.0";
+pub const MCP_JSONRPC_PARSE_ERROR: i64 = -32700;
+pub const MCP_JSONRPC_INVALID_REQUEST: i64 = -32600;
+pub const MCP_JSONRPC_METHOD_NOT_FOUND: i64 = -32601;
+pub const MCP_JSONRPC_INTERNAL_ERROR: i64 = -32603;
 
 #[cfg(test)]
 mod tests {

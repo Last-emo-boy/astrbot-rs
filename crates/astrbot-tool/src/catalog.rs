@@ -89,6 +89,19 @@ impl ToolCatalog {
         self.tools.retain(|tool| tool.name != name);
     }
 
+    pub fn remove_tools_by_plugin(&mut self, plugin_id: &str) -> Vec<ToolDescriptor> {
+        let mut removed = Vec::new();
+        self.tools.retain(|tool| {
+            if tool.source.plugin_id.as_deref() == Some(plugin_id) {
+                removed.push(tool.clone());
+                false
+            } else {
+                true
+            }
+        });
+        removed
+    }
+
     pub fn tool(&self, name: &str) -> Option<&ToolDescriptor> {
         self.tools.iter().find(|tool| tool.name == name)
     }

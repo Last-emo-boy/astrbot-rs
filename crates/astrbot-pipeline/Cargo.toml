@@ -9,9 +9,12 @@ astrbot-agent = { path = "../astrbot-agent" }
 astrbot-core = { path = "../astrbot-core" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-render = { path = "../astrbot-render" }
 astrbot-session = { path = "../astrbot-session" }
 astrbot-storage = { path = "../astrbot-storage" }
 async-trait.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
 tokio = { workspace = true, features = ["time"] }
 
 [dev-dependencies]

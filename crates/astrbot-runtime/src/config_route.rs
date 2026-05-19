@@ -1,5 +1,10 @@
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+
 use astrbot_core::{AstrbotError, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UmopConfigRoute {
@@ -29,6 +34,22 @@ impl UmopConfigRouter {
 
     pub fn routes(&self) -> &[UmopConfigRoute] {
         &self.routes
+    }
+
+    pub fn from_routing_map(routing: BTreeMap<String, String>) -> Result<Self> {
+        Self::new(
+            routing
+                .into_iter()
+                .map(|(pattern, config_id)| UmopConfigRoute::new(pattern, config_id))
+                .collect(),
+        )
+    }
+
+    pub fn to_routing_map(&self) -> BTreeMap<String, String> {
+        self.routes
+            .iter()
+            .map(|route| (route.pattern.clone(), route.config_id.clone()))
+            .collect()
     }
 
     pub fn resolve_config_id(&self, umo: &str) -> Option<&str> {
@@ -71,6 +92,56 @@ impl UmopConfigRouter {
         self.routes.retain(|route| route.pattern != pattern);
         Ok(self.routes.len() != before)
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UmopConfigRouteStore {
+    path: PathBuf,
+}
+
+impl UmopConfigRouteStore {
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        Self { path: path.into() }
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn load(&self) -> Result<UmopConfigRouter> {
+        if !self.path.exists() {
+            return Ok(UmopConfigRouter::default());
+        }
+
+        let content = fs::read_to_string(&self.path)
+            .map_err(|err| AstrbotError::Pipeline(format!("read umop config routes: {err}")))?;
+        if content.trim().is_empty() {
+            return Ok(UmopConfigRouter::default());
+        }
+        let routes = parse_stored_routes(&content)?;
+        UmopConfigRouter::new(routes)
+    }
+
+    pub fn save(&self, router: &UmopConfigRouter) -> Result<()> {
+        if let Some(parent) = self.path.parent() {
+            fs::create_dir_all(parent).map_err(|err| {
+                AstrbotError::Pipeline(format!("create umop route config directory: {err}"))
+            })?;
+        }
+        let payload = StoredUmopRoutes {
+            routes: router.routes().to_vec(),
+        };
+        let serialized = serde_json::to_string_pretty(&payload).map_err(|err| {
+            AstrbotError::Pipeline(format!("serialize umop config routes: {err}"))
+        })?;
+        fs::write(&self.path, serialized)
+            .map_err(|err| AstrbotError::Pipeline(format!("write umop config routes: {err}")))
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct StoredUmopRoutes {
+    routes: Vec<UmopConfigRoute>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,6 +191,31 @@ fn validate_routes(routes: &[UmopConfigRoute]) -> Result<()> {
         UmopConfigRoutePattern::parse(&route.pattern)?;
     }
     Ok(())
+}
+
+fn parse_stored_routes(content: &str) -> Result<Vec<UmopConfigRoute>> {
+    let value = serde_json::from_str::<Value>(content)
+        .map_err(|err| AstrbotError::Pipeline(format!("parse umop config routes: {err}")))?;
+
+    if value.is_array() {
+        return serde_json::from_value(value).map_err(|err| {
+            AstrbotError::Pipeline(format!("parse umop config route array: {err}"))
+        });
+    }
+
+    if value.get("routes").is_some() {
+        let stored = serde_json::from_value::<StoredUmopRoutes>(value).map_err(|err| {
+            AstrbotError::Pipeline(format!("parse umop config route catalog: {err}"))
+        })?;
+        return Ok(stored.routes);
+    }
+
+    let routing = serde_json::from_value::<BTreeMap<String, String>>(value)
+        .map_err(|err| AstrbotError::Pipeline(format!("parse umop config route mapping: {err}")))?;
+    Ok(routing
+        .into_iter()
+        .map(|(pattern, config_id)| UmopConfigRoute::new(pattern, config_id))
+        .collect())
 }
 
 fn component_matches(pattern: &str, value: &str) -> bool {

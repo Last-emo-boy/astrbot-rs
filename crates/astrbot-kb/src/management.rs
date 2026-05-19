@@ -4,8 +4,14 @@ use astrbot_core::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+use astrbot_storage::SqliteJsonStore;
+
 use crate::document::{KnowledgeBaseProfile, KnowledgeBaseStats, KnowledgeDocument};
 use crate::types::{ChunkId, DocumentId, KnowledgeBaseId, KnowledgeChunk, kb_error};
+
+const KB_PROFILE_NAMESPACE: &str = "kb_management_profiles";
+const KB_DOCUMENT_NAMESPACE: &str = "kb_management_documents";
+const KB_CHUNK_NAMESPACE: &str = "kb_management_chunks";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct KnowledgeBaseCreateCommand {
@@ -411,8 +417,127 @@ impl KnowledgeBaseManagementService {
         })
     }
 
+    pub async fn chunks_for_kb(&self, kb_id: &KnowledgeBaseId) -> Result<Vec<KnowledgeChunk>> {
+        self.store.list_chunks_for_kb(kb_id).await
+    }
+
     pub async fn delete_chunk(&self, chunk_id: &ChunkId) -> Result<bool> {
         self.store.delete_chunk(chunk_id).await
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct SqliteKnowledgeBaseManagementStore {
+    store: SqliteJsonStore,
+}
+
+impl SqliteKnowledgeBaseManagementStore {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
+}
+
+#[async_trait]
+impl KnowledgeBaseManagementStore for SqliteKnowledgeBaseManagementStore {
+    async fn upsert_kb(&self, profile: KnowledgeBaseProfile) -> Result<()> {
+        self.store
+            .put_json(KB_PROFILE_NAMESPACE, profile.kb_id.as_str(), &profile)
+    }
+
+    async fn get_kb(&self, kb_id: &KnowledgeBaseId) -> Result<Option<KnowledgeBaseProfile>> {
+        self.store.get_json(KB_PROFILE_NAMESPACE, kb_id.as_str())
+    }
+
+    async fn list_kbs(&self) -> Result<Vec<KnowledgeBaseProfile>> {
+        let mut profiles = self
+            .store
+            .list_json::<KnowledgeBaseProfile>(KB_PROFILE_NAMESPACE)?;
+        profiles.sort_by(|left, right| left.name.cmp(&right.name));
+        Ok(profiles)
+    }
+
+    async fn delete_kb(&self, kb_id: &KnowledgeBaseId) -> Result<bool> {
+        let deleted = self
+            .store
+            .delete_json(KB_PROFILE_NAMESPACE, kb_id.as_str())?;
+        if deleted {
+            for document in self.list_documents(kb_id).await? {
+                self.store
+                    .delete_json(KB_DOCUMENT_NAMESPACE, document.doc_id.as_str())?;
+            }
+            for chunk in self.list_chunks_for_kb(kb_id).await? {
+                self.store
+                    .delete_json(KB_CHUNK_NAMESPACE, chunk.chunk_id.as_str())?;
+            }
+        }
+        Ok(deleted)
+    }
+
+    async fn upsert_document(&self, document: KnowledgeDocument) -> Result<()> {
+        self.store
+            .put_json(KB_DOCUMENT_NAMESPACE, document.doc_id.as_str(), &document)
+    }
+
+    async fn get_document(&self, doc_id: &DocumentId) -> Result<Option<KnowledgeDocument>> {
+        self.store.get_json(KB_DOCUMENT_NAMESPACE, doc_id.as_str())
+    }
+
+    async fn list_documents(&self, kb_id: &KnowledgeBaseId) -> Result<Vec<KnowledgeDocument>> {
+        let mut documents = self
+            .store
+            .list_json::<KnowledgeDocument>(KB_DOCUMENT_NAMESPACE)?
+            .into_iter()
+            .filter(|document| &document.kb_id == kb_id)
+            .collect::<Vec<_>>();
+        documents.sort_by(|left, right| left.name.cmp(&right.name));
+        Ok(documents)
+    }
+
+    async fn delete_document(&self, doc_id: &DocumentId) -> Result<bool> {
+        let deleted = self
+            .store
+            .delete_json(KB_DOCUMENT_NAMESPACE, doc_id.as_str())?;
+        for chunk in self.list_chunks_for_document(doc_id).await? {
+            self.store
+                .delete_json(KB_CHUNK_NAMESPACE, chunk.chunk_id.as_str())?;
+        }
+        Ok(deleted)
+    }
+
+    async fn upsert_chunk(&self, chunk: KnowledgeChunk) -> Result<()> {
+        self.store
+            .put_json(KB_CHUNK_NAMESPACE, chunk.chunk_id.as_str(), &chunk)
+    }
+
+    async fn list_chunks_for_kb(&self, kb_id: &KnowledgeBaseId) -> Result<Vec<KnowledgeChunk>> {
+        let mut chunks = self
+            .store
+            .list_json::<KnowledgeChunk>(KB_CHUNK_NAMESPACE)?
+            .into_iter()
+            .filter(|chunk| &chunk.kb_id == kb_id)
+            .collect::<Vec<_>>();
+        chunks.sort_by(|left, right| {
+            left.doc_id
+                .cmp(&right.doc_id)
+                .then_with(|| left.chunk_index.cmp(&right.chunk_index))
+        });
+        Ok(chunks)
+    }
+
+    async fn list_chunks_for_document(&self, doc_id: &DocumentId) -> Result<Vec<KnowledgeChunk>> {
+        let mut chunks = self
+            .store
+            .list_json::<KnowledgeChunk>(KB_CHUNK_NAMESPACE)?
+            .into_iter()
+            .filter(|chunk| &chunk.doc_id == doc_id)
+            .collect::<Vec<_>>();
+        chunks.sort_by(|left, right| left.chunk_index.cmp(&right.chunk_index));
+        Ok(chunks)
+    }
+
+    async fn delete_chunk(&self, chunk_id: &ChunkId) -> Result<bool> {
+        self.store
+            .delete_json(KB_CHUNK_NAMESPACE, chunk_id.as_str())
     }
 }
 

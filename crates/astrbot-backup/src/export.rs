@@ -1,9 +1,11 @@
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use astrbot_core::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 use super::manifest::{BackupDirectoryStat, BackupManifest};
 
@@ -31,6 +33,20 @@ pub struct BackupFileEntry {
     pub size_bytes: u64,
 }
 
+impl BackupFileEntry {
+    pub fn new(
+        archive_path: impl Into<String>,
+        source_path: impl Into<PathBuf>,
+        size_bytes: u64,
+    ) -> Self {
+        Self {
+            archive_path: archive_path.into(),
+            source_path: source_path.into().to_string_lossy().to_string(),
+            size_bytes,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BackupArchiveEntry {
     pub archive_path: String,
@@ -41,6 +57,7 @@ pub struct BackupArchiveEntry {
 pub struct BackupExportRequest {
     pub astrbot_version: String,
     pub exported_at: String,
+    pub archive_filename: Option<String>,
     pub table_dumps: Vec<BackupTableDump>,
     pub files: Vec<BackupFileEntry>,
     pub directories: BTreeMap<String, BackupDirectoryStat>,
@@ -51,10 +68,16 @@ impl BackupExportRequest {
         Self {
             astrbot_version: astrbot_version.into(),
             exported_at: exported_at.into(),
+            archive_filename: None,
             table_dumps: Vec::new(),
             files: Vec::new(),
             directories: BTreeMap::new(),
         }
+    }
+
+    pub fn with_archive_filename(mut self, filename: impl Into<String>) -> Self {
+        self.archive_filename = Some(filename.into());
+        self
     }
 
     pub fn with_table_dump(mut self, dump: BackupTableDump) -> Self {
@@ -79,6 +102,8 @@ pub struct BackupExportPackage {
     pub tables: Vec<BackupTableDump>,
     pub files: Vec<BackupFileEntry>,
     pub generated_entries: Vec<BackupArchiveEntry>,
+    pub archive_path: Option<PathBuf>,
+    pub archive_size_bytes: Option<u64>,
 }
 
 impl BackupExportPackage {
@@ -96,7 +121,7 @@ impl BackupExportPackage {
 
             let archive_path = format!("databases/{}/{}.json", dump.group, dump.table);
             let bytes = serde_json::to_vec(&dump.rows).unwrap_or_default();
-            manifest.add_checksum(archive_path.clone(), format!("len:{}", bytes.len()));
+            manifest.add_checksum(archive_path.clone(), checksum_bytes(&bytes));
             generated_entries.push(BackupArchiveEntry {
                 archive_path,
                 bytes,
@@ -115,8 +140,22 @@ impl BackupExportPackage {
             tables: request.table_dumps,
             files: request.files,
             generated_entries,
+            archive_path: None,
+            archive_size_bytes: None,
         }
     }
+
+    pub fn with_archive(mut self, path: impl Into<PathBuf>, size_bytes: u64) -> Self {
+        self.archive_path = Some(path.into());
+        self.archive_size_bytes = Some(size_bytes);
+        self
+    }
+}
+
+pub fn checksum_bytes(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("sha256:{:x}", hasher.finalize())
 }
 
 #[async_trait]

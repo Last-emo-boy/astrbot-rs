@@ -27,6 +27,9 @@ pub enum SkillPackageError {
         name: String,
         operation: SkillPackageOperation,
     },
+    SkillAlreadyExists {
+        name: String,
+    },
     SkillNotFound {
         name: String,
     },
@@ -86,6 +89,7 @@ impl fmt::Display for SkillPackageError {
                     "sandbox-only skill {name} cannot be changed by local {operation:?}"
                 )
             }
+            Self::SkillAlreadyExists { name } => write!(formatter, "skill already exists: {name}"),
             Self::SkillNotFound { name } => write!(formatter, "skill not found: {name}"),
         }
     }

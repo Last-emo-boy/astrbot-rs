@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use astrbot_pipeline::{ContentSafetyConfig, KeywordContentSafetyStrategy};
+use astrbot_pipeline::{
+    BaiduAipContentSafetyStrategy, ContentSafetyConfig, KeywordContentSafetyStrategy,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::defaults::default_true;
@@ -11,6 +13,8 @@ pub struct RuntimeContentSafetyConfig {
     pub rejection_message: Option<String>,
     #[serde(default)]
     pub internal_keywords: RuntimeKeywordContentSafetyConfig,
+    #[serde(default)]
+    pub baidu_aip: RuntimeBaiduAipContentSafetyConfig,
 }
 
 impl From<RuntimeContentSafetyConfig> for ContentSafetyConfig {
@@ -26,6 +30,9 @@ impl From<RuntimeContentSafetyConfig> for ContentSafetyConfig {
             if !strategy.is_empty() {
                 content_safety = content_safety.with_strategy(Arc::new(strategy));
             }
+        }
+        if let Some(strategy) = config.baidu_aip.into_strategy() {
+            content_safety = content_safety.with_strategy(Arc::new(strategy));
         }
 
         content_safety
@@ -47,4 +54,48 @@ impl Default for RuntimeKeywordContentSafetyConfig {
             extra_keywords: Vec::new(),
         }
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeBaiduAipContentSafetyConfig {
+    #[serde(default, alias = "enable")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub app_id: String,
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default)]
+    pub secret_key: String,
+    #[serde(default)]
+    pub token_url: Option<String>,
+    #[serde(default)]
+    pub censor_url: Option<String>,
+}
+
+impl RuntimeBaiduAipContentSafetyConfig {
+    fn into_strategy(self) -> Option<BaiduAipContentSafetyStrategy> {
+        if !self.enabled
+            || self.app_id.trim().is_empty()
+            || self.api_key.trim().is_empty()
+            || self.secret_key.trim().is_empty()
+        {
+            return None;
+        }
+
+        let mut strategy =
+            BaiduAipContentSafetyStrategy::new(self.app_id, self.api_key, self.secret_key);
+        if let (Some(token_url), Some(censor_url)) = (
+            non_empty_string(self.token_url),
+            non_empty_string(self.censor_url),
+        ) {
+            strategy = strategy.with_endpoints(token_url, censor_url);
+        }
+        Some(strategy)
+    }
+}
+
+fn non_empty_string(value: Option<String>) -> Option<String> {
+    let value = value?;
+    let trimmed = value.trim();
+    (!trimmed.is_empty()).then(|| trimmed.to_string())
 }

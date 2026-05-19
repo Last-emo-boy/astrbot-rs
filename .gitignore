@@ -1,2 +1,42 @@
+# Rust build output
 /target/
 **/*.rs.bk
+
+# Logs
+*.log
+*.log.*
+logs/
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local runtime artifacts
+data/
+*.pid
+*.tmp
+*.temp
+*.cache
+*.jsonl
+.cache/
+tmp/
+temp/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+test-results/
+playwright-report/
+
+# Local workflow/agent scratch output
+.workflow/.scratchpad/
+.workflow/.csv-wave/
+.workflow/.maestro/

@@ -3,12 +3,17 @@ use std::sync::{Arc, RwLock};
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+
+use astrbot_storage::SqliteJsonStore;
 
 pub const DEFAULT_PERSONA_ID: &str = "default";
 const NONE_PERSONA_SENTINEL: &str = "[%None]";
 const WEBCHAT_DEFAULT_PERSONA_ID: &str = "_chatui_default_";
+const PERSONA_PROFILE_NAMESPACE: &str = "persona_profiles";
+const PERSONA_FOLDER_NAMESPACE: &str = "persona_folders";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonaProfile {
     pub id: String,
     pub system_prompt: String,
@@ -17,6 +22,8 @@ pub struct PersonaProfile {
     pub skills: Option<Vec<String>>,
     pub custom_error_message: Option<String>,
     pub folder_id: Option<String>,
+    #[serde(default)]
+    pub sort_order: i32,
 }
 
 impl PersonaProfile {
@@ -29,6 +36,7 @@ impl PersonaProfile {
             skills: None,
             custom_error_message: None,
             folder_id: None,
+            sort_order: 0,
         }
     }
 
@@ -62,15 +70,21 @@ impl PersonaProfile {
         self.custom_error_message = (!message.trim().is_empty()).then_some(message);
         self
     }
+
+    pub fn with_sort_order(mut self, sort_order: i32) -> Self {
+        self.sort_order = sort_order;
+        self
+    }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PersonaDialogRole {
     User,
     Assistant,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonaDialogTurn {
     pub role: PersonaDialogRole,
     pub content: String,
@@ -85,7 +99,7 @@ impl PersonaDialogTurn {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonaFolder {
     pub id: String,
     pub name: String,
@@ -130,9 +144,15 @@ pub trait PersonaRepository: Send + Sync {
 
     async fn list_personas(&self) -> Result<Vec<PersonaProfile>>;
 
+    async fn delete_persona(&self, persona_id: &str) -> Result<bool>;
+
     async fn upsert_folder(&self, folder: PersonaFolder) -> Result<()>;
 
     async fn folder(&self, folder_id: &str) -> Result<Option<PersonaFolder>>;
+
+    async fn list_folders(&self) -> Result<Vec<PersonaFolder>>;
+
+    async fn delete_folder(&self, folder_id: &str) -> Result<bool>;
 
     async fn folders_by_parent(&self, parent_id: Option<&str>) -> Result<Vec<PersonaFolder>>;
 }
@@ -176,8 +196,17 @@ impl PersonaRepository for InMemoryPersonaRepository {
             .values()
             .cloned()
             .collect::<Vec<_>>();
-        personas.sort_by(|left, right| left.id.cmp(&right.id));
+        personas.sort_by(compare_personas);
         Ok(personas)
+    }
+
+    async fn delete_persona(&self, persona_id: &str) -> Result<bool> {
+        Ok(self
+            .personas
+            .write()
+            .map_err(lock_error)?
+            .remove(persona_id)
+            .is_some())
     }
 
     async fn upsert_folder(&self, folder: PersonaFolder) -> Result<()> {
@@ -197,6 +226,27 @@ impl PersonaRepository for InMemoryPersonaRepository {
             .cloned())
     }
 
+    async fn list_folders(&self) -> Result<Vec<PersonaFolder>> {
+        let mut folders = self
+            .folders
+            .read()
+            .map_err(lock_error)?
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        folders.sort_by(compare_folders);
+        Ok(folders)
+    }
+
+    async fn delete_folder(&self, folder_id: &str) -> Result<bool> {
+        Ok(self
+            .folders
+            .write()
+            .map_err(lock_error)?
+            .remove(folder_id)
+            .is_some())
+    }
+
     async fn folders_by_parent(&self, parent_id: Option<&str>) -> Result<Vec<PersonaFolder>> {
         let mut folders = self
             .folders
@@ -206,11 +256,71 @@ impl PersonaRepository for InMemoryPersonaRepository {
             .filter(|folder| folder.parent_id.as_deref() == parent_id)
             .cloned()
             .collect::<Vec<_>>();
-        folders.sort_by(|left, right| {
-            left.sort_order
-                .cmp(&right.sort_order)
-                .then_with(|| left.name.cmp(&right.name))
-        });
+        folders.sort_by(compare_folders);
+        Ok(folders)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct SqlitePersonaRepository {
+    store: SqliteJsonStore,
+}
+
+impl SqlitePersonaRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
+}
+
+#[async_trait]
+impl PersonaRepository for SqlitePersonaRepository {
+    async fn upsert_persona(&self, persona: PersonaProfile) -> Result<()> {
+        self.store
+            .put_json(PERSONA_PROFILE_NAMESPACE, &persona.id, &persona)
+    }
+
+    async fn persona(&self, persona_id: &str) -> Result<Option<PersonaProfile>> {
+        self.store.get_json(PERSONA_PROFILE_NAMESPACE, persona_id)
+    }
+
+    async fn list_personas(&self) -> Result<Vec<PersonaProfile>> {
+        let mut personas = self.store.list_json(PERSONA_PROFILE_NAMESPACE)?;
+        personas.sort_by(compare_personas);
+        Ok(personas)
+    }
+
+    async fn delete_persona(&self, persona_id: &str) -> Result<bool> {
+        self.store
+            .delete_json(PERSONA_PROFILE_NAMESPACE, persona_id)
+    }
+
+    async fn upsert_folder(&self, folder: PersonaFolder) -> Result<()> {
+        self.store
+            .put_json(PERSONA_FOLDER_NAMESPACE, &folder.id, &folder)
+    }
+
+    async fn folder(&self, folder_id: &str) -> Result<Option<PersonaFolder>> {
+        self.store.get_json(PERSONA_FOLDER_NAMESPACE, folder_id)
+    }
+
+    async fn list_folders(&self) -> Result<Vec<PersonaFolder>> {
+        let mut folders = self.store.list_json(PERSONA_FOLDER_NAMESPACE)?;
+        folders.sort_by(compare_folders);
+        Ok(folders)
+    }
+
+    async fn delete_folder(&self, folder_id: &str) -> Result<bool> {
+        self.store.delete_json(PERSONA_FOLDER_NAMESPACE, folder_id)
+    }
+
+    async fn folders_by_parent(&self, parent_id: Option<&str>) -> Result<Vec<PersonaFolder>> {
+        let mut folders = self
+            .list_folders()
+            .await?
+            .into_iter()
+            .filter(|folder| folder.parent_id.as_deref() == parent_id)
+            .collect::<Vec<_>>();
+        folders.sort_by(compare_folders);
         Ok(folders)
     }
 }
@@ -317,6 +427,153 @@ impl PersonaManager {
         self.repository.persona(persona_id).await
     }
 
+    pub async fn folder(&self, folder_id: &str) -> Result<Option<PersonaFolder>> {
+        self.repository.folder(folder_id).await
+    }
+
+    pub async fn all_personas(&self) -> Result<Vec<PersonaProfile>> {
+        self.repository.list_personas().await
+    }
+
+    pub async fn all_folders(&self) -> Result<Vec<PersonaFolder>> {
+        self.repository.list_folders().await
+    }
+
+    pub async fn delete_persona(&self, persona_id: &str) -> Result<bool> {
+        self.repository.delete_persona(persona_id).await
+    }
+
+    pub async fn delete_folder(&self, folder_id: &str) -> Result<bool> {
+        let deleted = self.repository.delete_folder(folder_id).await?;
+        if deleted {
+            let personas = self.repository.list_personas().await?;
+            for mut persona in personas {
+                if persona.folder_id.as_deref() == Some(folder_id) {
+                    persona.folder_id = None;
+                    self.repository.upsert_persona(persona).await?;
+                }
+            }
+
+            let folders = self.repository.list_folders().await?;
+            for mut folder in folders {
+                if folder.parent_id.as_deref() == Some(folder_id) {
+                    folder.parent_id = None;
+                    self.repository.upsert_folder(folder).await?;
+                }
+            }
+        }
+        Ok(deleted)
+    }
+
+    pub async fn move_persona(
+        &self,
+        persona_id: &str,
+        folder_id: Option<String>,
+        sort_order: Option<i32>,
+    ) -> Result<PersonaProfile> {
+        let mut persona = self
+            .repository
+            .persona(persona_id)
+            .await?
+            .ok_or_else(|| AstrbotError::Pipeline(format!("persona {persona_id} not found")))?;
+        persona.folder_id = folder_id.and_then(|folder_id| {
+            let folder_id = folder_id.trim().to_string();
+            (!folder_id.is_empty()).then_some(folder_id)
+        });
+        if let Some(sort_order) = sort_order {
+            persona.sort_order = sort_order;
+        }
+        self.repository.upsert_persona(persona.clone()).await?;
+        Ok(persona)
+    }
+
+    pub async fn clone_persona(
+        &self,
+        source_persona_id: &str,
+        new_persona_id: &str,
+        folder_id: Option<String>,
+    ) -> Result<PersonaProfile> {
+        let mut persona = self
+            .repository
+            .persona(source_persona_id)
+            .await?
+            .ok_or_else(|| {
+                AstrbotError::Pipeline(format!("persona {source_persona_id} not found"))
+            })?;
+        persona.id = new_persona_id.trim().to_string();
+        if persona.id.is_empty() {
+            return Err(AstrbotError::Pipeline(
+                "new persona id is required".to_string(),
+            ));
+        }
+        if self.repository.persona(&persona.id).await?.is_some() {
+            return Err(AstrbotError::Pipeline(format!(
+                "persona {} already exists",
+                persona.id
+            )));
+        }
+        if let Some(folder_id) = folder_id {
+            let folder_id = folder_id.trim().to_string();
+            persona.folder_id = (!folder_id.is_empty()).then_some(folder_id);
+        }
+        self.repository.upsert_persona(persona.clone()).await?;
+        Ok(persona)
+    }
+
+    pub async fn move_folder(
+        &self,
+        folder_id: &str,
+        parent_id: Option<String>,
+        sort_order: Option<i32>,
+    ) -> Result<PersonaFolder> {
+        let mut folder = self
+            .repository
+            .folder(folder_id)
+            .await?
+            .ok_or_else(|| AstrbotError::Pipeline(format!("folder {folder_id} not found")))?;
+        folder.parent_id = parent_id.and_then(|parent_id| {
+            let parent_id = parent_id.trim().to_string();
+            (!parent_id.is_empty()).then_some(parent_id)
+        });
+        if let Some(sort_order) = sort_order {
+            folder.sort_order = sort_order;
+        }
+        self.repository.upsert_folder(folder.clone()).await?;
+        Ok(folder)
+    }
+
+    pub async fn reorder_personas(
+        &self,
+        ordered_persona_ids: &[String],
+    ) -> Result<Vec<PersonaProfile>> {
+        for (index, persona_id) in ordered_persona_ids.iter().enumerate() {
+            let Some(mut persona) = self.repository.persona(persona_id).await? else {
+                return Err(AstrbotError::Pipeline(format!(
+                    "persona {persona_id} not found"
+                )));
+            };
+            persona.sort_order = index as i32;
+            self.repository.upsert_persona(persona).await?;
+        }
+        self.repository.list_personas().await
+    }
+
+    pub async fn reorder_folders(
+        &self,
+        ordered_folder_ids: &[String],
+    ) -> Result<Vec<PersonaFolder>> {
+        for (index, folder_id) in ordered_folder_ids.iter().enumerate() {
+            let Some(mut folder) = self.repository.folder(folder_id).await? else {
+                return Err(AstrbotError::Pipeline(format!(
+                    "folder {folder_id} not found"
+                )));
+            };
+            folder.sort_order = index as i32;
+            self.repository.upsert_folder(folder).await?;
+        }
+        self.repository.list_folders().await
+    }
+
     pub async fn personas_by_folder(&self, folder_id: Option<&str>) -> Result<Vec<PersonaProfile>> {
         let mut personas = self
             .repository
@@ -325,7 +582,7 @@ impl PersonaManager {
             .into_iter()
             .filter(|persona| persona.folder_id.as_deref() == folder_id)
             .collect::<Vec<_>>();
-        personas.sort_by(|left, right| left.id.cmp(&right.id));
+        personas.sort_by(compare_personas);
         Ok(personas)
     }
 
@@ -401,6 +658,18 @@ fn is_none_persona(value: Option<&str>) -> bool {
     value == Some(NONE_PERSONA_SENTINEL)
 }
 
+fn compare_personas(left: &PersonaProfile, right: &PersonaProfile) -> std::cmp::Ordering {
+    left.sort_order
+        .cmp(&right.sort_order)
+        .then_with(|| left.id.cmp(&right.id))
+}
+
+fn compare_folders(left: &PersonaFolder, right: &PersonaFolder) -> std::cmp::Ordering {
+    left.sort_order
+        .cmp(&right.sort_order)
+        .then_with(|| left.name.cmp(&right.name))
+}
+
 fn lock_error<T>(err: std::sync::PoisonError<T>) -> AstrbotError {
     AstrbotError::Pipeline(format!("persona manager lock: {err}"))
 }
@@ -409,8 +678,10 @@ fn lock_error<T>(err: std::sync::PoisonError<T>) -> AstrbotError {
 mod tests {
     use super::{
         PersonaDialogRole, PersonaFolder, PersonaManager, PersonaProfile, PersonaResolveRequest,
-        PersonaResolveSource,
+        PersonaResolveSource, SqlitePersonaRepository,
     };
+    use astrbot_storage::SqliteJsonStore;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn persona_manager_resolves_forced_conversation_and_default_personas() {
@@ -480,6 +751,76 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn persona_manager_moves_clones_reorders_and_deletes_profiles() {
+        let manager = PersonaManager::default();
+        manager
+            .upsert_folder(PersonaFolder::new("root-a", "Root A").with_sort_order(1))
+            .await
+            .expect("folder should save");
+        manager
+            .upsert_folder(PersonaFolder::new("root-b", "Root B").with_sort_order(2))
+            .await
+            .expect("folder should save");
+        manager
+            .upsert_persona(
+                PersonaProfile::new("support", "be concise")
+                    .with_folder_id("root-a")
+                    .with_sort_order(10),
+            )
+            .await
+            .expect("persona should save");
+
+        let moved = manager
+            .move_persona("support", Some("root-b".to_string()), Some(3))
+            .await
+            .expect("persona should move");
+        assert_eq!(moved.folder_id.as_deref(), Some("root-b"));
+        assert_eq!(moved.sort_order, 3);
+
+        let cloned = manager
+            .clone_persona("support", "support-copy", Some("root-a".to_string()))
+            .await
+            .expect("persona should clone");
+        assert_eq!(cloned.id, "support-copy");
+        assert_eq!(cloned.folder_id.as_deref(), Some("root-a"));
+        assert_eq!(cloned.system_prompt, "be concise");
+
+        let reordered = manager
+            .reorder_personas(&["support-copy".to_string(), "support".to_string()])
+            .await
+            .expect("personas should reorder");
+        assert_eq!(reordered[0].id, "support-copy");
+        assert_eq!(reordered[1].id, "support");
+
+        assert!(
+            manager
+                .delete_persona("support")
+                .await
+                .expect("delete works")
+        );
+        assert!(
+            manager
+                .persona("support")
+                .await
+                .expect("persona lookup works")
+                .is_none()
+        );
+
+        assert!(
+            manager
+                .delete_folder("root-a")
+                .await
+                .expect("folder delete works")
+        );
+        let clone_after_folder_delete = manager
+            .persona("support-copy")
+            .await
+            .expect("persona lookup works")
+            .expect("clone remains");
+        assert!(clone_after_folder_delete.folder_id.is_none());
+    }
+
+    #[tokio::test]
     async fn persona_manager_respects_none_and_webchat_special_defaults() {
         let manager = PersonaManager::default();
 
@@ -500,5 +841,56 @@ mod tests {
             .expect("persona should resolve");
         assert_eq!(webchat.source, PersonaResolveSource::WebChatDefault);
         assert_eq!(webchat.persona_id.as_deref(), Some("_chatui_default_"));
+    }
+
+    #[tokio::test]
+    async fn sqlite_persona_repository_persists_profiles_and_folders_after_reopen() {
+        let db_path =
+            std::env::temp_dir().join(format!("astrbot-persona-test-{}.db", std::process::id()));
+        cleanup_sqlite_files(&db_path);
+
+        {
+            let repository = Arc::new(SqlitePersonaRepository::new(
+                SqliteJsonStore::open(&db_path).expect("sqlite store should open"),
+            ));
+            let manager = PersonaManager::with_repository(
+                repository,
+                PersonaProfile::new("default", "be helpful"),
+            );
+            manager
+                .upsert_folder(PersonaFolder::new("root", "Root").with_sort_order(1))
+                .await
+                .expect("folder should persist");
+            manager
+                .upsert_persona(
+                    PersonaProfile::new("support", "be concise")
+                        .with_folder_id("root")
+                        .with_sort_order(2),
+                )
+                .await
+                .expect("persona should persist");
+        }
+
+        let repository = Arc::new(SqlitePersonaRepository::new(
+            SqliteJsonStore::open(&db_path).expect("sqlite store should reopen"),
+        ));
+        let manager = PersonaManager::with_repository(
+            repository,
+            PersonaProfile::new("default", "be helpful"),
+        );
+
+        let folders = manager.all_folders().await.expect("folders should load");
+        let personas = manager.all_personas().await.expect("personas should load");
+        assert_eq!(folders[0].id, "root");
+        assert_eq!(personas[0].id, "support");
+        assert_eq!(personas[0].folder_id.as_deref(), Some("root"));
+
+        cleanup_sqlite_files(&db_path);
+    }
+
+    fn cleanup_sqlite_files(path: &std::path::Path) {
+        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(path.with_extension("db-wal"));
+        let _ = std::fs::remove_file(path.with_extension("db-shm"));
     }
 }

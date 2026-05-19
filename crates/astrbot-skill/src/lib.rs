@@ -4,6 +4,7 @@ mod frontmatter;
 mod package;
 mod prompt;
 mod prompt_inventory;
+mod runtime;
 mod sandbox_cache;
 
 pub use activation::{
@@ -20,6 +21,10 @@ pub use prompt::{
     SkillPromptInventory, SkillPromptRenderer, SkillPromptRuntime,
     build_skill_read_command_example, sanitize_prompt_description, sanitize_prompt_path_for_prompt,
     sanitize_skill_display_name,
+};
+pub use runtime::{
+    SkillRuntimeDeleteOutcome, SkillRuntimeInstallOutcome, SkillRuntimeInstallRequest,
+    SkillRuntimeSnapshot,
 };
 pub use sandbox_cache::{
     SANDBOX_SKILLS_CACHE_VERSION, SANDBOX_SKILLS_ROOT, SANDBOX_WORKSPACE_ROOT, SkillSandboxCache,

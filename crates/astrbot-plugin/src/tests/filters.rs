@@ -19,6 +19,16 @@ fn command_filter_matches_alias_and_prefix() {
 }
 
 #[test]
+fn command_filter_matches_parent_subcommands() {
+    let filter = CommandFilter::sub_command("plugin", "ls").with_alias("list");
+
+    assert!(filter.matches(&event("/plugin ls")));
+    assert!(filter.matches(&event("/plugin list all")));
+    assert!(!filter.matches(&event("/plugin")));
+    assert!(!filter.matches(&event("/ls")));
+}
+
+#[test]
 fn typed_filters_match_platform_session_permission_and_regex() {
     let mut group = event("hello 123");
     group.session = group.session.with_kind(MessageSessionKind::Group);

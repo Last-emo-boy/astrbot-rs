@@ -5,4 +5,5 @@ mod manager;
 mod onebot;
 mod registry;
 mod sink;
+mod wave1;
 mod webchat;

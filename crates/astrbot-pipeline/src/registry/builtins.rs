@@ -15,11 +15,6 @@ use super::{
 };
 
 pub(super) fn register_builtin_stages(registry: &mut PipelineStageRegistry) -> Result<()> {
-    registry.register_stage(
-        PREPROCESS_STAGE_TYPE,
-        PREPROCESS_STAGE_ORDER,
-        PreprocessStage::default,
-    )?;
     registry.register_stage(WAKE_STAGE_TYPE, WAKE_STAGE_ORDER, WakeCheckStage::default)?;
     registry.register_stage(
         WHITELIST_STAGE_TYPE,
@@ -40,6 +35,11 @@ pub(super) fn register_builtin_stages(registry: &mut PipelineStageRegistry) -> R
         CONTENT_SAFETY_STAGE_TYPE,
         CONTENT_SAFETY_STAGE_ORDER,
         ContentSafetyCheckStage::default,
+    )?;
+    registry.register_stage(
+        PREPROCESS_STAGE_TYPE,
+        PREPROCESS_STAGE_ORDER,
+        PreprocessStage::default,
     )?;
     registry.register_stage(
         PROCESS_STAGE_TYPE,

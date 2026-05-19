@@ -2,9 +2,11 @@ mod catalog;
 mod commands;
 mod conflicts;
 mod internal;
+mod parity;
 mod reference;
 mod schema;
 mod source;
+mod web_search;
 
 use serde_json::json;
 

@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{CommandDescriptor, ToolDescriptor};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolConflict {
     pub tool_name: String,
     pub sources: Vec<String>,
@@ -25,7 +27,7 @@ pub fn detect_tool_conflicts(tools: &[ToolDescriptor]) -> Vec<ToolConflict> {
         .collect()
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CommandConflict {
     pub command: String,
     pub handlers: Vec<String>,

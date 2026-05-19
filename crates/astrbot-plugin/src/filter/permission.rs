@@ -1,4 +1,5 @@
 use astrbot_core::MessageEvent;
+use astrbot_tool::CommandPermission;
 
 use super::EventFilter;
 
@@ -132,6 +133,13 @@ impl PermissionFilter {
 impl EventFilter for PermissionFilter {
     fn matches(&self, event: &MessageEvent) -> bool {
         self.resolver.allows(event, &self.scope, self.required)
+    }
+
+    fn command_permission(&self) -> Option<CommandPermission> {
+        Some(match self.required {
+            PermissionLevel::Member => CommandPermission::Member,
+            PermissionLevel::Admin | PermissionLevel::Owner => CommandPermission::Admin,
+        })
     }
 }
 

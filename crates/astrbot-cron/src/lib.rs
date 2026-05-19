@@ -10,5 +10,6 @@ pub use proactive::{
 };
 pub use scheduler::{
     BasicCronHandler, CronJobRepository, CronScheduleDriver, CronScheduler, CronSchedulerState,
-    DueCronScheduleDriver, InMemoryCronJobRepository, SchedulerJobSnapshot,
+    CronTickReport, DueCronScheduleDriver, InMemoryCronJobRepository, SchedulerJobSnapshot,
+    SqliteCronJobRepository,
 };

@@ -7,7 +7,10 @@ mod state;
 mod wake;
 mod whitelist;
 
-pub use content_safety::{RuntimeContentSafetyConfig, RuntimeKeywordContentSafetyConfig};
+pub use content_safety::{
+    RuntimeBaiduAipContentSafetyConfig, RuntimeContentSafetyConfig,
+    RuntimeKeywordContentSafetyConfig,
+};
 pub use provider_fallback::RuntimeProviderFallbackConfig;
 pub use rate_limit::{RuntimeRateLimitConfig, RuntimeRateLimitStrategy};
 pub use result_decorate::RuntimeResultDecorateConfig;

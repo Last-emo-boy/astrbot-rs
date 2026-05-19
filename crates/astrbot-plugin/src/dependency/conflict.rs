@@ -1,8 +1,9 @@
 use std::sync::OnceLock;
 
 use regex::{Captures, Regex};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DependencyConflictKind {
     CoreVersionConflict,
     PackageVersionConflict,
@@ -10,7 +11,7 @@ pub enum DependencyConflictKind {
     InstallerFailure,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencyConflictReport {
     pub plugin_id: String,
     pub kind: DependencyConflictKind,

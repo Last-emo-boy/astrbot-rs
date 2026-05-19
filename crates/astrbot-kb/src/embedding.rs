@@ -1,9 +1,10 @@
 use astrbot_core::Result;
 use astrbot_provider::{EmbeddingProvider, EmbeddingRequest};
+use serde::{Deserialize, Serialize};
 
 use crate::types::KnowledgeChunk;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmbeddedKnowledgeChunk {
     pub chunk: KnowledgeChunk,
     pub embedding: Vec<f32>,

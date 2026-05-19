@@ -6,8 +6,9 @@ use async_trait::async_trait;
 
 use crate::{
     AgentDoneEvent, AgentFallbackPolicy, AgentFeedbackEvent, AgentHookEvent, AgentLifecycleEvent,
-    AgentRunContext, AgentRunHook, NoopAgentRunHook, NoopProviderRequestDecorator,
-    ProviderRequestDecorator, ProviderRequestEnvelope,
+    AgentLlmRequestEvent, AgentRunContext, AgentRunHook, NoopAgentRunHook,
+    NoopProviderRequestDecorator, NoopProviderRequestHook, ProviderRequestDecorator,
+    ProviderRequestEnvelope, ProviderRequestHook,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -74,6 +75,7 @@ pub struct ChatAgentRunner {
     provider: Arc<dyn ChatProvider>,
     fallback_policy: AgentFallbackPolicy,
     request_decorator: Arc<dyn ProviderRequestDecorator>,
+    request_hook: Arc<dyn ProviderRequestHook>,
     hook: Arc<dyn AgentRunHook>,
 }
 
@@ -83,6 +85,7 @@ impl ChatAgentRunner {
             provider,
             fallback_policy: AgentFallbackPolicy::default(),
             request_decorator: Arc::new(NoopProviderRequestDecorator),
+            request_hook: Arc::new(NoopProviderRequestHook),
             hook: Arc::new(NoopAgentRunHook),
         }
     }
@@ -97,6 +100,11 @@ impl ChatAgentRunner {
         request_decorator: Arc<dyn ProviderRequestDecorator>,
     ) -> Self {
         self.request_decorator = request_decorator;
+        self
+    }
+
+    pub fn with_request_hook(mut self, request_hook: Arc<dyn ProviderRequestHook>) -> Self {
+        self.request_hook = request_hook;
         self
     }
 
@@ -131,10 +139,42 @@ impl AgentRunner for ChatAgentRunner {
         self.hook
             .on_event(AgentHookEvent::AgentBegin(lifecycle.clone()))
             .await?;
+        self.hook
+            .on_event(AgentHookEvent::WaitingLlmRequest(lifecycle.clone()))
+            .await?;
 
         self.request_decorator
             .decorate(event, &mut envelope.request)
             .await?;
+
+        if !envelope.explicit
+            && let Some(provider_wake_prefix) = self
+                .fallback_policy
+                .provider_wake_prefix
+                .as_deref()
+                .filter(|prefix| !prefix.is_empty())
+        {
+            if !envelope.request.strip_prompt_prefix(provider_wake_prefix) {
+                return Ok(AgentRunOutcome::continue_without_result());
+            }
+            envelope.request.wake_prefix = Some(provider_wake_prefix.to_string());
+        }
+
+        self.hook
+            .on_event(AgentHookEvent::LlmRequest(AgentLlmRequestEvent::new(
+                lifecycle.clone(),
+                envelope.request.clone(),
+                envelope.explicit,
+            )))
+            .await?;
+
+        if self
+            .request_hook
+            .before_request(event, &mut envelope.request, envelope.explicit)
+            .await?
+        {
+            return Ok(AgentRunOutcome::continue_without_result());
+        }
 
         let response = match self
             .provider

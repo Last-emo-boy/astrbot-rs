@@ -47,6 +47,37 @@ fn runtime_builds_console_platform_from_config() {
     );
 }
 
+#[test]
+fn runtime_rejects_missing_platform_required_payloads() {
+    let config = RuntimeConfig {
+        platforms: vec![RuntimePlatformConfig::new("onebot", "onebot")],
+        ..RuntimeConfig::default()
+    };
+
+    let error = match AstrbotRuntime::initialize(config) {
+        Ok(_) => panic!("invalid platform should fail"),
+        Err(err) => err,
+    };
+
+    assert!(error.to_string().contains("ws_reverse_host"));
+}
+
+#[test]
+fn runtime_builds_valid_secret_backed_platform_payloads() {
+    let config = RuntimeConfig {
+        platforms: vec![RuntimePlatformConfig::telegram(
+            "telegram",
+            "telegram-token",
+        )],
+        ..RuntimeConfig::default()
+    };
+
+    let runtime = AstrbotRuntime::initialize(config).expect("runtime should initialize");
+
+    assert_eq!(runtime.platform_manager().platform_count(), 1);
+    assert!(runtime.platform_manager().adapter("telegram").is_some());
+}
+
 #[tokio::test]
 async fn runtime_webchat_platform_submits_events_to_pipeline() {
     let config = RuntimeConfig {
@@ -88,7 +119,7 @@ async fn runtime_onebot_platform_submits_events_to_pipeline() {
         .expect("onebot platform should exist");
 
     onebot
-        .submit_private_text("user-1", "hello")
+        .submit_private_text("1001", "hello")
         .await
         .expect("onebot private input should submit event");
     runtime
@@ -97,7 +128,7 @@ async fn runtime_onebot_platform_submits_events_to_pipeline() {
         .expect("private event should process");
 
     onebot
-        .submit_group_text("group-1", "user-2", "/hello group")
+        .submit_group_text("2001", "1002", "/hello group")
         .await
         .expect("onebot group input should submit event");
     runtime
@@ -108,10 +139,10 @@ async fn runtime_onebot_platform_submits_events_to_pipeline() {
     let sent = runtime.sent_messages_for("onebot").await;
     assert_eq!(sent.len(), 2);
     assert!(sent[0].session.is_direct());
-    assert_eq!(sent[0].session.conversation_id, "private:user-1");
+    assert_eq!(sent[0].session.conversation_id, "private:1001");
     assert_eq!(sent[0].chain.plain_text(), DEFAULT_MOCK_RESPONSE);
     assert!(sent[1].session.is_group());
-    assert_eq!(sent[1].session.conversation_id, "group:group-1");
+    assert_eq!(sent[1].session.conversation_id, "group:2001");
     assert_eq!(sent[1].chain.plain_text(), DEFAULT_MOCK_RESPONSE);
 }
 

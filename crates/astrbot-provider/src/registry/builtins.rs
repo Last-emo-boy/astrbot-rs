@@ -1,19 +1,24 @@
 use std::sync::Arc;
 
+use crate::capability::ProviderModelDiscoverySupport;
 use crate::constants::*;
 use crate::factories::{
-    OpenAiCompatiblePreset, build_anthropic_provider, build_bailian_rerank_provider,
+    OpenAiCompatiblePreset, build_anthropic_provider, build_azure_text_to_speech_provider,
+    build_bailian_rerank_provider, build_dashscope_text_to_speech_provider,
+    build_edge_text_to_speech_provider, build_fishaudio_text_to_speech_provider,
     build_gemini_embedding_provider, build_gemini_provider, build_gemini_text_to_speech_provider,
+    build_genie_text_to_speech_provider, build_gsv_selfhost_text_to_speech_provider,
     build_gsvi_text_to_speech_provider, build_minimax_text_to_speech_provider,
     build_openai_compatible_provider, build_openai_embedding_provider,
     build_openai_speech_to_text_provider, build_openai_text_to_speech_provider,
-    build_vllm_rerank_provider, build_volcengine_text_to_speech_provider,
-    build_xinference_rerank_provider, build_xinference_speech_to_text_provider,
-    register_openai_compatible_alias,
+    build_openai_whisper_selfhost_speech_to_text_provider,
+    build_sensevoice_selfhost_speech_to_text_provider, build_vllm_rerank_provider,
+    build_volcengine_text_to_speech_provider, build_xinference_rerank_provider,
+    build_xinference_speech_to_text_provider, register_openai_compatible_alias,
 };
 use crate::{
     MockChatProvider, MockEmbeddingProvider, MockRerankProvider, MockSpeechToTextProvider,
-    MockTextToSpeechProvider,
+    MockTextToSpeechProvider, default_model_candidates, model_discovery_support,
 };
 
 use super::ProviderRegistry;
@@ -41,6 +46,18 @@ pub(super) fn with_builtin_providers() -> ProviderRegistry {
             build_xinference_speech_to_text_provider,
         )
         .expect("built-in Xinference speech-to-text provider type should register once");
+    registry
+        .register_speech_to_text_provider(
+            OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE,
+            build_openai_whisper_selfhost_speech_to_text_provider,
+        )
+        .expect("built-in selfhost Whisper speech-to-text provider type should register once");
+    registry
+        .register_speech_to_text_provider(
+            SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE,
+            build_sensevoice_selfhost_speech_to_text_provider,
+        )
+        .expect("built-in selfhost SenseVoice speech-to-text provider type should register once");
     registry
         .register_text_to_speech_provider(MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE, |config| {
             let audio_path = config
@@ -83,6 +100,42 @@ pub(super) fn with_builtin_providers() -> ProviderRegistry {
         )
         .expect("built-in GSVI text-to-speech provider type should register once");
     registry
+        .register_text_to_speech_provider(
+            GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_gsv_selfhost_text_to_speech_provider,
+        )
+        .expect("built-in GSV selfhost text-to-speech provider type should register once");
+    registry
+        .register_text_to_speech_provider(
+            AZURE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_azure_text_to_speech_provider,
+        )
+        .expect("built-in Azure text-to-speech provider type should register once");
+    registry
+        .register_text_to_speech_provider(
+            EDGE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_edge_text_to_speech_provider,
+        )
+        .expect("built-in Edge text-to-speech provider type should register once");
+    registry
+        .register_text_to_speech_provider(
+            DASHSCOPE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_dashscope_text_to_speech_provider,
+        )
+        .expect("built-in Dashscope text-to-speech provider type should register once");
+    registry
+        .register_text_to_speech_provider(
+            FISHAUDIO_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_fishaudio_text_to_speech_provider,
+        )
+        .expect("built-in FishAudio text-to-speech provider type should register once");
+    registry
+        .register_text_to_speech_provider(
+            GENIE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+            build_genie_text_to_speech_provider,
+        )
+        .expect("built-in Genie text-to-speech provider type should register once");
+    registry
         .register_embedding_provider(MOCK_EMBEDDING_PROVIDER_TYPE, |config| {
             let embedding = config
                 .mock_embedding
@@ -122,6 +175,7 @@ pub(super) fn with_builtin_providers() -> ProviderRegistry {
             build_xinference_rerank_provider,
         )
         .expect("built-in Xinference rerank provider type should register once");
+    annotate_builtin_model_metadata(&mut registry);
     registry
 }
 
@@ -172,5 +226,39 @@ pub(super) fn with_builtin_chat_providers() -> ProviderRegistry {
         OPENROUTER_CHAT_PROVIDER_TYPE,
         OpenAiCompatiblePreset::OpenRouter,
     );
+    annotate_builtin_model_metadata(&mut registry);
     registry
+}
+
+fn annotate_builtin_model_metadata(registry: &mut ProviderRegistry) {
+    for provider_type in [
+        MOCK_CHAT_PROVIDER_TYPE,
+        OPENAI_CHAT_PROVIDER_TYPE,
+        ANTHROPIC_CHAT_PROVIDER_TYPE,
+        GOOGLE_GENAI_CHAT_PROVIDER_TYPE,
+        ZHIPU_CHAT_PROVIDER_TYPE,
+        GROQ_CHAT_PROVIDER_TYPE,
+        XAI_CHAT_PROVIDER_TYPE,
+        AIHUBMIX_CHAT_PROVIDER_TYPE,
+        OPENROUTER_CHAT_PROVIDER_TYPE,
+    ] {
+        registry.set_provider_model_metadata(
+            provider_type,
+            model_discovery_support(provider_type),
+            default_model_candidates(provider_type),
+        );
+    }
+
+    for provider_type in [
+        XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE,
+        XINFERENCE_RERANK_PROVIDER_TYPE,
+    ] {
+        if registry.has_provider_adapter(provider_type) {
+            registry.set_provider_model_metadata(
+                provider_type,
+                ProviderModelDiscoverySupport::Supported,
+                Vec::new(),
+            );
+        }
+    }
 }

@@ -3,11 +3,14 @@ use std::sync::RwLock;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+
+use crate::SqliteJsonStore;
 
 pub const DEFAULT_CHAT_PROJECT_EMOJI: &str = "📁";
 pub const DEFAULT_CHAT_UI_PROJECT_EMOJI: &str = DEFAULT_CHAT_PROJECT_EMOJI;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatProjectRecord {
     pub project_id: String,
     pub creator: String,
@@ -53,7 +56,7 @@ impl ChatProjectRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatProjectCreateRecord {
     pub creator: String,
     pub title: String,
@@ -90,7 +93,7 @@ impl ChatProjectCreateRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatProjectUpdateRecord {
     pub title: Option<String>,
     pub emoji: Option<String>,
@@ -124,7 +127,7 @@ impl ChatProjectUpdateRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlatformSessionRecord {
     pub session_id: String,
     pub platform_id: String,
@@ -170,7 +173,7 @@ impl PlatformSessionRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SessionProjectMembershipRecord {
     pub session_id: String,
     pub project_id: String,
@@ -185,7 +188,7 @@ impl SessionProjectMembershipRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatUiProjectRecord {
     pub project_id: String,
     pub creator: String,
@@ -248,7 +251,7 @@ impl From<ChatProjectRecord> for ChatUiProjectRecord {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatUiSessionRecord {
     pub session_id: String,
     pub platform_id: String,
@@ -384,6 +387,19 @@ pub trait ChatUiProjectRepository: Send + Sync {
 }
 
 pub type InMemoryChatUiProjectRepository = InMemoryChatProjectRepository;
+
+pub type SqliteChatUiProjectRepository = SqliteChatProjectRepository;
+
+#[derive(Clone, Debug)]
+pub struct SqliteChatProjectRepository {
+    store: SqliteJsonStore,
+}
+
+impl SqliteChatProjectRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
+}
 
 #[derive(Default)]
 pub struct InMemoryChatProjectRepository {
@@ -588,6 +604,158 @@ impl ChatProjectRepository for InMemoryChatProjectRepository {
 }
 
 #[async_trait]
+impl ChatProjectRepository for SqliteChatProjectRepository {
+    async fn create_project(&self, record: ChatProjectCreateRecord) -> Result<ChatProjectRecord> {
+        let project_id = format!("project-{}", self.store.next_record_id("chat_project_ids")?);
+        let project = ChatProjectRecord::new(project_id, record.creator, record.title, record.now)
+            .with_emoji(record.emoji)
+            .with_description(record.description);
+        validate_project(&project)?;
+        self.store
+            .put_json("chat_projects", &project.project_id, &project)?;
+        Ok(project)
+    }
+
+    async fn project_by_id(&self, project_id: &str) -> Result<Option<ChatProjectRecord>> {
+        let project_id = required(project_id, "project_id")?;
+        self.store.get_json("chat_projects", project_id)
+    }
+
+    async fn projects_by_creator(&self, creator: &str) -> Result<Vec<ChatProjectRecord>> {
+        let creator = required(creator, "creator")?;
+        let mut projects = self
+            .store
+            .list_json::<ChatProjectRecord>("chat_projects")?
+            .into_iter()
+            .filter(|project| project.creator == creator)
+            .collect::<Vec<_>>();
+        projects.sort_by(|left, right| {
+            right
+                .updated_at
+                .cmp(&left.updated_at)
+                .then_with(|| left.project_id.cmp(&right.project_id))
+        });
+        Ok(projects)
+    }
+
+    async fn update_project(
+        &self,
+        project_id: &str,
+        record: ChatProjectUpdateRecord,
+    ) -> Result<bool> {
+        let project_id = required(project_id, "project_id")?;
+        let Some(mut project) = self.project_by_id(project_id).await? else {
+            return Ok(false);
+        };
+        if let Some(title) = record.title {
+            project.title = title;
+        }
+        if let Some(emoji) = record.emoji {
+            project.emoji = Some(emoji);
+        }
+        if let Some(description) = record.description {
+            project.description = Some(description);
+        }
+        project.updated_at = record.updated_at;
+        validate_project(&project)?;
+        self.store
+            .put_json("chat_projects", &project.project_id, &project)?;
+        Ok(true)
+    }
+
+    async fn delete_project(&self, project_id: &str) -> Result<bool> {
+        let project_id = required(project_id, "project_id")?;
+        let removed = self.store.delete_json("chat_projects", project_id)?;
+        if removed {
+            for membership in self
+                .store
+                .list_json::<SessionProjectMembershipRecord>("session_project_memberships")?
+                .into_iter()
+                .filter(|membership| membership.project_id == project_id)
+            {
+                self.store
+                    .delete_json("session_project_memberships", &membership.session_id)?;
+            }
+        }
+        Ok(removed)
+    }
+
+    async fn upsert_platform_session(&self, record: PlatformSessionRecord) -> Result<()> {
+        validate_session(&record)?;
+        self.store
+            .put_json("platform_sessions", &record.session_id, &record)
+    }
+
+    async fn platform_session(&self, session_id: &str) -> Result<Option<PlatformSessionRecord>> {
+        let session_id = required(session_id, "session_id")?;
+        self.store.get_json("platform_sessions", session_id)
+    }
+
+    async fn add_session_to_project(
+        &self,
+        session_id: &str,
+        project_id: &str,
+    ) -> Result<SessionProjectMembershipRecord> {
+        let session_id = required(session_id, "session_id")?;
+        let project_id = required(project_id, "project_id")?;
+        let membership = SessionProjectMembershipRecord::new(session_id, project_id);
+        self.store
+            .put_json("session_project_memberships", session_id, &membership)?;
+        Ok(membership)
+    }
+
+    async fn remove_session_from_project(&self, session_id: &str) -> Result<bool> {
+        let session_id = required(session_id, "session_id")?;
+        self.store
+            .delete_json("session_project_memberships", session_id)
+    }
+
+    async fn project_sessions(&self, project_id: &str) -> Result<Vec<PlatformSessionRecord>> {
+        let project_id = required(project_id, "project_id")?;
+        let session_ids = self
+            .store
+            .list_json::<SessionProjectMembershipRecord>("session_project_memberships")?
+            .into_iter()
+            .filter(|membership| membership.project_id == project_id)
+            .map(|membership| membership.session_id)
+            .collect::<Vec<_>>();
+        let mut records = Vec::new();
+        for session_id in session_ids {
+            if let Some(session) = self.platform_session(&session_id).await? {
+                records.push(session);
+            }
+        }
+        records.sort_by(|left, right| {
+            right
+                .updated_at
+                .cmp(&left.updated_at)
+                .then_with(|| left.session_id.cmp(&right.session_id))
+        });
+        Ok(records)
+    }
+
+    async fn project_by_session(
+        &self,
+        session_id: &str,
+        creator: &str,
+    ) -> Result<Option<ChatProjectRecord>> {
+        let session_id = required(session_id, "session_id")?;
+        let creator = required(creator, "creator")?;
+        let Some(membership) = self.store.get_json::<SessionProjectMembershipRecord>(
+            "session_project_memberships",
+            session_id,
+        )?
+        else {
+            return Ok(None);
+        };
+        Ok(self
+            .project_by_id(&membership.project_id)
+            .await?
+            .filter(|project| project.creator == creator))
+    }
+}
+
+#[async_trait]
 impl ChatUiProjectRepository for InMemoryChatProjectRepository {
     async fn create_chatui_project(
         &self,
@@ -625,6 +793,87 @@ impl ChatUiProjectRepository for InMemoryChatProjectRepository {
             return Ok(None);
         }
         projects.insert(project.project_id.clone(), project);
+        Ok(Some(record))
+    }
+
+    async fn delete_chatui_project(&self, project_id: &str) -> Result<bool> {
+        self.delete_project(project_id).await
+    }
+
+    async fn upsert_chatui_session(&self, record: ChatUiSessionRecord) -> Result<()> {
+        let session = chatui_session_to_platform_session(record);
+        self.upsert_platform_session(session).await
+    }
+
+    async fn chatui_session(&self, session_id: &str) -> Result<Option<ChatUiSessionRecord>> {
+        self.platform_session(session_id)
+            .await
+            .map(|session| session.map(Into::into))
+    }
+
+    async fn assign_session_to_project(&self, session_id: &str, project_id: &str) -> Result<()> {
+        self.add_session_to_project(session_id, project_id)
+            .await
+            .map(|_| ())
+    }
+
+    async fn remove_session_from_project(&self, session_id: &str) -> Result<bool> {
+        ChatProjectRepository::remove_session_from_project(self, session_id).await
+    }
+
+    async fn project_sessions(&self, project_id: &str) -> Result<Vec<ChatUiSessionRecord>> {
+        ChatProjectRepository::project_sessions(self, project_id)
+            .await
+            .map(|sessions| sessions.into_iter().map(Into::into).collect())
+    }
+
+    async fn project_by_session(
+        &self,
+        session_id: &str,
+        creator: &str,
+    ) -> Result<Option<ChatUiProjectRecord>> {
+        ChatProjectRepository::project_by_session(self, session_id, creator)
+            .await
+            .map(|project| project.map(Into::into))
+    }
+}
+
+#[async_trait]
+impl ChatUiProjectRepository for SqliteChatProjectRepository {
+    async fn create_chatui_project(
+        &self,
+        record: ChatUiProjectRecord,
+    ) -> Result<ChatUiProjectRecord> {
+        validate_chatui_project(&record)?;
+        let project = chatui_project_to_project(record.clone());
+        self.store
+            .put_json("chat_projects", &project.project_id, &project)?;
+        Ok(record)
+    }
+
+    async fn chatui_project(&self, project_id: &str) -> Result<Option<ChatUiProjectRecord>> {
+        self.project_by_id(project_id)
+            .await
+            .map(|project| project.map(Into::into))
+    }
+
+    async fn chatui_projects_by_creator(&self, creator: &str) -> Result<Vec<ChatUiProjectRecord>> {
+        self.projects_by_creator(creator)
+            .await
+            .map(|projects| projects.into_iter().map(Into::into).collect())
+    }
+
+    async fn update_chatui_project(
+        &self,
+        record: ChatUiProjectRecord,
+    ) -> Result<Option<ChatUiProjectRecord>> {
+        validate_chatui_project(&record)?;
+        let project = chatui_project_to_project(record.clone());
+        if self.project_by_id(&project.project_id).await?.is_none() {
+            return Ok(None);
+        }
+        self.store
+            .put_json("chat_projects", &project.project_id, &project)?;
         Ok(Some(record))
     }
 
@@ -764,8 +1013,9 @@ fn membership_lock_error<T>(err: std::sync::PoisonError<T>) -> AstrbotError {
 mod tests {
     use super::{
         ChatProjectCreateRecord, ChatProjectRepository, InMemoryChatProjectRepository,
-        PlatformSessionRecord,
+        PlatformSessionRecord, SqliteChatProjectRepository,
     };
+    use crate::SqliteJsonStore;
 
     #[tokio::test]
     async fn chat_project_repository_lists_projects_by_creator_recent_first() {
@@ -872,6 +1122,44 @@ mod tests {
                 .await
                 .expect("project lookup should work")
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn sqlite_chat_project_repository_persists_projects_and_memberships() {
+        let store = SqliteJsonStore::open_in_memory().expect("sqlite store should open");
+        let repository = SqliteChatProjectRepository::new(store.clone());
+        repository
+            .upsert_platform_session(PlatformSessionRecord::new(
+                "session-1",
+                "webchat",
+                "alice",
+                "2026-05-17T00:00:02Z",
+            ))
+            .await
+            .expect("session should store");
+        let project = repository
+            .create_project(ChatProjectCreateRecord::new(
+                "alice",
+                "Research",
+                "2026-05-17T00:00:00Z",
+            ))
+            .await
+            .expect("project should store");
+        repository
+            .add_session_to_project("session-1", &project.project_id)
+            .await
+            .expect("session should assign");
+
+        let reloaded = SqliteChatProjectRepository::new(store);
+        assert_eq!(
+            reloaded
+                .project_by_session("session-1", "alice")
+                .await
+                .expect("project should load")
+                .expect("project should exist")
+                .project_id,
+            project.project_id
         );
     }
 }

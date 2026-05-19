@@ -15,16 +15,19 @@ mod webhook;
 
 pub use api_client::{
     PlatformApiClient, PlatformApiError, PlatformApiErrorKind, PlatformApiMethod,
-    PlatformApiRequest, PlatformApiResponse,
+    PlatformApiRequest, PlatformApiResponse, ReqwestPlatformApiClient,
 };
 pub use identity::{PlatformGroupIdentityInput, PlatformIdentityNormalizer, platform_member};
 pub use long_connection::{
     LongConnectionClient, LongConnectionCommand, LongConnectionEndpoint, LongConnectionFrame,
     LongConnectionReconnectPolicy, LongConnectionState, LongConnectionWaiters,
+    TungsteniteLongConnectionClient,
 };
 pub use media::{
     PlatformMediaKind, PlatformMediaReference, PlatformMediaSource, PlatformMediaUpload,
-    PlatformMediaUploadClient,
+    PlatformMediaUploadClient, PlatformVoiceConversionRequest, PlatformVoiceMediaConverter,
+    PlatformVoiceTargetFormat, PlatformVoiceUploadPreparer, UnsupportedPlatformVoiceMediaConverter,
+    detect_platform_voice_format,
 };
 pub use outbound::{
     PlatformOutboundRoute, PlatformOutboundRoutingState, PlatformReplyTarget,
@@ -57,7 +60,7 @@ pub use transport::{
     NoopTransport, PlatformTransport, PlatformTransportKind, PlatformTransportState,
 };
 pub use webhook::{
-    WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint, WebhookEventDeduplicator,
-    WebhookHttpMethod, WebhookRequest, WebhookResponse, WebhookRoute, WebhookServer,
-    WebhookServerState,
+    AxumWebhookServer, WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint,
+    WebhookEventDeduplicator, WebhookHttpMethod, WebhookRequest, WebhookResponse, WebhookRoute,
+    WebhookServer, WebhookServerState,
 };

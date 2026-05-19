@@ -123,7 +123,7 @@ fn openapi_chat_gateway_requires_chat_scope_before_enqueue() {
             .expect_err("chat scope should be required"),
         OpenApiChatGatewayError::MissingChatScope
     );
-    assert_eq!(required_openapi_chat_scopes()[0].as_str(), "openapi.chat");
+    assert_eq!(required_openapi_chat_scopes()[0].as_str(), "chat");
 }
 
 #[test]

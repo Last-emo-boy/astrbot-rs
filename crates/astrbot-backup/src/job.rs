@@ -68,6 +68,10 @@ impl BackupProgressSnapshot {
     pub fn failed(message: impl Into<String>) -> Self {
         Self::new(BackupJobStatus::Failed, "failed", 0, 0, message)
     }
+
+    pub fn cancelled(message: impl Into<String>) -> Self {
+        Self::new(BackupJobStatus::Cancelled, "cancelled", 0, 0, message)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -171,6 +175,21 @@ impl BackupJobStore {
         };
         snapshot.progress = BackupProgressSnapshot::failed(&message);
         snapshot.error = Some(message);
+        Ok(Some(snapshot.clone()))
+    }
+
+    pub fn cancel(
+        &self,
+        task_id: &str,
+        message: impl Into<String>,
+    ) -> Result<Option<BackupJobSnapshot>> {
+        let message = message.into();
+        let mut jobs = self.jobs.write().map_err(lock_error)?;
+        let Some(snapshot) = jobs.get_mut(task_id.trim()) else {
+            return Ok(None);
+        };
+        snapshot.progress = BackupProgressSnapshot::cancelled(message);
+        snapshot.error = None;
         Ok(Some(snapshot.clone()))
     }
 }

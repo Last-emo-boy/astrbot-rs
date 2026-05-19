@@ -1,4 +1,4 @@
-use super::conversation::{attachment_table, conversation_messages_table};
+use super::conversation::{attachment_table, conversation_messages_table, file_token_table};
 use super::ops::api_keys_table;
 use super::provider::{config_snapshots_table, provider_preferences_table};
 use super::{StorageSchema, StorageTable};
@@ -21,6 +21,7 @@ pub fn repository_port_tables() -> Vec<StorageTable> {
         conversation_messages,
         provider_preferences_table(false),
         attachment_table(),
+        file_token_table(),
         config_snapshots_table(false),
         api_keys_table(),
     ]

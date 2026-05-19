@@ -5,26 +5,39 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+astrbot-agent = { path = "../astrbot-agent" }
 astrbot-conversation = { path = "../astrbot-conversation" }
 astrbot-core = { path = "../astrbot-core" }
 astrbot-kb = { path = "../astrbot-kb" }
 astrbot-maintenance = { path = "../astrbot-maintenance" }
 astrbot-media = { path = "../astrbot-media" }
+astrbot-mcp = { path = "../astrbot-mcp" }
+astrbot-metrics = { path = "../astrbot-metrics" }
+astrbot-observability = { path = "../astrbot-observability" }
+astrbot-cron = { path = "../astrbot-cron" }
 astrbot-platform = { path = "../astrbot-platform" }
+astrbot-persona = { path = "../astrbot-persona" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-render = { path = "../astrbot-render" }
 astrbot-runtime = { path = "../astrbot-runtime" }
 astrbot-session = { path = "../astrbot-session" }
 astrbot-skill = { path = "../astrbot-skill" }
 astrbot-storage = { path = "../astrbot-storage" }
 astrbot-tool = { path = "../astrbot-tool" }
-axum.workspace = true
+async-trait.workspace = true
+axum = { workspace = true, features = ["multipart", "ws"] }
+base64.workspace = true
+hmac.workspace = true
+pbkdf2.workspace = true
+rand.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha1.workspace = true
+sha2.workspace = true
 tokio.workspace = true
+tokio-stream.workspace = true
 
 [dev-dependencies]
-async-trait.workspace = true
-reqwest.workspace = true
 tower = { version = "0.5", features = ["util"] }

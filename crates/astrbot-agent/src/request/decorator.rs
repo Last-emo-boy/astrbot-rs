@@ -17,6 +17,30 @@ impl ProviderRequestDecorator for NoopProviderRequestDecorator {
     }
 }
 
+#[async_trait]
+pub trait ProviderRequestHook: Send + Sync {
+    async fn before_request(
+        &self,
+        event: &MessageEvent,
+        request: &mut ProviderRequest,
+        explicit: bool,
+    ) -> Result<bool>;
+}
+
+pub struct NoopProviderRequestHook;
+
+#[async_trait]
+impl ProviderRequestHook for NoopProviderRequestHook {
+    async fn before_request(
+        &self,
+        _event: &MessageEvent,
+        _request: &mut ProviderRequest,
+        _explicit: bool,
+    ) -> Result<bool> {
+        Ok(false)
+    }
+}
+
 #[derive(Default)]
 pub struct CompositeProviderRequestDecorator {
     decorators: Vec<Arc<dyn ProviderRequestDecorator>>,

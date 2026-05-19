@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use astrbot_provider::{
+    AudioConversionRequest, AudioFormat, AudioMediaConverter, AudioTranscodeTarget,
     OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE, OpenAiSpeechToTextConfig, OpenAiSpeechToTextProvider,
     SpeechToTextProvider, SpeechToTextRequest,
 };
+use async_trait::async_trait;
 use tokio::sync::Mutex;
 
 mod support;
@@ -73,6 +75,32 @@ async fn downloads_http_audio_without_leaking_provider_authorization() {
 }
 
 #[tokio::test]
+async fn transcribes_converted_audio_when_converter_is_configured() {
+    let audio = TempAudioFile::new("openai-stt-amr-converted", "amr", b"#!AMR audio bytes");
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let base_url = serve_sequence(
+        vec![TestResponse::json("200 OK", r#"{"text":"converted"}"#)],
+        captured.clone(),
+    )
+    .await;
+    let provider = OpenAiSpeechToTextProvider::new(
+        OpenAiSpeechToTextConfig::new(base_url, "whisper-1").with_api_key("test-key"),
+    )
+    .expect("provider should build")
+    .with_audio_converter(Arc::new(SttTestConverter));
+
+    let response = provider
+        .transcribe(SpeechToTextRequest::new(audio.path_string()))
+        .await
+        .expect("configured converter should allow AMR transcription");
+
+    assert_eq!(response.text, "converted");
+    let requests = captured.lock().await.clone();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].contains("RIFF converted audio"));
+}
+
+#[tokio::test]
 async fn maps_openai_stt_error_response_to_provider_error() {
     let audio = TempAudioFile::wav("openai-stt-error", b"RIFF audio bytes");
     let base_url = serve_sequence(
@@ -135,4 +163,16 @@ async fn rejects_openai_stt_audio_that_requires_media_conversion() {
 #[test]
 fn provider_type_matches_astrbot_openai_whisper_name() {
     assert_eq!(OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE, "openai_whisper_api");
+}
+
+struct SttTestConverter;
+
+#[async_trait]
+impl AudioMediaConverter for SttTestConverter {
+    async fn convert(&self, request: AudioConversionRequest) -> astrbot_core::Result<Vec<u8>> {
+        assert_eq!(request.format, AudioFormat::Amr);
+        assert_eq!(request.target_format, AudioTranscodeTarget::Wav);
+        assert_eq!(request.audio, b"#!AMR audio bytes");
+        Ok(b"RIFF converted audio".to_vec())
+    }
 }

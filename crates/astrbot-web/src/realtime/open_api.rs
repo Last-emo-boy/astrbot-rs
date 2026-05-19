@@ -37,7 +37,7 @@ impl OpenApiChatAuthContext {
     pub fn has_chat_scope(&self) -> bool {
         self.scopes.iter().any(|scope| {
             let scope = scope.trim();
-            scope == OpenApiScope::Chat.as_str() || scope == "chat" || scope == "*"
+            scope == OpenApiScope::Chat.as_str() || scope == "openapi.chat" || scope == "*"
         })
     }
 }

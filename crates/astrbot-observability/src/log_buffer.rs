@@ -98,6 +98,17 @@ impl InMemoryLogBuffer {
         id
     }
 
+    pub async fn restore(&self, entries: impl IntoIterator<Item = LogEntry>) {
+        let mut state = self.state.lock().await;
+        for entry in entries {
+            state.next_id = state.next_id.max(entry.id.0.saturating_add(1));
+            state.entries.push_back(entry);
+            while state.entries.len() > self.capacity {
+                state.entries.pop_front();
+            }
+        }
+    }
+
     pub async fn snapshot(&self, after: Option<LogEntryId>, limit: usize) -> LogBufferSnapshot {
         let state = self.state.lock().await;
         let entries = state
@@ -156,5 +167,29 @@ mod tests {
         let after_second = buffer.snapshot(Some(LogEntryId(second.0)), 10).await;
         assert_eq!(after_second.entries.len(), 1);
         assert_eq!(after_second.entries[0].message, "three");
+    }
+
+    #[tokio::test]
+    async fn restore_preserves_cursor_and_capacity() {
+        let buffer = InMemoryLogBuffer::new(2);
+        buffer
+            .restore([
+                LogEntry::new(LogLevel::Info, LogSource::Runtime, "one"),
+                LogEntry {
+                    id: LogEntryId(7),
+                    ..LogEntry::new(LogLevel::Warn, LogSource::Runtime, "seven")
+                },
+            ])
+            .await;
+
+        let id = buffer
+            .push(LogEntry::new(LogLevel::Error, LogSource::Runtime, "next"))
+            .await;
+        assert_eq!(id, LogEntryId(8));
+
+        let snapshot = buffer.snapshot(None, 10).await;
+        assert_eq!(snapshot.entries.len(), 2);
+        assert_eq!(snapshot.entries[0].message, "seven");
+        assert_eq!(snapshot.entries[1].message, "next");
     }
 }

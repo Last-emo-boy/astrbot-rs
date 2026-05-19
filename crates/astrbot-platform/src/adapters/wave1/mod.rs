@@ -1,0 +1,16 @@
+pub(crate) mod common;
+pub(crate) mod dingtalk;
+pub(crate) mod discord;
+pub(crate) mod kook;
+pub(crate) mod lark;
+pub(crate) mod line;
+pub(crate) mod misskey;
+pub(crate) mod qq_official;
+pub(crate) mod qq_official_webhook;
+pub(crate) mod satori;
+pub(crate) mod slack;
+pub(crate) mod telegram;
+pub(crate) mod wecom;
+pub(crate) mod wecom_ai_bot;
+pub(crate) mod wecom_kf;
+pub(crate) mod weixin_official_account;

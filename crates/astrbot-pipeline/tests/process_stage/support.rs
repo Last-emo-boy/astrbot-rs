@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use astrbot_agent::{AgentHookEvent, AgentRunHook};
+use astrbot_agent::{AgentHookEvent, AgentRunHook, ProviderRequestHook};
 use astrbot_core::{
     AstrbotError, MessageChain, MessageEvent, MessageEventResult, MessageSender, MessageSession,
     ProviderContentPart, ProviderContextMessage, ProviderRequest, ProviderToolPlaceholder, Result,
@@ -120,5 +120,28 @@ impl AgentRunHook for CapturingAgentHook {
     async fn on_event(&self, event: AgentHookEvent) -> Result<()> {
         self.events.lock().await.push(event);
         Ok(())
+    }
+}
+
+#[derive(Default)]
+pub struct CapturingProviderRequestHook {
+    pub stop: bool,
+    pub rewrite_prompt: Option<String>,
+    pub seen: Mutex<Vec<ProviderRequest>>,
+}
+
+#[async_trait]
+impl ProviderRequestHook for CapturingProviderRequestHook {
+    async fn before_request(
+        &self,
+        _event: &MessageEvent,
+        request: &mut ProviderRequest,
+        _explicit: bool,
+    ) -> Result<bool> {
+        self.seen.lock().await.push(request.clone());
+        if let Some(prompt) = &self.rewrite_prompt {
+            request.prompt = Some(prompt.clone());
+        }
+        Ok(self.stop)
     }
 }

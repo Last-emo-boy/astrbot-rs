@@ -3,7 +3,10 @@ use std::sync::Arc;
 use astrbot_core::{EventExecutor, MessageEvent, Result};
 use async_trait::async_trait;
 
-use crate::{PipelineContext, PipelineControl, PipelineStage, PipelineStageRegistry};
+use crate::{
+    PipelineContext, PipelineControl, PipelineStage, PipelineStageRegistry, RESPOND_STAGE_TYPE,
+    RESULT_DECORATE_STAGE_TYPE,
+};
 
 pub struct PipelineScheduler {
     ctx: PipelineContext,
@@ -54,10 +57,17 @@ impl EventExecutor for PipelineScheduler {
     async fn execute(&self, mut event: MessageEvent) -> Result<()> {
         for stage in &self.stages {
             let control = stage.handle(&mut event, &self.ctx).await?;
-            if control == PipelineControl::Stop || event.is_stopped() {
+            if control == PipelineControl::Stop {
+                break;
+            }
+            if event.is_stopped() && !is_result_delivery_stage(stage.name()) {
                 break;
             }
         }
         Ok(())
     }
+}
+
+fn is_result_delivery_stage(stage_name: &str) -> bool {
+    matches!(stage_name, RESULT_DECORATE_STAGE_TYPE | RESPOND_STAGE_TYPE)
 }

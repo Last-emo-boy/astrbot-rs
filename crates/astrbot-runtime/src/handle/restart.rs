@@ -9,6 +9,7 @@ use super::runtime::{AstrbotRuntime, RuntimeHandle};
 struct RestartState {
     provider_preferences: Option<HashMap<String, String>>,
     status_sink: astrbot_observability::SharedStatusEventSink,
+    metric_sink: std::sync::Arc<dyn astrbot_metrics::MetricSink>,
 }
 
 impl RestartState {
@@ -22,6 +23,7 @@ impl RestartState {
         Ok(Self {
             provider_preferences,
             status_sink: handle.status_sink.clone(),
+            metric_sink: handle.metric_sink.clone(),
         })
     }
 
@@ -32,11 +34,17 @@ impl RestartState {
                 .replace_with(preferences)
                 .await?;
         }
-        Ok(runtime.with_status_sink(self.status_sink))
+        Ok(runtime
+            .with_status_sink(self.status_sink)
+            .with_metric_sink(self.metric_sink))
     }
 }
 
 impl RuntimeHandle {
+    pub async fn reload(self, config: RuntimeConfig) -> Result<RuntimeHandle> {
+        self.restart(config).await
+    }
+
     pub async fn restart(self, config: RuntimeConfig) -> Result<RuntimeHandle> {
         let restart_state = RestartState::capture(&self, &config).await?;
 

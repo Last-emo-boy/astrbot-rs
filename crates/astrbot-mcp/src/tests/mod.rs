@@ -1,4 +1,5 @@
 mod bridge;
+mod client;
 mod config;
 mod elicitation;
 mod prompts;

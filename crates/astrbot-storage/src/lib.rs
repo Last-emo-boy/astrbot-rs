@@ -18,8 +18,13 @@ mod sqlite;
 mod stats;
 mod temp_artifact;
 
-pub use api_key::{ApiKeyRecord, ApiKeyRepository, InMemoryApiKeyRepository};
-pub use attachment::{AttachmentRecord, AttachmentRepository, InMemoryAttachmentRepository};
+pub use api_key::{
+    ApiKeyRecord, ApiKeyRepository, InMemoryApiKeyRepository, SqliteApiKeyRepository,
+};
+pub use attachment::{
+    AttachmentRecord, AttachmentRepository, InMemoryAttachmentRepository,
+    SqliteAttachmentRepository,
+};
 pub use backup::{
     BACKUP_MANIFEST_VERSION, BACKUP_UPLOAD_CHUNK_SIZE, BACKUP_UPLOAD_EXPIRE_SECONDS,
     BackupArchiveEntry, BackupChunkReceipt, BackupDirectoryStat, BackupExportJobRequest,
@@ -29,18 +34,23 @@ pub use backup::{
     BackupJobStore, BackupManifest, BackupProgressReader, BackupProgressSnapshot,
     BackupRepositoryPort, BackupSchemaVersion, BackupTableDump, BackupUploadCompletePlan,
     BackupUploadManager, BackupUploadSession, BackupUploadStart, BackupVersionStatus,
+    FilesystemBackupExporter, SqliteBackupDirectory, SqliteBackupImporter, SqliteBackupRepository,
+    merge_upload_chunks, read_backup_manifest, verify_backup_archive,
 };
 pub use chat_project::{
     ChatProjectCreateRecord, ChatProjectRecord, ChatProjectRepository, ChatProjectUpdateRecord,
     ChatUiProjectRecord, ChatUiProjectRepository, ChatUiSessionRecord,
     DEFAULT_CHAT_UI_PROJECT_EMOJI, InMemoryChatProjectRepository, InMemoryChatUiProjectRepository,
-    PlatformSessionRecord, SessionProjectMembershipRecord,
+    PlatformSessionRecord, SessionProjectMembershipRecord, SqliteChatProjectRepository,
+    SqliteChatUiProjectRepository,
 };
 pub use config_snapshot::{
     ConfigSnapshotRecord, ConfigSnapshotRepository, InMemoryConfigSnapshotRepository,
+    SqliteConfigSnapshotRepository,
 };
 pub use conversation::{
-    ConversationHistoryRepository, ConversationMessageRecord, InMemoryConversationHistoryRepository,
+    ConversationHistoryRepository, ConversationMessageRecord,
+    InMemoryConversationHistoryRepository, SqliteConversationHistoryRepository,
 };
 pub use conversation_refs::{
     ConversationReferenceRecord, ConversationReferenceRepository,
@@ -48,10 +58,11 @@ pub use conversation_refs::{
 };
 pub use file_token::{
     FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
+    SqliteFileTokenRepository,
 };
 pub use kb_document::{
     InMemoryKbDocumentRepository, KbDocumentRecord, KbDocumentRepository, KbMediaRecord,
-    KbProfileRecord,
+    KbProfileRecord, SqliteKbDocumentRepository,
 };
 pub use memory::{InMemoryMemoryRepository, MemoryRepository};
 pub use migration::{
@@ -71,10 +82,15 @@ pub use repository::{
 pub use schema::{StorageColumn, StorageColumnType, StorageSchema, StorageTable};
 pub use session_rule::{
     InMemorySessionRuleRepository, SessionBatchUpdateReport, SessionGroupRepository,
-    SessionRuleRepository,
+    SessionRuleRepository, SqliteSessionRuleRepository,
 };
-pub use sqlite::{SqlitePragma, SqliteStorageConfig, SqliteStoragePlan};
-pub use stats::{InMemoryPlatformStatsRepository, PlatformStatsRecord, PlatformStatsRepository};
+pub use sqlite::{
+    SqliteJsonStore, SqlitePragma, SqliteStorage, SqliteStorageConfig, SqliteStoragePlan,
+};
+pub use stats::{
+    InMemoryPlatformStatsRepository, PlatformStatsRecord, PlatformStatsRepository,
+    SqlitePlatformStatsRepository,
+};
 pub use temp_artifact::{
     TempArtifactCleaner, TempArtifactCleanupPlan, TempArtifactCleanupPolicy,
     TempArtifactDescriptor, TempArtifactFileInfo, TempArtifactRoot, safe_artifact_segment,

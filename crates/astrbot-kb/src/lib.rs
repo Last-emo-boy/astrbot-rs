@@ -31,7 +31,7 @@ pub use management::{
     InMemoryKnowledgeBaseManagementStore, KnowledgeBaseCatalog, KnowledgeBaseCreateCommand,
     KnowledgeBaseManagementService, KnowledgeBaseManagementStore, KnowledgeBaseSummary,
     KnowledgeBaseUpdateCommand, KnowledgeChunkCatalog, KnowledgeChunkSummary,
-    KnowledgeDocumentCatalog, KnowledgeDocumentSummary,
+    KnowledgeDocumentCatalog, KnowledgeDocumentSummary, SqliteKnowledgeBaseManagementStore,
 };
 pub use media_store::{
     InMemoryKnowledgeMediaStore, KnowledgeMediaStore, KnowledgeMediaWriteRequest,
@@ -43,11 +43,14 @@ pub use preflight::{
     KnowledgeProviderPreflightRequest, KnowledgeProviderPreflightService, KnowledgeRerankPreflight,
 };
 pub use rank_fusion::{RankFusionHit, ReciprocalRankFusion};
-pub use repository::{InMemoryKnowledgeDocumentRepository, KnowledgeDocumentRepository};
+pub use repository::{
+    InMemoryKnowledgeDocumentRepository, KnowledgeDocumentRepository,
+    SqliteKnowledgeDocumentRepository,
+};
 pub use retrieval::{
     HybridKnowledgeRetriever, InMemorySparseRetriever, KnowledgeRetrievalRequest,
     KnowledgeRetrievalResult, KnowledgeRetriever, SparseRetrievalPort, SparseRetrievalRequest,
-    SparseRetrievalResult,
+    SparseRetrievalResult, VectorStoreSparseRetriever,
 };
 pub use types::{ChunkId, DocumentId, KnowledgeBaseId, KnowledgeChunk, MediaId, kb_error};
 pub use upload_task::{
@@ -56,7 +59,9 @@ pub use upload_task::{
     KnowledgeUploadTaskService, KnowledgeUploadTaskStatus, KnowledgeUploadTaskStore,
     KnowledgeUploadTaskSummary,
 };
-pub use vector_store::{InMemoryVectorStore, VectorSearchRequest, VectorSearchResult, VectorStore};
+pub use vector_store::{
+    InMemoryVectorStore, SqliteVectorStore, VectorSearchRequest, VectorSearchResult, VectorStore,
+};
 
 #[cfg(test)]
 mod tests;

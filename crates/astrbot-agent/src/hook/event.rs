@@ -1,10 +1,12 @@
-use astrbot_core::{MessageChain, MessageEvent, ProviderToolCallResult};
+use astrbot_core::{MessageChain, MessageEvent, ProviderRequest, ProviderToolCallResult};
 
 use crate::{AgentRunContext, AgentToolCall};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AgentHookEvent {
     AgentBegin(AgentLifecycleEvent),
+    WaitingLlmRequest(AgentLifecycleEvent),
+    LlmRequest(AgentLlmRequestEvent),
     ToolStart(AgentToolLifecycleEvent),
     ToolEnd(AgentToolLifecycleEvent),
     AgentDone(AgentDoneEvent),
@@ -14,6 +16,8 @@ impl AgentHookEvent {
     pub fn kind(&self) -> AgentHookEventKind {
         match self {
             Self::AgentBegin(_) => AgentHookEventKind::AgentBegin,
+            Self::WaitingLlmRequest(_) => AgentHookEventKind::WaitingLlmRequest,
+            Self::LlmRequest(_) => AgentHookEventKind::LlmRequest,
             Self::ToolStart(_) => AgentHookEventKind::ToolStart,
             Self::ToolEnd(_) => AgentHookEventKind::ToolEnd,
             Self::AgentDone(_) => AgentHookEventKind::AgentDone,
@@ -24,6 +28,8 @@ impl AgentHookEvent {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AgentHookEventKind {
     AgentBegin,
+    WaitingLlmRequest,
+    LlmRequest,
     ToolStart,
     ToolEnd,
     AgentDone,
@@ -47,6 +53,23 @@ impl AgentLifecycleEvent {
         Self {
             event_id: event.id.clone(),
             session_id: event.session.conversation_id.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AgentLlmRequestEvent {
+    pub lifecycle: AgentLifecycleEvent,
+    pub request: ProviderRequest,
+    pub explicit: bool,
+}
+
+impl AgentLlmRequestEvent {
+    pub fn new(lifecycle: AgentLifecycleEvent, request: ProviderRequest, explicit: bool) -> Self {
+        Self {
+            lifecycle,
+            request,
+            explicit,
         }
     }
 }

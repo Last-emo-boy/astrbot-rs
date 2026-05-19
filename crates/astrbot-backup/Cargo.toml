@@ -9,6 +9,8 @@ astrbot-core = { path = "../astrbot-core" }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
+zip.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

@@ -7,11 +7,14 @@ rust-version.workspace = true
 [dependencies]
 astrbot-agent = { path = "../astrbot-agent" }
 astrbot-core = { path = "../astrbot-core" }
+astrbot-metrics = { path = "../astrbot-metrics" }
 astrbot-observability = { path = "../astrbot-observability" }
 astrbot-pipeline = { path = "../astrbot-pipeline" }
 astrbot-platform = { path = "../astrbot-platform" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-render = { path = "../astrbot-render" }
+astrbot-storage = { path = "../astrbot-storage" }
 astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
 serde.workspace = true

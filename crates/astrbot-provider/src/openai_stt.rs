@@ -6,7 +6,10 @@ use async_trait::async_trait;
 
 use crate::http::{bearer_headers, build_http_client, extract_error_message, join_api_path};
 use crate::protocol::speech::{build_openai_stt_form, parse_openai_stt_text};
-use crate::{AudioInputLoader, SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
+use crate::{
+    AudioInputLoader, AudioMediaConverter, SpeechToTextProvider, SpeechToTextRequest,
+    SpeechToTextResponse,
+};
 
 #[derive(Clone, Debug)]
 pub struct OpenAiSpeechToTextConfig {
@@ -72,6 +75,14 @@ impl OpenAiSpeechToTextProvider {
             client,
             audio_loader,
         })
+    }
+
+    pub fn with_audio_converter(
+        mut self,
+        converter: std::sync::Arc<dyn AudioMediaConverter>,
+    ) -> Self {
+        self.audio_loader = self.audio_loader.with_converter(converter);
+        self
     }
 }
 

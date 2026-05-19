@@ -3,7 +3,7 @@ use std::sync::Arc;
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::t2i::{
     RenderArtifact, RenderFormat, RenderMode, RenderStrategy, T2iRenderRequest, T2iRenderResult,
@@ -140,6 +140,73 @@ pub trait NetworkT2iClient: Send + Sync {
 }
 
 #[derive(Clone)]
+pub struct ReqwestNetworkT2iClient {
+    client: reqwest::Client,
+}
+
+impl ReqwestNetworkT2iClient {
+    pub fn new() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub fn with_client(client: reqwest::Client) -> Self {
+        Self { client }
+    }
+}
+
+impl Default for ReqwestNetworkT2iClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl NetworkT2iClient for ReqwestNetworkT2iClient {
+    async fn render(
+        &self,
+        _endpoint: &T2iEndpoint,
+        payload: NetworkT2iRequestPayload,
+    ) -> Result<NetworkT2iRenderOutput> {
+        if !payload.return_url {
+            return Err(AstrbotError::Pipeline(
+                "network T2I file output is not supported without a download service".to_string(),
+            ));
+        }
+
+        let response = self
+            .client
+            .post(&payload.generate_url)
+            .json(&source_compatible_payload(&payload))
+            .send()
+            .await
+            .map_err(|err| AstrbotError::Pipeline(format!("post T2I generate request: {err}")))?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(AstrbotError::Pipeline(format!(
+                "T2I generate request returned HTTP {status}"
+            )));
+        }
+
+        let body = response
+            .json::<Value>()
+            .await
+            .map_err(|err| AstrbotError::Pipeline(format!("parse T2I generate response: {err}")))?;
+        let artifact_id = body
+            .get("data")
+            .and_then(|data| data.get("id"))
+            .and_then(Value::as_str)
+            .filter(|id| !id.trim().is_empty())
+            .ok_or_else(|| {
+                AstrbotError::Pipeline(format!("T2I generate response missing data.id: {body}"))
+            })?;
+
+        Ok(NetworkT2iRenderOutput::ArtifactId(artifact_id.to_string()))
+    }
+}
+
+#[derive(Clone)]
 pub struct NetworkT2iRenderer {
     catalog: NetworkT2iEndpointCatalog,
     templates: TemplateCatalog,
@@ -209,6 +276,26 @@ impl T2iRenderer for NetworkT2iRenderer {
     }
 }
 
+fn source_compatible_payload(payload: &NetworkT2iRequestPayload) -> Value {
+    json!({
+        "tmpl": payload.template,
+        "json": payload.return_url,
+        "tmpldata": payload.template_data,
+        "options": {
+            "full_page": payload.options.full_page,
+            "type": network_format_type(payload.options.format),
+            "quality": payload.options.quality,
+        },
+    })
+}
+
+fn network_format_type(format: RenderFormat) -> &'static str {
+    match format {
+        RenderFormat::Png => "png",
+        RenderFormat::Jpeg => "jpeg",
+    }
+}
+
 fn network_output_to_result(
     endpoint: &T2iEndpoint,
     request: &T2iRenderRequest,
@@ -257,6 +344,7 @@ fn clean_endpoint_url(url: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     use astrbot_core::{AstrbotError, Result};
     use async_trait::async_trait;
@@ -264,10 +352,11 @@ mod tests {
     use crate::{
         NetworkT2iClient, NetworkT2iEndpointCatalog, NetworkT2iRenderOutput, NetworkT2iRenderer,
         OfficialT2iEndpointDescriptor, RenderArtifactKind, RenderMode, RenderOptions,
-        RenderStrategy, T2iEndpoint, T2iRenderRequest, T2iRenderer, TemplateCatalog, TemplateName,
+        RenderStrategy, ReqwestNetworkT2iClient, T2iEndpoint, T2iRenderRequest, T2iRenderer,
+        TemplateCatalog, TemplateName,
     };
 
-    use super::NetworkT2iRequestPayload;
+    use super::{NetworkT2iRequestPayload, source_compatible_payload};
 
     #[test]
     fn endpoint_catalog_normalizes_base_and_filters_inactive_official_endpoints() {
@@ -335,6 +424,131 @@ mod tests {
         );
     }
 
+    #[test]
+    fn source_compatible_payload_uses_python_t2i_wire_shape() {
+        let payload = NetworkT2iRequestPayload {
+            generate_url: "https://example.test/text2img/generate".to_string(),
+            template: "<html>{{ text }}</html>".to_string(),
+            template_data: serde_json::Map::from_iter([(
+                "text".to_string(),
+                serde_json::Value::String("hello".to_string()),
+            )]),
+            return_url: true,
+            options: super::NetworkT2iRenderOptions {
+                full_page: true,
+                format: crate::RenderFormat::Jpeg,
+                quality: 40,
+            },
+        };
+
+        assert_eq!(
+            source_compatible_payload(&payload),
+            serde_json::json!({
+                "tmpl": "<html>{{ text }}</html>",
+                "json": true,
+                "tmpldata": { "text": "hello" },
+                "options": {
+                    "full_page": true,
+                    "type": "jpeg",
+                    "quality": 40,
+                },
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn reqwest_network_client_posts_generate_and_extracts_artifact_id() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("test server should bind");
+        let address = listener.local_addr().expect("server address");
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.expect("request should arrive");
+            let mut buffer = Vec::new();
+            let mut chunk = [0_u8; 1024];
+            loop {
+                let read = stream.read(&mut chunk).await.expect("request should read");
+                if read == 0 {
+                    break;
+                }
+                buffer.extend_from_slice(&chunk[..read]);
+                if let Some(header_end) = find_header_end(&buffer) {
+                    let headers = String::from_utf8_lossy(&buffer[..header_end]);
+                    let content_length = headers
+                        .lines()
+                        .find_map(|line| line.strip_prefix("content-length:"))
+                        .or_else(|| {
+                            headers
+                                .lines()
+                                .find_map(|line| line.strip_prefix("Content-Length:"))
+                        })
+                        .and_then(|value| value.trim().parse::<usize>().ok())
+                        .unwrap_or(0);
+                    let body_start = header_end + 4;
+                    if buffer.len() >= body_start + content_length {
+                        let path = headers
+                            .lines()
+                            .next()
+                            .and_then(|line| line.split_whitespace().nth(1))
+                            .unwrap_or("")
+                            .to_string();
+                        let body = serde_json::from_slice::<serde_json::Value>(
+                            &buffer[body_start..body_start + content_length],
+                        )
+                        .expect("request body should be JSON");
+                        assert_eq!(path, "/text2img/generate");
+                        assert_eq!(body["tmpl"], "<html>{{ text }}</html>");
+                        assert_eq!(body["json"], true);
+                        assert_eq!(body["tmpldata"]["text"], "hello");
+                        assert_eq!(body["options"]["type"], "jpeg");
+                        assert_eq!(body["options"]["quality"], 40);
+                        break;
+                    }
+                }
+            }
+            let response_body = "{\"data\":{\"id\":\"img-42\"}}";
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                response_body.len(),
+                response_body
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await
+                .expect("response should write");
+        });
+
+        let endpoint =
+            T2iEndpoint::new(format!("http://{address}/text2img")).expect("endpoint should parse");
+        let client = ReqwestNetworkT2iClient::default();
+        let output = client
+            .render(
+                &endpoint,
+                NetworkT2iRequestPayload {
+                    generate_url: endpoint.generate_url(),
+                    template: "<html>{{ text }}</html>".to_string(),
+                    template_data: serde_json::Map::from_iter([(
+                        "text".to_string(),
+                        serde_json::Value::String("hello".to_string()),
+                    )]),
+                    return_url: true,
+                    options: super::NetworkT2iRenderOptions {
+                        full_page: true,
+                        format: crate::RenderFormat::Jpeg,
+                        quality: 40,
+                    },
+                },
+            )
+            .await
+            .expect("network T2I request should succeed");
+
+        assert_eq!(
+            output,
+            NetworkT2iRenderOutput::ArtifactId("img-42".to_string())
+        );
+        server.await.expect("server task should finish");
+    }
+
     #[derive(Default)]
     struct FallbackClient {
         attempts: Mutex<Vec<String>>,
@@ -358,5 +572,9 @@ mod tests {
                 Ok(NetworkT2iRenderOutput::ArtifactId("image-id".to_string()))
             }
         }
+    }
+
+    fn find_header_end(buffer: &[u8]) -> Option<usize> {
+        buffer.windows(4).position(|window| window == b"\r\n\r\n")
     }
 }

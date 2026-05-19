@@ -1,6 +1,8 @@
+mod chat_compat;
 mod history;
 mod management;
 mod message_parts;
+mod openapi;
 mod realtime;
 mod reference;
 mod server;

@@ -261,16 +261,20 @@ impl MemoryTranscriptBuilder {
         let Some(captioner) = &self.captioner else {
             return Ok("[Image]".to_string());
         };
-        let caption = captioner
+        let caption = match captioner
             .caption_image(MemoryImageCaptionRequest {
                 prompt: self.caption_config.prompt.clone(),
                 provider_id: self.caption_config.provider_id.clone(),
                 session_id: session.conversation_id.clone(),
                 image_url: image_url.to_string(),
             })
-            .await?
-            .map(|caption| caption.trim().to_string())
-            .filter(|caption| !caption.is_empty());
+            .await
+        {
+            Ok(caption) => caption,
+            Err(_) => return Ok("[Image]".to_string()),
+        }
+        .map(|caption| caption.trim().to_string())
+        .filter(|caption| !caption.is_empty());
 
         Ok(caption
             .map(|caption| format!("[Image: {caption}]"))
@@ -309,6 +313,8 @@ mod tests {
 
     struct StaticCaptioner;
 
+    struct FailingCaptioner;
+
     #[async_trait]
     impl MemoryImageCaptioner for StaticCaptioner {
         async fn caption_image(
@@ -318,6 +324,18 @@ mod tests {
             assert_eq!(request.provider_id.as_deref(), Some("vision"));
             assert_eq!(request.image_url, "image.png");
             Ok(Some("a chart".to_string()))
+        }
+    }
+
+    #[async_trait]
+    impl MemoryImageCaptioner for FailingCaptioner {
+        async fn caption_image(
+            &self,
+            _request: MemoryImageCaptionRequest,
+        ) -> astrbot_core::Result<Option<String>> {
+            Err(astrbot_core::AstrbotError::Provider(
+                "caption provider unavailable".to_string(),
+            ))
         }
     }
 
@@ -343,6 +361,25 @@ mod tests {
             record.content,
             "[Alice/12:00:00]: hello [Image: a chart] [At: Bob]"
         );
+    }
+
+    #[tokio::test]
+    async fn transcript_builder_degrades_when_caption_provider_fails() {
+        let builder = MemoryTranscriptBuilder::new().with_captioner(
+            Arc::new(FailingCaptioner),
+            MemoryImageCaptionConfig::enabled("caption"),
+        );
+        let input = MemoryMessageInput::new(MemorySessionKey::new("webchat", "room-1"), "Alice")
+            .with_text("hello")
+            .with_image_url("image.png");
+
+        let record = builder
+            .build(input)
+            .await
+            .expect("caption failure should degrade")
+            .expect("record should exist");
+
+        assert_eq!(record.content, "[Alice]: hello [Image]");
     }
 
     #[test]

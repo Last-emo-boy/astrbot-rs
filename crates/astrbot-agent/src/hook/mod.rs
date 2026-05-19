@@ -6,7 +6,7 @@ use astrbot_core::Result;
 use async_trait::async_trait;
 
 pub use event::{
-    AgentDoneEvent, AgentHookEvent, AgentHookEventKind, AgentLifecycleEvent,
+    AgentDoneEvent, AgentHookEvent, AgentHookEventKind, AgentLifecycleEvent, AgentLlmRequestEvent,
     AgentToolLifecycleEvent,
 };
 

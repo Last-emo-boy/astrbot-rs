@@ -3,7 +3,10 @@ use std::fmt;
 use std::time::Duration;
 
 use crate::constants::{
-    GEMINI_TEXT_TO_SPEECH_PROVIDER_TYPE, GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    AZURE_TEXT_TO_SPEECH_PROVIDER_TYPE, DASHSCOPE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    EDGE_TEXT_TO_SPEECH_PROVIDER_TYPE, FISHAUDIO_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    GEMINI_TEXT_TO_SPEECH_PROVIDER_TYPE, GENIE_TEXT_TO_SPEECH_PROVIDER_TYPE,
+    GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE, GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE,
     MINIMAX_TEXT_TO_SPEECH_PROVIDER_TYPE, MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE,
     OPENAI_TEXT_TO_SPEECH_PROVIDER_TYPE, VOLCENGINE_TEXT_TO_SPEECH_PROVIDER_TYPE,
 };
@@ -136,6 +139,118 @@ impl TextToSpeechProviderConfig {
             supports_streaming: false,
             voice: None,
             provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn gsv_selfhost(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(60),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: None,
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn azure(id: impl Into<String>, subscription_key: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: AZURE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: None,
+            api_key: None,
+            timeout: Duration::from_secs(120),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("zh-CN-YunxiaNeural".to_string()),
+            provider_options: HashMap::from([(
+                "azure_tts_subscription_key".to_string(),
+                subscription_key.into(),
+            )]),
+        }
+    }
+
+    pub fn edge(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: EDGE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some("edge_tts".to_string()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(30),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("zh-CN-XiaoxiaoNeural".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn dashscope(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: DASHSCOPE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some(model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(20),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("loongstella".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn fishaudio(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: FISHAUDIO_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(20),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("可莉".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn genie(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: GENIE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout: Duration::from_secs(120),
+            custom_headers: HashMap::new(),
+            mock_audio_path: None,
+            supports_streaming: true,
+            voice: Some("mika".to_string()),
+            provider_options: HashMap::from([(
+                "genie_language".to_string(),
+                "Japanese".to_string(),
+            )]),
         }
     }
 

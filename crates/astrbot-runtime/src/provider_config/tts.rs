@@ -140,6 +140,112 @@ impl RuntimeTextToSpeechProviderConfig {
         }
     }
 
+    pub fn gsv_selfhost(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 60,
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: None,
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn azure(id: impl Into<String>, subscription_key: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::AZURE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: None,
+            api_key: None,
+            timeout_secs: 120,
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("zh-CN-YunxiaNeural".to_string()),
+            provider_options: HashMap::from([(
+                "azure_tts_subscription_key".to_string(),
+                subscription_key.into(),
+            )]),
+        }
+    }
+
+    pub fn edge(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::EDGE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some("edge_tts".to_string()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 30,
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("zh-CN-XiaoxiaoNeural".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn dashscope(
+        id: impl Into<String>,
+        api_base: impl Into<String>,
+        model: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::DASHSCOPE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: Some(model.into()),
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 20,
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("loongstella".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn fishaudio(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::FISHAUDIO_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 20,
+            mock_audio_path: None,
+            supports_streaming: false,
+            voice: Some("可莉".to_string()),
+            provider_options: HashMap::new(),
+        }
+    }
+
+    pub fn genie(id: impl Into<String>, api_base: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            provider_type: astrbot_provider::GENIE_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string(),
+            enabled: true,
+            model: None,
+            api_base: Some(api_base.into()),
+            api_key: None,
+            timeout_secs: 120,
+            mock_audio_path: None,
+            supports_streaming: true,
+            voice: Some("mika".to_string()),
+            provider_options: HashMap::from([(
+                "genie_language".to_string(),
+                "Japanese".to_string(),
+            )]),
+        }
+    }
+
     pub fn with_api_key(mut self, api_key: impl Into<String>) -> Self {
         self.api_key = Some(api_key.into());
         self
@@ -218,6 +324,56 @@ impl From<RuntimeTextToSpeechProviderConfig> for TextToSpeechProviderConfig {
                     config
                         .api_base
                         .unwrap_or_else(|| "http://127.0.0.1:5000".to_string()),
+                )
+            }
+            astrbot_provider::GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                TextToSpeechProviderConfig::gsv_selfhost(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "http://127.0.0.1:9880".to_string()),
+                )
+            }
+            astrbot_provider::AZURE_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                let subscription_key = config
+                    .provider_options
+                    .get("azure_tts_subscription_key")
+                    .cloned()
+                    .or(config.api_key.clone())
+                    .unwrap_or_default();
+                TextToSpeechProviderConfig::azure(config.id, subscription_key)
+            }
+            astrbot_provider::EDGE_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                TextToSpeechProviderConfig::edge(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "http://127.0.0.1:8765".to_string()),
+                )
+            }
+            astrbot_provider::DASHSCOPE_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                TextToSpeechProviderConfig::dashscope(
+                    config.id,
+                    config.api_base.unwrap_or_else(|| {
+                        "https://dashscope.aliyuncs.com/api/v1/services/aigc".to_string()
+                    }),
+                    config.model.unwrap_or_default(),
+                )
+            }
+            astrbot_provider::FISHAUDIO_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                TextToSpeechProviderConfig::fishaudio(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "https://api.fish-audio.cn/v1".to_string()),
+                )
+            }
+            astrbot_provider::GENIE_TEXT_TO_SPEECH_PROVIDER_TYPE => {
+                TextToSpeechProviderConfig::genie(
+                    config.id,
+                    config
+                        .api_base
+                        .unwrap_or_else(|| "http://127.0.0.1:8766".to_string()),
                 )
             }
             _ => TextToSpeechProviderConfig {

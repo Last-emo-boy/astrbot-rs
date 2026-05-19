@@ -5,6 +5,7 @@ mod project;
 
 pub use conversation::{
     ConversationDirectory, ConversationRecord, ConversationService, InMemoryConversationDirectory,
+    SqliteConversationDirectory,
 };
 pub use message_history::{
     ConversationMessageRecord, PlatformMessageHistoryService, RepositoryMessageHistoryService,

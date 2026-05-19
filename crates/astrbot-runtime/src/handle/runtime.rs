@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
-use astrbot_core::{EventBus, Result};
+use astrbot_core::event::{EventLogRecord, EventLogger};
+use astrbot_core::{AstrbotError, EventBus, MessageEvent, Result};
+use astrbot_metrics::{MetricEvent, MetricSink, NoopMetricSink};
 use astrbot_observability::{
-    ComponentKind, ComponentStatus, NoopStatusEventSink, StatusEvent, StatusEventSink,
+    ComponentKind, ComponentStatus, InMemoryLogBuffer, LogEntry, LogLevel, LogSource,
+    NoopStatusEventSink, StatusEvent, StatusEventSink,
 };
 use astrbot_pipeline::{
     ContentSafetyConfig, DefaultPipelineBuilder, InMemoryProviderPreferencePort, PipelineContext,
@@ -12,6 +15,11 @@ use astrbot_pipeline::{
 use astrbot_platform::{PlatformManager, SentMessage};
 use astrbot_plugin::PluginRegistry;
 use astrbot_provider::ProviderManager;
+use astrbot_render::{
+    LocalMarkdownRenderer, NetworkT2iEndpointCatalog, NetworkT2iRenderer, ReqwestNetworkT2iClient,
+    TemplateCatalog, TemplateRenderer,
+};
+use astrbot_storage::TempArtifactRoot;
 use tokio::sync::mpsc;
 
 use crate::RuntimeConfig;
@@ -25,12 +33,14 @@ use super::testing;
 pub struct AstrbotRuntime {
     config: RuntimeConfig,
     event_bus: EventBus,
+    event_sender: mpsc::Sender<MessageEvent>,
     platform_manager: PlatformManager,
     provider_manager: ProviderManager,
     pub(super) provider_preference: Arc<InMemoryProviderPreferencePort>,
     plugin_registry: Arc<PluginRegistry>,
     scheduler: Arc<PipelineScheduler>,
     status_sink: Arc<dyn StatusEventSink>,
+    pub(super) metric_sink: Arc<dyn MetricSink>,
 }
 
 pub struct RuntimeHandle {
@@ -40,13 +50,14 @@ pub struct RuntimeHandle {
     pub(super) provider_preference: Arc<InMemoryProviderPreferencePort>,
     plugin_registry: Arc<PluginRegistry>,
     pub(super) status_sink: Arc<dyn StatusEventSink>,
+    pub(super) metric_sink: Arc<dyn MetricSink>,
 }
 
 impl AstrbotRuntime {
     pub fn initialize(config: RuntimeConfig) -> Result<Self> {
         let queue_capacity = config.event_queue_capacity.max(1);
         let (event_tx, event_rx) = mpsc::channel(queue_capacity);
-        let platform_manager = build_platform_manager(&config, event_tx)?;
+        let platform_manager = build_platform_manager(&config, event_tx.clone())?;
         let provider_manager = build_provider_manager(&config)?;
         let provider_preference = Arc::new(InMemoryProviderPreferencePort::new());
         let plugin_registry = build_plugin_registry(&config);
@@ -57,9 +68,14 @@ impl AstrbotRuntime {
         ));
         let rate_limit = RateLimitConfig::from(config.rate_limit.clone());
         let content_safety = ContentSafetyConfig::from(config.content_safety.clone());
-        let provider_fallback = ProviderFallbackConfig::from(config.provider_fallback.clone());
+        let provider_fallback = ProviderFallbackConfig::from(config.provider_fallback.clone())
+            .with_provider_wake_prefixes(
+                config.provider_fallback.wake_prefix.clone(),
+                config.wake_check.wake_prefixes.clone(),
+            );
         let result_decorate = ResultDecorateConfig::from(config.result_decorate.clone());
 
+        let path_layout = config.paths.resolve();
         let context = if provider_manager.chat_provider_count() > 0 {
             PipelineContext::with_chat_provider(Arc::new(provider_manager.clone()))
         } else {
@@ -74,6 +90,16 @@ impl AstrbotRuntime {
         .with_provider_fallback(provider_fallback)
         .with_result_decorate(result_decorate)
         .with_plugin_registry(plugin_registry.clone());
+        let context = if provider_manager.text_to_speech_provider_count() > 0 {
+            context.with_text_to_speech_provider(Arc::new(provider_manager.clone()))
+        } else {
+            context
+        };
+        let context = if config.result_decorate.t2i_enabled {
+            context.with_t2i_renderer(default_t2i_renderer(&config.result_decorate, &path_layout))
+        } else {
+            context
+        };
         let scheduler = DefaultPipelineBuilder::new()?.build(context)?;
         let scheduler = Arc::new(scheduler);
         let event_bus = EventBus::new(event_rx, scheduler.clone());
@@ -81,12 +107,14 @@ impl AstrbotRuntime {
         Ok(Self {
             config,
             event_bus,
+            event_sender: event_tx,
             platform_manager,
             provider_manager,
             provider_preference,
             plugin_registry,
             scheduler,
             status_sink: Arc::new(NoopStatusEventSink),
+            metric_sink: Arc::new(NoopMetricSink),
         })
     }
 
@@ -94,6 +122,18 @@ impl AstrbotRuntime {
         self.platform_manager = self.platform_manager.with_status_sink(status_sink.clone());
         self.provider_manager = self.provider_manager.with_status_sink(status_sink.clone());
         self.status_sink = status_sink;
+        self
+    }
+
+    pub fn with_metric_sink(mut self, metric_sink: Arc<dyn MetricSink>) -> Self {
+        self.metric_sink = metric_sink;
+        self
+    }
+
+    pub fn with_log_buffer(mut self, logs: Arc<InMemoryLogBuffer>) -> Self {
+        self.event_bus = self
+            .event_bus
+            .with_logger(Arc::new(RuntimeEventLogSink::new(logs)));
         self
     }
 
@@ -119,6 +159,10 @@ impl AstrbotRuntime {
 
     pub fn scheduler(&self) -> Arc<PipelineScheduler> {
         self.scheduler.clone()
+    }
+
+    pub fn event_sender(&self) -> mpsc::Sender<MessageEvent> {
+        self.event_sender.clone()
     }
 
     pub async fn emit_mock_text(
@@ -168,11 +212,13 @@ impl AstrbotRuntime {
     pub fn start(self) -> RuntimeHandle {
         let AstrbotRuntime {
             event_bus,
+            event_sender: _,
             platform_manager,
             provider_manager,
             provider_preference,
             plugin_registry,
             status_sink,
+            metric_sink,
             ..
         } = self;
         status_sink.emit(StatusEvent::new(
@@ -192,6 +238,7 @@ impl AstrbotRuntime {
             provider_preference,
             plugin_registry,
             status_sink,
+            metric_sink,
         }
     }
 
@@ -202,6 +249,39 @@ impl AstrbotRuntime {
     pub async fn sent_messages_for(&self, platform_id: &str) -> Vec<SentMessage> {
         testing::sent_messages_for(&self.platform_manager, platform_id).await
     }
+}
+
+fn default_t2i_renderer(
+    config: &crate::policy_config::RuntimeResultDecorateConfig,
+    path_layout: &crate::path_config::RuntimePathLayout,
+) -> Arc<dyn astrbot_render::T2iRenderer> {
+    match config.t2i_strategy.trim() {
+        "template" | "html" | "local_template" => {
+            return Arc::new(TemplateRenderer::new(
+                TemplateCatalog::new(&path_layout.t2i_template_dir),
+                &path_layout.generated_media_dir,
+            ));
+        }
+        "remote" | "network" | "network_only" => {
+            let catalog = config
+                .t2i_endpoint
+                .as_deref()
+                .map(NetworkT2iEndpointCatalog::new)
+                .transpose()
+                .unwrap_or(None)
+                .unwrap_or_else(NetworkT2iEndpointCatalog::default_official);
+            return Arc::new(NetworkT2iRenderer::new(
+                catalog,
+                TemplateCatalog::new(&path_layout.t2i_template_dir),
+                Arc::new(ReqwestNetworkT2iClient::default()),
+            ));
+        }
+        _ => {}
+    }
+
+    Arc::new(LocalMarkdownRenderer::new(TempArtifactRoot::new(
+        &path_layout.temp_dir,
+    )))
 }
 
 impl RuntimeHandle {
@@ -246,7 +326,15 @@ impl RuntimeHandle {
             sender_id,
             text,
         )
-        .await
+        .await?;
+        self.metric_sink
+            .record(MetricEvent::platform_message(
+                current_unix_timestamp().to_string(),
+                platform_id,
+                platform_id,
+                1,
+            ))
+            .await
     }
 
     pub async fn sent_messages(&self) -> Vec<SentMessage> {
@@ -264,6 +352,7 @@ impl RuntimeHandle {
             provider_manager,
             plugin_registry,
             status_sink,
+            metric_sink: _,
             ..
         } = self;
 
@@ -271,18 +360,76 @@ impl RuntimeHandle {
             ComponentKind::Runtime,
             ComponentStatus::Stopping,
         ));
-        tasks.stop().await?;
-        status_sink.emit(StatusEvent::new(
-            ComponentKind::Task,
-            ComponentStatus::Stopped,
-        ));
-        plugin_registry.terminate().await?;
-        provider_manager.terminate().await?;
-        platform_manager.terminate().await?;
-        status_sink.emit(StatusEvent::new(
-            ComponentKind::Runtime,
-            ComponentStatus::Stopped,
-        ));
-        Ok(())
+
+        let mut first_error = None;
+        if let Err(err) = platform_manager.terminate().await {
+            remember_stop_error(&mut first_error, err);
+        }
+        if let Err(err) = tasks.stop().await {
+            remember_stop_error(&mut first_error, err);
+            status_sink.emit(StatusEvent::new(
+                ComponentKind::Task,
+                ComponentStatus::Failed,
+            ));
+        } else {
+            status_sink.emit(StatusEvent::new(
+                ComponentKind::Task,
+                ComponentStatus::Stopped,
+            ));
+        }
+        if let Err(err) = plugin_registry.terminate().await {
+            remember_stop_error(&mut first_error, err);
+        }
+        if let Err(err) = provider_manager.terminate().await {
+            remember_stop_error(&mut first_error, err);
+        }
+
+        if let Some(err) = first_error {
+            status_sink.emit(StatusEvent::new(
+                ComponentKind::Runtime,
+                ComponentStatus::Failed,
+            ));
+            Err(err)
+        } else {
+            status_sink.emit(StatusEvent::new(
+                ComponentKind::Runtime,
+                ComponentStatus::Stopped,
+            ));
+            Ok(())
+        }
+    }
+}
+
+fn current_unix_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0)
+}
+
+fn remember_stop_error(first_error: &mut Option<AstrbotError>, err: AstrbotError) {
+    if first_error.is_none() {
+        *first_error = Some(err);
+    }
+}
+
+struct RuntimeEventLogSink {
+    logs: Arc<InMemoryLogBuffer>,
+}
+
+impl RuntimeEventLogSink {
+    fn new(logs: Arc<InMemoryLogBuffer>) -> Self {
+        Self { logs }
+    }
+}
+
+impl EventLogger for RuntimeEventLogSink {
+    fn log_event(&self, record: &EventLogRecord) {
+        let logs = self.logs.clone();
+        let entry = LogEntry::new(LogLevel::Info, LogSource::Runtime, record.display_line())
+            .with_target(record.event_id.clone());
+        tokio::spawn(async move {
+            logs.push(entry).await;
+        });
     }
 }

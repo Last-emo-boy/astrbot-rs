@@ -4,8 +4,11 @@ use std::sync::RwLock;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+use crate::SqliteJsonStore;
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum FileTokenScope {
     Dashboard,
     Plugin,
@@ -41,7 +44,7 @@ impl From<&str> for FileTokenScope {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FileTokenRecord {
     pub token: String,
     pub file_path: PathBuf,
@@ -50,6 +53,17 @@ pub struct FileTokenRecord {
     pub content_type: Option<String>,
     pub expires_at_unix: Option<u64>,
     pub single_use: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct SqliteFileTokenRepository {
+    store: SqliteJsonStore,
+}
+
+impl SqliteFileTokenRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
 }
 
 impl FileTokenRecord {
@@ -181,6 +195,63 @@ impl FileTokenRepository for InMemoryFileTokenRepository {
     }
 }
 
+#[async_trait]
+impl FileTokenRepository for SqliteFileTokenRepository {
+    async fn put_file_token(&self, mut record: FileTokenRecord) -> Result<()> {
+        let token = record.token.trim();
+        if token.is_empty() {
+            return Err(AstrbotError::Pipeline(
+                "file token must not be empty".to_string(),
+            ));
+        }
+        record.token = token.to_string();
+        self.store.put_json("file_tokens", &record.token, &record)
+    }
+
+    async fn file_token(&self, token: &str) -> Result<Option<FileTokenRecord>> {
+        self.store.get_json("file_tokens", token.trim())
+    }
+
+    async fn consume_file_token(
+        &self,
+        token: &str,
+        now_unix: u64,
+    ) -> Result<Option<FileTokenRecord>> {
+        let token = token.trim();
+        let Some(record) = self
+            .store
+            .get_json::<FileTokenRecord>("file_tokens", token)?
+        else {
+            return Ok(None);
+        };
+        if record.is_expired_at(now_unix) {
+            self.store.delete_json("file_tokens", token)?;
+            return Ok(None);
+        }
+        if record.single_use {
+            self.store.delete_json("file_tokens", token)?;
+        }
+        Ok(Some(record))
+    }
+
+    async fn remove_expired_file_tokens(&self, now_unix: u64) -> Result<usize> {
+        let expired = self
+            .store
+            .list_json::<FileTokenRecord>("file_tokens")?
+            .into_iter()
+            .filter(|record| record.is_expired_at(now_unix))
+            .map(|record| record.token)
+            .collect::<Vec<_>>();
+        let mut removed = 0;
+        for token in expired {
+            if self.store.delete_json("file_tokens", &token)? {
+                removed += 1;
+            }
+        }
+        Ok(removed)
+    }
+}
+
 fn non_empty_string(value: impl Into<String>) -> Option<String> {
     let value = value.into();
     let trimmed = value.trim();
@@ -191,7 +262,9 @@ fn non_empty_string(value: impl Into<String>) -> Option<String> {
 mod tests {
     use super::{
         FileTokenRecord, FileTokenRepository, FileTokenScope, InMemoryFileTokenRepository,
+        SqliteFileTokenRepository,
     };
+    use crate::SqliteJsonStore;
 
     #[tokio::test]
     async fn file_token_repository_consumes_single_use_scoped_records() {
@@ -262,6 +335,35 @@ mod tests {
                 .await
                 .expect("file token should load"),
             None
+        );
+    }
+
+    #[tokio::test]
+    async fn sqlite_file_token_repository_consumes_persisted_tokens() {
+        let store = SqliteJsonStore::open_in_memory().expect("sqlite store should open");
+        let repository = SqliteFileTokenRepository::new(store.clone());
+        repository
+            .put_file_token(
+                FileTokenRecord::new("token-1", "dashboard/index.html", FileTokenScope::Dashboard)
+                    .expires_at_unix(200),
+            )
+            .await
+            .expect("file token should store");
+
+        let reloaded = SqliteFileTokenRepository::new(store);
+        assert!(
+            reloaded
+                .consume_file_token("token-1", 100)
+                .await
+                .expect("file token should consume")
+                .is_some()
+        );
+        assert!(
+            reloaded
+                .file_token("token-1")
+                .await
+                .expect("file token should load")
+                .is_none()
         );
     }
 }

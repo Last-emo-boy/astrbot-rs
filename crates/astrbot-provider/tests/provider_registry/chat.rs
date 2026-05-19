@@ -30,6 +30,24 @@ fn builtins_expose_chat_capability_metadata() {
             .capability,
         ProviderCapability::ChatCompletion
     );
+    assert_eq!(
+        registry
+            .provider_metadata(GOOGLE_GENAI_CHAT_PROVIDER_TYPE)
+            .expect("Gemini metadata should exist")
+            .model_discovery
+            .as_str(),
+        "supported"
+    );
+    let anthropic_metadata = registry
+        .provider_metadata(ANTHROPIC_CHAT_PROVIDER_TYPE)
+        .expect("Anthropic metadata should exist");
+    assert_eq!(anthropic_metadata.model_discovery.as_str(), "unsupported");
+    assert!(
+        anthropic_metadata
+            .model_candidates
+            .iter()
+            .any(|model| model.id == "claude-3-5-sonnet-latest")
+    );
 
     let chat_types = registry.provider_types_by_capability(ProviderCapability::ChatCompletion);
     assert!(chat_types.contains(&MOCK_CHAT_PROVIDER_TYPE.to_string()));
@@ -51,12 +69,17 @@ fn builtins_register_speech_provider_types() {
     assert!(registry.has_speech_to_text_provider(MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE));
     assert!(registry.has_speech_to_text_provider(OPENAI_SPEECH_TO_TEXT_PROVIDER_TYPE));
     assert!(registry.has_speech_to_text_provider(XINFERENCE_SPEECH_TO_TEXT_PROVIDER_TYPE));
+    assert!(
+        registry.has_speech_to_text_provider(OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE)
+    );
+    assert!(registry.has_speech_to_text_provider(SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(OPENAI_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(GEMINI_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(VOLCENGINE_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(MINIMAX_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert!(registry.has_text_to_speech_provider(GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE));
+    assert!(registry.has_text_to_speech_provider(GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE));
     assert_eq!(
         registry
             .provider_metadata(MOCK_SPEECH_TO_TEXT_PROVIDER_TYPE)
@@ -88,6 +111,16 @@ fn builtins_register_speech_provider_types() {
     );
     assert!(
         registry
+            .provider_types_by_capability(ProviderCapability::SpeechToText)
+            .contains(&OPENAI_WHISPER_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE.to_string())
+    );
+    assert!(
+        registry
+            .provider_types_by_capability(ProviderCapability::SpeechToText)
+            .contains(&SENSEVOICE_SELFHOST_SPEECH_TO_TEXT_PROVIDER_TYPE.to_string())
+    );
+    assert!(
+        registry
             .provider_types_by_capability(ProviderCapability::TextToSpeech)
             .contains(&MOCK_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string())
     );
@@ -115,6 +148,11 @@ fn builtins_register_speech_provider_types() {
         registry
             .provider_types_by_capability(ProviderCapability::TextToSpeech)
             .contains(&GSVI_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string())
+    );
+    assert!(
+        registry
+            .provider_types_by_capability(ProviderCapability::TextToSpeech)
+            .contains(&GSV_SELFHOST_TEXT_TO_SPEECH_PROVIDER_TYPE.to_string())
     );
 }
 

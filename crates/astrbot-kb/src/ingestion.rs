@@ -57,10 +57,11 @@ impl KnowledgeIngestionRequest {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct KnowledgeIngestionOutcome {
     pub document: KnowledgeDocument,
     pub media: Vec<KnowledgeMedia>,
+    pub chunks: Vec<KnowledgeChunk>,
     pub chunk_count: usize,
 }
 
@@ -156,6 +157,7 @@ impl KnowledgeIngestionService {
             .into_iter()
             .enumerate()
             .map(|(index, text)| {
+                let char_count = text.chars().count();
                 KnowledgeChunk::new(
                     ChunkId::new(format!("{}-chunk-{index}", request.doc_id))?,
                     request.kb_id.clone(),
@@ -165,7 +167,7 @@ impl KnowledgeIngestionService {
                 )
                 .with_metadata("doc_name", serde_json::json!(request.file_name))
                 .with_metadata("chunk_index", serde_json::json!(index))
-                .with_metadata("char_count", serde_json::json!(0))
+                .with_metadata("char_count", serde_json::json!(char_count))
                 .pipe(Ok)
             })
             .collect::<Result<Vec<_>>>()?;
@@ -194,6 +196,10 @@ impl KnowledgeIngestionService {
                 chunks: embedded.clone(),
             })
             .await?;
+        let stored_chunks = embedded
+            .iter()
+            .map(|embedded| embedded.chunk.clone())
+            .collect::<Vec<_>>();
         self.progress(
             KnowledgeIndexStage::VectorUpsert,
             embedded.len(),
@@ -223,6 +229,7 @@ impl KnowledgeIngestionService {
         Ok(KnowledgeIngestionOutcome {
             document,
             media: media_records,
+            chunks: stored_chunks,
             chunk_count: embedded.len(),
         })
     }

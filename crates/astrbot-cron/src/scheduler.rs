@@ -2,12 +2,16 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
+use std::time::SystemTime;
 
 use astrbot_core::{AstrbotError, Result};
+use astrbot_storage::SqliteJsonStore;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    CronJob, CronJobKind, CronJobStatus, ProactiveAgentWakeRequest, ProactiveAgentWakeService,
+    CronJob, CronJobKind, CronJobStatus, CronScheduleSpec, ProactiveAgentWakeRequest,
+    ProactiveAgentWakeService,
 };
 
 type HandlerFuture = Pin<Box<dyn Future<Output = Result<()>> + Send>>;
@@ -30,9 +34,20 @@ pub struct InMemoryCronJobRepository {
     jobs: RwLock<HashMap<String, CronJob>>,
 }
 
+#[derive(Clone, Debug)]
+pub struct SqliteCronJobRepository {
+    store: SqliteJsonStore,
+}
+
 impl InMemoryCronJobRepository {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+impl SqliteCronJobRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
     }
 }
 
@@ -73,7 +88,33 @@ impl CronJobRepository for InMemoryCronJobRepository {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[async_trait]
+impl CronJobRepository for SqliteCronJobRepository {
+    async fn upsert_job(&self, job: CronJob) -> Result<()> {
+        self.store.put_json("cron_jobs", &job.job_id, &job)
+    }
+
+    async fn job(&self, job_id: &str) -> Result<Option<CronJob>> {
+        self.store.get_json("cron_jobs", job_id)
+    }
+
+    async fn delete_job(&self, job_id: &str) -> Result<bool> {
+        self.store.delete_json("cron_jobs", job_id)
+    }
+
+    async fn list_jobs(&self, kind: Option<CronJobKind>) -> Result<Vec<CronJob>> {
+        let mut jobs = self
+            .store
+            .list_json::<CronJob>("cron_jobs")?
+            .into_iter()
+            .filter(|job| kind.is_none_or(|kind| job.kind == kind))
+            .collect::<Vec<_>>();
+        jobs.sort_by(|left, right| left.job_id.cmp(&right.job_id));
+        Ok(jobs)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SchedulerJobSnapshot {
     pub job_id: String,
     pub schedule_key: String,
@@ -93,6 +134,37 @@ impl SchedulerJobSnapshot {
             schedule_key,
             enabled: job.enabled,
         }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CronTickReport {
+    pub checked_count: usize,
+    pub due_count: usize,
+    pub ran_count: usize,
+    pub failed_count: usize,
+    pub skipped_count: usize,
+    pub ran_job_ids: Vec<String>,
+    pub failed_job_ids: Vec<String>,
+}
+
+impl CronTickReport {
+    fn mark_due(&mut self) {
+        self.due_count += 1;
+    }
+
+    fn mark_ran(&mut self, job_id: impl Into<String>) {
+        self.ran_count += 1;
+        self.ran_job_ids.push(job_id.into());
+    }
+
+    fn mark_failed(&mut self, job_id: impl Into<String>) {
+        self.failed_count += 1;
+        self.failed_job_ids.push(job_id.into());
+    }
+
+    fn mark_skipped(&mut self) {
+        self.skipped_count += 1;
     }
 }
 
@@ -247,6 +319,14 @@ impl CronScheduler {
         self.repository.list_jobs(kind).await
     }
 
+    pub async fn job(&self, job_id: &str) -> Result<Option<CronJob>> {
+        self.repository.job(job_id).await
+    }
+
+    pub fn scheduled_jobs(&self) -> Vec<SchedulerJobSnapshot> {
+        self.driver.scheduled_jobs()
+    }
+
     pub async fn sync_from_repository(&self) -> Result<()> {
         let jobs = self.repository.list_jobs(None).await?;
         for job in jobs {
@@ -297,6 +377,36 @@ impl CronScheduler {
         }
     }
 
+    pub async fn tick_due(&self, now: SystemTime) -> Result<CronTickReport> {
+        if self.state() != CronSchedulerState::Running {
+            return Err(AstrbotError::Pipeline(
+                "cron scheduler is not running".to_string(),
+            ));
+        }
+
+        let jobs = self.repository.list_jobs(None).await?;
+        let mut report = CronTickReport {
+            checked_count: jobs.len(),
+            ..CronTickReport::default()
+        };
+        for job in jobs {
+            if !job.enabled {
+                report.mark_skipped();
+                continue;
+            }
+            if !run_once_due(&job, now) {
+                continue;
+            }
+            report.mark_due();
+            match self.run_job(&job.job_id).await {
+                Ok(()) => report.mark_ran(job.job_id),
+                Err(_) => report.mark_failed(job.job_id),
+            }
+        }
+
+        Ok(report)
+    }
+
     async fn run_basic_job(&self, job: CronJob) -> Result<()> {
         let handler = self
             .basic_handlers
@@ -326,6 +436,129 @@ impl CronScheduler {
     }
 }
 
+fn run_once_due(job: &CronJob, now: SystemTime) -> bool {
+    let CronScheduleSpec::RunOnce { run_at } = &job.schedule.spec else {
+        return false;
+    };
+    parse_unix_or_rfc3339(run_at).is_some_and(|run_at| run_at <= now)
+}
+
+fn parse_unix_or_rfc3339(value: &str) -> Option<SystemTime> {
+    let value = value.trim();
+    if let Ok(seconds) = value.parse::<u64>() {
+        return Some(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(seconds));
+    }
+
+    parse_datetime_with_optional_offset(value)
+}
+
+fn parse_datetime_with_optional_offset(value: &str) -> Option<SystemTime> {
+    if let Some(value) = value.strip_suffix('Z') {
+        return system_time_from_timestamp(parse_simple_datetime_timestamp(value)?);
+    }
+    if let Some((datetime, offset_seconds)) = split_timezone_offset(value) {
+        return system_time_from_timestamp(
+            parse_simple_datetime_timestamp(datetime)? - offset_seconds,
+        );
+    }
+    system_time_from_timestamp(parse_simple_datetime_timestamp(value)?)
+}
+
+fn split_timezone_offset(value: &str) -> Option<(&str, i64)> {
+    let time_start = value.find('T')? + 1;
+    let offset_index = value[time_start..]
+        .rfind(|character| character == '+' || character == '-')
+        .map(|index| time_start + index)?;
+    let offset = &value[offset_index..];
+    let sign = if offset.starts_with('-') { -1 } else { 1 };
+    let mut parts = offset[1..].split(':');
+    let hours = parts.next()?.parse::<i64>().ok()?;
+    let minutes = parts.next()?.parse::<i64>().ok()?;
+    if parts.next().is_some() || hours > 23 || minutes > 59 {
+        return None;
+    }
+    Some((
+        &value[..offset_index],
+        sign * (hours * 3_600 + minutes * 60),
+    ))
+}
+
+fn parse_simple_datetime_timestamp(value: &str) -> Option<i64> {
+    let (date, time) = value.split_once('T')?;
+    let mut date_parts = date.split('-');
+    let year = date_parts.next()?.parse::<i32>().ok()?;
+    let month = date_parts.next()?.parse::<u32>().ok()?;
+    let day = date_parts.next()?.parse::<u32>().ok()?;
+    if date_parts.next().is_some() {
+        return None;
+    }
+
+    let time = time.split_once('.').map_or(time, |(time, _)| time);
+    let mut time_parts = time.split(':');
+    let hour = time_parts.next()?.parse::<u32>().ok()?;
+    let minute = time_parts.next()?.parse::<u32>().ok()?;
+    let second = time_parts
+        .next()
+        .map(|second| second.parse::<u32>().ok())
+        .unwrap_or(Some(0))?;
+    if time_parts.next().is_some() {
+        return None;
+    }
+
+    unix_timestamp(year, month, day, hour, minute, second)
+}
+
+fn system_time_from_timestamp(timestamp: i64) -> Option<SystemTime> {
+    (timestamp >= 0)
+        .then(|| SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64))
+}
+
+fn unix_timestamp(
+    year: i32,
+    month: u32,
+    day: u32,
+    hour: u32,
+    minute: u32,
+    second: u32,
+) -> Option<i64> {
+    if !(1..=12).contains(&month) || day == 0 || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let month_days = days_in_month(year, month)?;
+    if day > month_days {
+        return None;
+    }
+
+    let days = days_from_civil(year, month, day);
+    Some(days * 86_400 + i64::from(hour) * 3_600 + i64::from(minute) * 60 + i64::from(second))
+}
+
+fn days_in_month(year: i32, month: u32) -> Option<u32> {
+    Some(match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => return None,
+    })
+}
+
+fn is_leap_year(year: i32) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
+    let year = year - i32::from(month <= 2);
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let yoe = year - era * 400;
+    let mp = i32::try_from(month).expect("month should fit i32");
+    let doy = (153 * (mp + if mp > 2 { -3 } else { 9 }) + 2) / 5
+        + i32::try_from(day).expect("day should fit i32")
+        - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    i64::from(era) * 146_097 + i64::from(doe) - 719_468
+}
+
 fn lock_error<T>(err: std::sync::PoisonError<T>) -> AstrbotError {
     AstrbotError::Pipeline(format!("cron scheduler lock: {err}"))
 }
@@ -335,12 +568,14 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use astrbot_core::{MessageChain, MessageSession, MessageSink, MessageStream};
+    use astrbot_storage::SqliteJsonStore;
     use async_trait::async_trait;
 
     use crate::{
-        ActiveAgentCronPayload, CronJob, CronJobKind, CronJobSchedule, CronScheduleDriver,
-        CronScheduler, CronSchedulerState, DueCronScheduleDriver, InMemoryCronJobRepository,
-        ProactiveAgentWakeService, RecordingCronEventSink,
+        ActiveAgentCronPayload, CronJob, CronJobKind, CronJobRepository, CronJobSchedule,
+        CronScheduleDriver, CronScheduler, CronSchedulerState, DueCronScheduleDriver,
+        InMemoryCronJobRepository, ProactiveAgentWakeService, RecordingCronEventSink,
+        SqliteCronJobRepository,
     };
 
     use super::{BasicCronHandler, Result};
@@ -502,6 +737,117 @@ mod tests {
                 .await
                 .expect("jobs should list")
                 .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn tick_due_runs_due_run_once_jobs_and_leaves_future_jobs() {
+        let (scheduler, _, event_sink) = scheduler();
+        scheduler
+            .add_job(CronJob::active_agent(
+                "due-1",
+                "due wake",
+                CronJobSchedule::run_once_at("2026-05-17T00:00:00Z"),
+                ActiveAgentCronPayload::new("webchat:conversation-1", "due"),
+            ))
+            .await
+            .expect("due job should save");
+        scheduler
+            .add_job(CronJob::active_agent(
+                "future-1",
+                "future wake",
+                CronJobSchedule::run_once_at("2026-05-18T00:00:00Z"),
+                ActiveAgentCronPayload::new("webchat:conversation-1", "future"),
+            ))
+            .await
+            .expect("future job should save");
+        scheduler.start().await.expect("scheduler should start");
+
+        let report = scheduler
+            .tick_due(
+                std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_779_033_600),
+            )
+            .await
+            .expect("tick should run");
+
+        assert_eq!(report.checked_count, 2);
+        assert_eq!(report.due_count, 1);
+        assert_eq!(report.ran_job_ids, vec!["due-1"]);
+        assert_eq!(event_sink.events().len(), 1);
+        let jobs = scheduler.list_jobs(None).await.expect("jobs should list");
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].job_id, "future-1");
+    }
+
+    #[tokio::test]
+    async fn tick_due_accepts_dashboard_local_and_offset_run_once_times() {
+        let (scheduler, _, event_sink) = scheduler();
+        scheduler
+            .add_job(CronJob::active_agent(
+                "local-1",
+                "local wake",
+                CronJobSchedule::run_once_at("2026-05-17T00:00"),
+                ActiveAgentCronPayload::new("webchat:conversation-1", "local"),
+            ))
+            .await
+            .expect("local job should save");
+        scheduler
+            .add_job(CronJob::active_agent(
+                "offset-1",
+                "offset wake",
+                CronJobSchedule::run_once_at("2026-05-17T08:00:00+08:00"),
+                ActiveAgentCronPayload::new("webchat:conversation-1", "offset"),
+            ))
+            .await
+            .expect("offset job should save");
+        scheduler.start().await.expect("scheduler should start");
+
+        let report = scheduler
+            .tick_due(
+                std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_779_033_600),
+            )
+            .await
+            .expect("tick should run");
+
+        assert_eq!(report.due_count, 2);
+        assert_eq!(event_sink.events().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn tick_due_rejects_stopped_scheduler() {
+        let (scheduler, _, _) = scheduler();
+
+        let err = scheduler
+            .tick_due(std::time::SystemTime::UNIX_EPOCH)
+            .await
+            .expect_err("stopped scheduler should reject tick");
+
+        assert!(err.to_string().contains("not running"));
+    }
+
+    #[tokio::test]
+    async fn sqlite_cron_repository_persists_jobs() {
+        let store = SqliteJsonStore::open_in_memory().expect("sqlite store should open");
+        let repository = SqliteCronJobRepository::new(store.clone());
+        repository
+            .upsert_job(CronJob::active_agent(
+                "active-1",
+                "wake",
+                CronJobSchedule::cron("0 8 * * *"),
+                ActiveAgentCronPayload::new("webchat:conversation-1", "hello"),
+            ))
+            .await
+            .expect("job should store");
+
+        let reloaded = SqliteCronJobRepository::new(store);
+        assert_eq!(
+            reloaded
+                .job("active-1")
+                .await
+                .expect("job should load")
+                .expect("job should exist")
+                .name,
+            "wake"
         );
     }
 }

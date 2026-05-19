@@ -8,7 +8,7 @@ mod registry;
 mod tests;
 
 pub use adapters::{
-    ConsolePlatform, ConsoleSink, DecodedWebhookPayload, EmbeddedQuoteParser,
+    AxumWebhookServer, ConsolePlatform, ConsoleSink, DecodedWebhookPayload, EmbeddedQuoteParser,
     EncryptedWebhookEnvelope, IdentityPermissionResolver, InMemoryPlatformQueueStore,
     LongConnectionClient, LongConnectionCommand, LongConnectionEndpoint, LongConnectionFrame,
     LongConnectionReconnectPolicy, LongConnectionState, LongConnectionWaiters, MockPlatform,
@@ -24,18 +24,26 @@ pub use adapters::{
     PlatformQuoteRequest, PlatformQuoteResolution, PlatformRateLimit, PlatformReplyTarget,
     PlatformRetryDecision, PlatformRetryPolicy, PlatformRetryReason, PlatformRouteTargetKind,
     PlatformSenderBinding, PlatformSessionScene, PlatformTransport, PlatformTransportKind,
-    PlatformTransportState, ProactiveSendReadiness, ProactiveSendRequirement, RichEventMedia,
-    RichEventPart, RichEventReaction, RichEventThread, RichPlatformEvent, Sha1SortedFieldsVerifier,
-    WebChatPlatform, WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint,
-    WebhookEventDeduplicator, WebhookHttpMethod, WebhookPayloadCodec, WebhookRequest,
-    WebhookResponse, WebhookRoute, WebhookServer, WebhookServerState, WebhookSignatureInput,
-    WebhookSignatureVerdict, WebhookSignatureVerifier, permission_allows, platform_member,
+    PlatformTransportState, PlatformVoiceConversionRequest, PlatformVoiceMediaConverter,
+    PlatformVoiceTargetFormat, PlatformVoiceUploadPreparer, ProactiveSendReadiness,
+    ProactiveSendRequirement, ReqwestPlatformApiClient, RichEventMedia, RichEventPart,
+    RichEventReaction, RichEventThread, RichPlatformEvent, Sha1SortedFieldsVerifier,
+    TungsteniteLongConnectionClient, UnsupportedPlatformVoiceMediaConverter, WebChatPlatform,
+    WebhookCallbackHandler, WebhookDuplicateStatus, WebhookEndpoint, WebhookEventDeduplicator,
+    WebhookHttpMethod, WebhookPayloadCodec, WebhookRequest, WebhookResponse, WebhookRoute,
+    WebhookServer, WebhookServerState, WebhookSignatureInput, WebhookSignatureVerdict,
+    WebhookSignatureVerifier, detect_platform_voice_format, permission_allows, platform_member,
 };
 pub use built::BuiltPlatform;
 pub use core::{
-    CONSOLE_PLATFORM_TYPE, MOCK_PLATFORM_TYPE, MessageRecorder, ONEBOT_PLATFORM_TYPE,
-    PlatformAdapter, PlatformBuildContext, PlatformConfig, RecordingSink, SentMessage,
-    StreamedMessage, WEBCHAT_PLATFORM_TYPE,
+    AIOCQHTTP_PLATFORM_TYPE, CONSOLE_PLATFORM_TYPE, DINGTALK_PLATFORM_TYPE, DISCORD_PLATFORM_TYPE,
+    KOOK_PLATFORM_TYPE, LARK_PLATFORM_TYPE, LINE_PLATFORM_TYPE, MISSKEY_PLATFORM_TYPE,
+    MOCK_PLATFORM_TYPE, MessageRecorder, ONEBOT_PLATFORM_TYPE, PlatformAdapter,
+    PlatformBuildContext, PlatformConfig, QQ_OFFICIAL_PLATFORM_TYPE,
+    QQ_OFFICIAL_WEBHOOK_PLATFORM_TYPE, RecordingSink, SATORI_PLATFORM_TYPE, SLACK_PLATFORM_TYPE,
+    SentMessage, StreamedMessage, TELEGRAM_PLATFORM_TYPE, WEBCHAT_PLATFORM_TYPE,
+    WECOM_AI_BOT_PLATFORM_TYPE, WECOM_KF_PLATFORM_TYPE, WECOM_PLATFORM_TYPE,
+    WEIXIN_OFFICIAL_ACCOUNT_PLATFORM_TYPE,
 };
 pub use manager::PlatformManager;
 pub use registry::PlatformRegistry;

@@ -39,6 +39,17 @@ impl InMemorySparseRetriever {
     }
 }
 
+#[derive(Clone)]
+pub struct VectorStoreSparseRetriever {
+    vector_store: Arc<dyn VectorStore>,
+}
+
+impl VectorStoreSparseRetriever {
+    pub fn new(vector_store: Arc<dyn VectorStore>) -> Self {
+        Self { vector_store }
+    }
+}
+
 #[async_trait]
 impl SparseRetrievalPort for InMemorySparseRetriever {
     async fn retrieve(
@@ -75,11 +86,30 @@ impl SparseRetrievalPort for InMemorySparseRetriever {
     }
 }
 
+#[async_trait]
+impl SparseRetrievalPort for VectorStoreSparseRetriever {
+    async fn retrieve(
+        &self,
+        request: SparseRetrievalRequest,
+    ) -> Result<Vec<SparseRetrievalResult>> {
+        if request.kb_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut chunks = Vec::new();
+        for kb_id in &request.kb_ids {
+            chunks.extend(self.vector_store.list_chunks(kb_id).await?);
+        }
+        InMemorySparseRetriever::new(chunks).retrieve(request).await
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct KnowledgeRetrievalRequest {
     pub query: String,
     pub kb_ids: Vec<KnowledgeBaseId>,
     pub query_embedding: Option<Vec<f32>>,
+    pub rerank_provider_id: Option<String>,
     pub top_k_dense: usize,
     pub top_k_sparse: usize,
     pub top_k_fusion: usize,
@@ -92,6 +122,7 @@ impl KnowledgeRetrievalRequest {
             query: query.into(),
             kb_ids,
             query_embedding: None,
+            rerank_provider_id: None,
             top_k_dense: 50,
             top_k_sparse: 50,
             top_k_fusion: 20,
@@ -101,6 +132,14 @@ impl KnowledgeRetrievalRequest {
 
     pub fn with_query_embedding(mut self, embedding: Vec<f32>) -> Self {
         self.query_embedding = Some(embedding);
+        self
+    }
+
+    pub fn with_rerank_provider_id(mut self, provider_id: Option<String>) -> Self {
+        self.rerank_provider_id = provider_id.and_then(|provider_id| {
+            let provider_id = provider_id.trim().to_string();
+            (!provider_id.is_empty()).then_some(provider_id)
+        });
         self
     }
 
@@ -231,10 +270,11 @@ impl KnowledgeRetriever for HybridKnowledgeRetriever {
                 .map(|result| result.content.clone())
                 .collect::<Vec<_>>();
             let reranked = rerank_provider
-                .rerank(
+                .rerank(rerank_request_with_provider_id(
                     RerankRequest::new(request.query.clone(), documents)
                         .with_top_n(request.top_m_final),
-                )
+                    request.rerank_provider_id.clone(),
+                ))
                 .await?;
             let mut next = Vec::new();
             for score in reranked.results {
@@ -256,6 +296,16 @@ impl KnowledgeRetriever for HybridKnowledgeRetriever {
         });
         fused.truncate(request.top_m_final);
         Ok(fused)
+    }
+}
+
+fn rerank_request_with_provider_id(
+    request: RerankRequest,
+    provider_id: Option<String>,
+) -> RerankRequest {
+    match provider_id {
+        Some(provider_id) => request.with_provider_id(provider_id),
+        None => request,
     }
 }
 

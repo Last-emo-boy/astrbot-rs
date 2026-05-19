@@ -1,3 +1,4 @@
+mod archive;
 mod export;
 mod import;
 mod job;
@@ -5,9 +6,14 @@ mod manifest;
 mod service;
 mod upload;
 
+pub use archive::{
+    FilesystemBackupExporter, backup_archive_entry_names, merge_upload_chunks,
+    read_backup_manifest, read_backup_table, read_entry_bytes, validate_archive_path,
+    verify_backup_archive, write_backup_archive,
+};
 pub use export::{
     BackupArchiveEntry, BackupExportPackage, BackupExportPort, BackupExportRequest,
-    BackupFileEntry, BackupTableDump,
+    BackupFileEntry, BackupTableDump, checksum_bytes,
 };
 pub use import::{BackupImportMode, BackupImportPort, BackupImportPrecheck, BackupImportResult};
 pub use job::{

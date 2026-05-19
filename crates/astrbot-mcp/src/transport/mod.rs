@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -118,6 +118,13 @@ pub trait McpTransportRuntime: Send + Sync {
     async fn connect(&self, endpoint: McpTransportEndpoint) -> McpResult<McpTransportSession>;
 
     async fn send(&self, session: &McpTransportSession, frame: McpJsonRpcFrame) -> McpResult<()>;
+
+    async fn request(
+        &self,
+        session: &McpTransportSession,
+        frame: McpJsonRpcFrame,
+        read_timeout: Duration,
+    ) -> McpResult<McpJsonRpcFrame>;
 
     async fn close(&self, session: McpTransportSession) -> McpResult<()>;
 }

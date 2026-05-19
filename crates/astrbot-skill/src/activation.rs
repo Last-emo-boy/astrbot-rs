@@ -32,6 +32,18 @@ impl SkillActivationPolicy {
         self
     }
 
+    pub fn and(mut self, other: &Self) -> Self {
+        self.disabled_skills
+            .extend(other.disabled_skills.iter().cloned());
+        self.allowed_skills = match (self.allowed_skills.take(), other.allowed_skills.as_ref()) {
+            (Some(left), Some(right)) => Some(left.intersection(right).cloned().collect()),
+            (Some(left), None) => Some(left),
+            (None, Some(right)) => Some(right.clone()),
+            (None, None) => None,
+        };
+        self
+    }
+
     pub fn is_enabled(&self, skill_name: &str) -> bool {
         !self.disabled_skills.contains(skill_name)
             && self
@@ -171,5 +183,17 @@ mod tests {
             .expect_err("missing skill should not be mutable");
 
         assert!(matches!(error, SkillPackageError::SkillNotFound { .. }));
+    }
+
+    #[test]
+    fn activation_policy_and_intersects_allowlist_and_disabled_names() {
+        let policy = super::SkillActivationPolicy::all_enabled()
+            .allow_only(["writer", "draw"])
+            .disable("draw")
+            .and(&super::SkillActivationPolicy::all_enabled().allow_only(["writer", "preset"]));
+
+        assert!(policy.is_enabled("writer"));
+        assert!(!policy.is_enabled("draw"));
+        assert!(!policy.is_enabled("preset"));
     }
 }

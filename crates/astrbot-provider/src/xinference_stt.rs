@@ -9,7 +9,10 @@ use reqwest::multipart;
 use crate::http::{build_http_client, extract_error_message, insert_custom_headers, join_api_path};
 use crate::model_resolver::{XinferenceModelResolver, XinferenceModelType};
 use crate::protocol::xinference::parse_xinference_stt_text;
-use crate::{AudioInputLoader, SpeechToTextProvider, SpeechToTextRequest, SpeechToTextResponse};
+use crate::{
+    AudioInputLoader, AudioMediaConverter, SpeechToTextProvider, SpeechToTextRequest,
+    SpeechToTextResponse,
+};
 
 #[derive(Clone, Debug)]
 pub struct XinferenceSpeechToTextConfig {
@@ -84,6 +87,14 @@ impl XinferenceSpeechToTextProvider {
             audio_loader,
             model_resolver,
         })
+    }
+
+    pub fn with_audio_converter(
+        mut self,
+        converter: std::sync::Arc<dyn AudioMediaConverter>,
+    ) -> Self {
+        self.audio_loader = self.audio_loader.with_converter(converter);
+        self
     }
 
     fn build_form(&self, audio: Vec<u8>, model_uid: String) -> Result<multipart::Form> {

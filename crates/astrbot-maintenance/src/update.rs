@@ -228,7 +228,8 @@ impl ReleaseUpdateService for PlannedReleaseUpdateService<'_> {
         }
         let summary =
             MaintenanceOperationSummary::new(operation_id, MaintenanceOperationKind::ProjectUpdate)
-                .with_progress(progress);
+                .with_progress(progress)
+                .with_metadata(to_metadata(&plan)?);
         self.operations.put_operation(summary.clone()).await?;
         Ok(summary)
     }
@@ -250,7 +251,8 @@ impl ReleaseUpdateService for PlannedReleaseUpdateService<'_> {
             operation_id,
             MaintenanceOperationKind::DashboardUpdate,
         )
-        .with_progress(MaintenanceOperationProgress::queued().running("dashboard update planned"));
+        .with_progress(MaintenanceOperationProgress::queued().running("dashboard update planned"))
+        .with_metadata(to_metadata(&plan)?);
         self.operations.put_operation(summary.clone()).await?;
         Ok(summary)
     }
@@ -263,6 +265,11 @@ fn normalize_version(version: &str) -> String {
 fn non_empty(value: impl Into<String>) -> Option<String> {
     let value = value.into();
     (!value.trim().is_empty()).then_some(value)
+}
+
+fn to_metadata<T: Serialize>(value: &T) -> Result<serde_json::Value> {
+    serde_json::to_value(value)
+        .map_err(|error| AstrbotError::Pipeline(format!("maintenance metadata: {error}")))
 }
 
 #[cfg(test)]

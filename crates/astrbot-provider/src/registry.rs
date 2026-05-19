@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use astrbot_core::Result;
 
-use crate::capability::{ProviderAdapterMetadata, ProviderCapability};
+use crate::capability::{
+    ProviderAdapterMetadata, ProviderCapability, ProviderModelDiscoverySupport, ProviderModelInfo,
+};
 use crate::config::{
     ChatProviderConfig, EmbeddingProviderConfig, RerankProviderConfig, SpeechToTextProviderConfig,
     TextToSpeechProviderConfig,
@@ -124,6 +126,16 @@ impl ProviderRegistry {
         capability: ProviderCapability,
     ) -> Result<()> {
         self.adapter_metadata.register(provider_type, capability)
+    }
+
+    pub fn set_provider_model_metadata(
+        &mut self,
+        provider_type: &str,
+        support: ProviderModelDiscoverySupport,
+        candidates: Vec<ProviderModelInfo>,
+    ) {
+        self.adapter_metadata
+            .set_model_metadata(provider_type, support, candidates);
     }
 
     pub fn provider_metadata(&self, provider_type: &str) -> Option<&ProviderAdapterMetadata> {

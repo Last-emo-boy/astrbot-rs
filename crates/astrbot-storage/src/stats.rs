@@ -3,13 +3,27 @@ use std::sync::RwLock;
 
 use astrbot_core::{AstrbotError, Result};
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+use crate::SqliteJsonStore;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlatformStatsRecord {
     pub timestamp: String,
     pub platform_id: String,
     pub platform_type: String,
     pub count: i64,
+}
+
+#[derive(Clone, Debug)]
+pub struct SqlitePlatformStatsRepository {
+    store: SqliteJsonStore,
+}
+
+impl SqlitePlatformStatsRepository {
+    pub fn new(store: SqliteJsonStore) -> Self {
+        Self { store }
+    }
 }
 
 impl PlatformStatsRecord {
@@ -96,9 +110,66 @@ impl PlatformStatsRepository for InMemoryPlatformStatsRepository {
     }
 }
 
+#[async_trait]
+impl PlatformStatsRepository for SqlitePlatformStatsRepository {
+    async fn increment_platform_stats(&self, record: PlatformStatsRecord) -> Result<()> {
+        let key = platform_stats_key(
+            &record.timestamp,
+            &record.platform_id,
+            &record.platform_type,
+        );
+        let mut current = self
+            .store
+            .get_json::<PlatformStatsRecord>("platform_stats", &key)?
+            .unwrap_or_else(|| {
+                PlatformStatsRecord::new(
+                    record.timestamp.clone(),
+                    record.platform_id.clone(),
+                    record.platform_type.clone(),
+                    0,
+                )
+            });
+        current.count += record.count;
+        self.store.put_json("platform_stats", &key, &current)
+    }
+
+    async fn platform_stats_since(&self, timestamp: &str) -> Result<Vec<PlatformStatsRecord>> {
+        let mut records = self
+            .store
+            .list_json::<PlatformStatsRecord>("platform_stats")?
+            .into_iter()
+            .filter(|record| record.timestamp.as_str() >= timestamp)
+            .collect::<Vec<_>>();
+        records.sort_by(|left, right| {
+            left.timestamp
+                .cmp(&right.timestamp)
+                .then_with(|| left.platform_id.cmp(&right.platform_id))
+                .then_with(|| left.platform_type.cmp(&right.platform_type))
+        });
+        Ok(records)
+    }
+
+    async fn total_message_count(&self) -> Result<i64> {
+        Ok(self
+            .store
+            .list_json::<PlatformStatsRecord>("platform_stats")?
+            .into_iter()
+            .map(|record| record.count)
+            .sum())
+    }
+}
+
+fn platform_stats_key(timestamp: &str, platform_id: &str, platform_type: &str) -> String {
+    format!("{timestamp}\u{1f}{platform_id}\u{1f}{platform_type}")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{InMemoryPlatformStatsRepository, PlatformStatsRecord, PlatformStatsRepository};
+    use super::{
+        InMemoryPlatformStatsRepository, PlatformStatsRecord, PlatformStatsRepository,
+        SqlitePlatformStatsRepository,
+    };
+    use crate::SqliteJsonStore;
 
     #[tokio::test]
     async fn in_memory_stats_merges_duplicate_platform_hour_keys() {
@@ -129,6 +200,39 @@ mod tests {
 
         assert_eq!(stats.len(), 1);
         assert_eq!(stats[0].count, 5);
+        assert_eq!(
+            repository
+                .total_message_count()
+                .await
+                .expect("count should load"),
+            5
+        );
+    }
+
+    #[tokio::test]
+    async fn sqlite_stats_merges_duplicate_platform_hour_keys() {
+        let repository = SqlitePlatformStatsRepository::new(
+            SqliteJsonStore::open_in_memory().expect("sqlite store should open"),
+        );
+        repository
+            .increment_platform_stats(PlatformStatsRecord::new(
+                "2026-05-16T08:00:00Z",
+                "webchat",
+                "webchat",
+                2,
+            ))
+            .await
+            .expect("stats should store");
+        repository
+            .increment_platform_stats(PlatformStatsRecord::new(
+                "2026-05-16T08:00:00Z",
+                "webchat",
+                "webchat",
+                3,
+            ))
+            .await
+            .expect("stats should store");
+
         assert_eq!(
             repository
                 .total_message_count()

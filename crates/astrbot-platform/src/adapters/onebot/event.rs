@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use astrbot_core::{MessageChain, MessageEvent, MessageSender, MessageSession};
+use astrbot_core::{MessageChain, MessageEvent, MessageSender, MessageSession, MessageSink};
 
-use crate::RecordingSink;
 use crate::{PlatformGroupIdentityInput, PlatformIdentityNormalizer};
 
 pub(super) fn build_onebot_event(
@@ -12,7 +11,7 @@ pub(super) fn build_onebot_event(
     session: MessageSession,
     sender_id: impl Into<String>,
     message: MessageChain,
-    sink: Arc<RecordingSink>,
+    sink: Arc<dyn MessageSink>,
 ) -> MessageEvent {
     let sender = MessageSender::new(sender_id, None);
     let group = if session.is_group() {

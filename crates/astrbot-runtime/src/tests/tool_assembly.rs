@@ -13,6 +13,11 @@ fn runtime_assembles_internal_tool_catalog_without_dashboard_state() {
 
     assert!(names.contains(&"astr_kb_search"));
     assert!(names.contains(&"send_message_to_user"));
+    assert!(names.contains(&"web_search"));
+    assert!(names.contains(&"fetch_url"));
+    assert!(names.contains(&"web_search_tavily"));
+    assert!(names.contains(&"tavily_extract_web_page"));
+    assert!(names.contains(&"web_search_bocha"));
     assert!(
         catalog
             .tools()

@@ -1,3 +1,4 @@
+mod computer;
 mod context;
 mod external;
 mod fallback;
@@ -17,7 +18,13 @@ mod skill_prompt;
 mod subagent;
 mod tool_image_cache;
 mod tool_loop;
+mod web_search;
+mod web_search_filter;
 
+pub use computer::{
+    ComputerUseExecutionSessionPort, ComputerUseSessionPort, ComputerUseToolCatalogFilter,
+    ComputerUseToolExecutor, StaticComputerUseSessionPort, arguments_from_json,
+};
 pub use context::{
     AgentContextCompressor, AgentContextWindow, AgentTokenCounter, ApproximateTokenCounter,
     ContextTokenBudget, ContextTruncationPolicy, ContextWindowManager,
@@ -37,11 +44,18 @@ pub use feedback::{
     ToolStatusMessagePolicy, ToolStatusTracker, VoiceFeedbackEvent, VoiceFeedbackMode,
 };
 pub use hook::{
-    AgentDoneEvent, AgentHookEvent, AgentHookEventKind, AgentLifecycleEvent, AgentRunHook,
-    AgentToolLifecycleEvent, CompositeAgentRunHook, NoopAgentRunHook,
+    AgentDoneEvent, AgentHookEvent, AgentHookEventKind, AgentLifecycleEvent, AgentLlmRequestEvent,
+    AgentRunHook, AgentToolLifecycleEvent, CompositeAgentRunHook, NoopAgentRunHook,
 };
-pub use knowledge::{AgentKnowledgeContextPort, KnowledgeContextRequestDecorator};
-pub use memory::{AgentActiveReplyDecider, AgentMemoryContextPort, MemoryRequestDecorator};
+pub use knowledge::{
+    AgentKnowledgeContextPort, AgentKnowledgeContextSelection, AgentKnowledgeSelectionPort,
+    KnowledgeContextRequestDecorator, KnowledgeRetrievalContextService,
+    KnowledgeSearchToolExecutor,
+};
+pub use memory::{
+    AgentActiveReplyDecider, AgentMemoryContextConfig, AgentMemoryContextPort,
+    ChatProviderMemoryImageCaptioner, InMemoryAgentMemoryContext, MemoryRequestDecorator,
+};
 pub use message::{AgentMessage, AgentMessageRole, AgentToolCall, AgentToolCallPart};
 pub use multimodal::{
     ChatProviderImageCaptioner, ImageCaptionConfig, ImageCaptionRequest,
@@ -54,8 +68,9 @@ pub use references::{AgentReferenceDecorator, AgentResponseReferences};
 pub use request::{
     AgentProviderPreferencePort, AgentQuoteContextPort, AgentRequestDecoratorComposer,
     AgentSessionContextPort, CompositeProviderRequestDecorator, NoopProviderRequestDecorator,
-    ProviderPreferenceRequestDecorator, ProviderRequestDecorator, ProviderRequestEnvelope,
-    QuoteContextRequestDecorator, SessionContextRequestDecorator,
+    NoopProviderRequestHook, ProviderPreferenceRequestDecorator, ProviderRequestDecorator,
+    ProviderRequestEnvelope, ProviderRequestHook, QuoteContextRequestDecorator,
+    SessionContextRequestDecorator,
 };
 pub use response::{
     AgentResponseEvent, AgentResponseEventKind, AgentResponseStats, AgentTokenUsage,
@@ -73,8 +88,15 @@ pub use tool_image_cache::{
     ToolImageCacheRequest, ToolImageData,
 };
 pub use tool_loop::{
-    ToolLoopOutcome, ToolLoopPolicy, ToolLoopState, ToolLoopStep, ToolLoopStrategy,
+    AgentToolCatalogFilter, AgentToolExecutionRequest, AgentToolExecutionResult, AgentToolExecutor,
+    AgentToolOutput, NoopAgentToolCatalogFilter, ToolLoopAgentRunner, ToolLoopOutcome,
+    ToolLoopPolicy, ToolLoopState, ToolLoopStep, ToolLoopStrategy,
 };
+pub use web_search::{
+    FixtureWebSearchClient, FixtureWebSearchRequest, ReqwestWebSearchClient, WebSearchClient,
+    WebSearchToolExecutionMetadata, WebSearchToolExecutor,
+};
+pub use web_search_filter::{WebSearchSessionConfigPort, WebSearchToolCatalogFilter};
 
 #[cfg(test)]
 mod tests;

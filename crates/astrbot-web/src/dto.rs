@@ -3,6 +3,8 @@ use std::fmt;
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../../dashboard-next/src/api/dto/"))]
 pub struct SubmitTextRequest {
     pub sender_id: String,
     #[serde(default)]
@@ -15,6 +17,8 @@ pub struct SubmitTextRequest {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../../dashboard-next/src/api/dto/"))]
 pub enum WebChatMessagePart {
     Plain {
         text: String,
@@ -111,6 +115,8 @@ pub struct WebChatMessagesResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../../dashboard-next/src/api/dto/"))]
 pub struct ErrorResponse {
     pub error: String,
 }

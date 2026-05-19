@@ -32,6 +32,8 @@ pub struct RuntimePathConfig {
     pub knowledge_base_dir: Option<PathBuf>,
     #[serde(default)]
     pub backups_dir: Option<PathBuf>,
+    #[serde(default)]
+    pub dashboard_next_dist_dir: Option<PathBuf>,
 }
 
 impl Default for RuntimePathConfig {
@@ -51,6 +53,7 @@ impl Default for RuntimePathConfig {
             site_packages_dir: None,
             knowledge_base_dir: None,
             backups_dir: None,
+            dashboard_next_dist_dir: None,
         }
     }
 }
@@ -108,6 +111,11 @@ impl RuntimePathConfig {
                 "knowledge_base",
             ),
             backups_dir: resolve_child(&data_dir, self.backups_dir.as_deref(), "backups"),
+            dashboard_next_dist_dir: resolve_child(
+                &data_dir,
+                self.dashboard_next_dist_dir.as_deref(),
+                "dashboard-next/dist",
+            ),
             data_dir,
         }
     }
@@ -129,6 +137,7 @@ pub struct RuntimePathLayout {
     pub site_packages_dir: PathBuf,
     pub knowledge_base_dir: PathBuf,
     pub backups_dir: PathBuf,
+    pub dashboard_next_dist_dir: PathBuf,
 }
 
 fn resolve_child(base: &Path, override_path: Option<&Path>, default_child: &str) -> PathBuf {
@@ -208,6 +217,10 @@ mod tests {
             PathBuf::from("workspace/data/knowledge_base")
         );
         assert_eq!(layout.backups_dir, PathBuf::from("workspace/data/backups"));
+        assert_eq!(
+            layout.dashboard_next_dist_dir,
+            PathBuf::from("workspace/data/dashboard-next/dist")
+        );
     }
 
     #[test]

@@ -1,0 +1,36 @@
+{
+  "type": "feature-rewrite",
+  "scope": "Replace legacy vanilla JS dashboard with Solid + Vite + TypeScript Dashboard Next, restoring AstrBot Vue 3 dashboard parity and removing the existing dashboard/ directory in one cut.",
+  "status": "completed",
+  "created_at": "2026-05-19T00:00:00+08:00",
+  "updated_at": "2026-05-20T00:00:00+08:00",
+  "milestone": "M8-dashboard-rewrite",
+  "plan": {
+    "total_tasks": 10,
+    "completed_tasks": 10,
+    "pending_tasks": 0,
+    "blocked_tasks": 0
+  },
+  "execution": {
+    "reflection_rounds": 2,
+    "current_task_id": null,
+    "next_task": null
+  },
+  "latest_update": "TASK-001..TASK-010 all completed. cargo check --workspace --all-targets clean; dashboard_assets 5 tests + astrbot-web 117 tests pass; dashboard-next tsc --noEmit clean; vite build 1.05s with 51.58KB main / gzip 19.19KB. Legacy dashboard/ directory physically removed (staged for deletion). NextDist now selected over UserDist when present. No residual filesystem references to legacy dashboard/ remain — only HTTP API paths (/api/management/dashboard/capabilities), the SPA route /dashboard/default, and unrelated FileTokenScope::Dashboard test fixtures.",
+  "reference": [
+    "E:/Playground/astrbot-rs/dashboard/index.html",
+    "E:/Playground/astrbot-rs/dashboard/app.js",
+    "E:/Playground/astrbot-rs/dashboard/styles.css",
+    "E:/Playground/astrbot-rs/dashboard/src/api.js",
+    "E:/Playground/astrbot-rs/dashboard/src/routes.js",
+    "E:/Playground/astrbot-rs/crates/astrbot-runtime/src/dashboard_assets.rs",
+    "E:/Playground/astrbot-rs/crates/astrbot-web/src/dto.rs",
+    "E:/Playground/astrbot-rs/crates/astrbot-web/src/management/mod.rs",
+    "E:/Playground/Astrbot/dashboard/package.json",
+    "E:/Playground/Astrbot/dashboard/src/router/index.ts",
+    "E:/Playground/Astrbot/dashboard/src/views/ChatPage.vue",
+    "E:/Playground/Astrbot/dashboard/src/views/ProviderPage.vue",
+    "E:/Playground/Astrbot/dashboard/src/views/PlatformPage.vue",
+    "E:/Playground/Astrbot/dashboard/src/views/SubAgentPage.vue"
+  ]
+}

@@ -40,6 +40,10 @@ pub const DASHBOARD_INDEX_ROUTES: &[&str] = &[
     "/knowledge-base",
     "/chatbox",
     "/tool-use",
+    "/mcp",
+    "/api-keys",
+    "/observability",
+    "/t2i-templates",
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,6 +51,7 @@ pub enum DashboardAssetSource {
     Explicit,
     UserDist,
     BundledDist,
+    NextDist,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -74,6 +79,7 @@ pub struct DashboardAssetPolicy {
     webui_enabled: bool,
     explicit_webui_dir: Option<PathBuf>,
     user_dist_dir: PathBuf,
+    next_dist_dir: Option<PathBuf>,
     bundled_dist_dir: Option<PathBuf>,
 }
 
@@ -83,6 +89,7 @@ impl DashboardAssetPolicy {
             webui_enabled: true,
             explicit_webui_dir: None,
             user_dist_dir: layout.data_dir.join("dist"),
+            next_dist_dir: Some(layout.dashboard_next_dist_dir.clone()),
             bundled_dist_dir: None,
         }
     }
@@ -92,6 +99,7 @@ impl DashboardAssetPolicy {
             webui_enabled: true,
             explicit_webui_dir: None,
             user_dist_dir: user_dist_dir.into(),
+            next_dist_dir: None,
             bundled_dist_dir: None,
         }
     }
@@ -103,6 +111,11 @@ impl DashboardAssetPolicy {
 
     pub fn with_explicit_webui_dir(mut self, webui_dir: impl Into<PathBuf>) -> Self {
         self.explicit_webui_dir = Some(webui_dir.into());
+        self
+    }
+
+    pub fn with_next_dist_dir(mut self, next_dist_dir: impl Into<PathBuf>) -> Self {
+        self.next_dist_dir = Some(next_dist_dir.into());
         self
     }
 
@@ -120,6 +133,13 @@ impl DashboardAssetPolicy {
             return DashboardAssetSelection {
                 source: DashboardAssetSource::Explicit,
                 root_dir: explicit.clone(),
+                webui_enabled: self.webui_enabled,
+            };
+        }
+        if let Some(next) = self.next_dist_dir.as_ref().filter(|path| path.exists()) {
+            return DashboardAssetSelection {
+                source: DashboardAssetSource::NextDist,
+                root_dir: next.clone(),
                 webui_enabled: self.webui_enabled,
             };
         }
@@ -244,6 +264,48 @@ mod tests {
     }
 
     #[test]
+    fn dashboard_asset_policy_prefers_next_dist_over_user_when_both_present() {
+        let root = temp_dashboard_asset_root("next-vs-user");
+        let user_dist = root.join("data-dist");
+        let next = root.join("next-dist");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&user_dist).expect("user dist should create");
+        fs::create_dir_all(&next).expect("next dist should create");
+        fs::write(user_dist.join("index.html"), "user").expect("user index should write");
+        fs::write(next.join("index.html"), "next").expect("next index should write");
+
+        let policy = DashboardAssetPolicy::new(&user_dist).with_next_dist_dir(&next);
+        let selection = policy.select();
+        assert_eq!(selection.source, DashboardAssetSource::NextDist);
+        assert_eq!(selection.root_dir, next);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn dashboard_asset_policy_prefers_next_dist_over_bundled_when_user_absent() {
+        let root = temp_dashboard_asset_root("next-vs-bundled");
+        let user_dist = root.join("data-dist");
+        let next = root.join("next-dist");
+        let bundled = root.join("bundled-dist");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&next).expect("next dist should create");
+        fs::create_dir_all(&bundled).expect("bundled dist should create");
+        fs::write(next.join("index.html"), "next").expect("next index should write");
+        fs::write(bundled.join("index.html"), "bundled").expect("bundled index should write");
+
+        let policy = DashboardAssetPolicy::new(&user_dist)
+            .with_next_dist_dir(&next)
+            .with_bundled_dist_dir(&bundled);
+        let selection = policy.select();
+        assert_eq!(selection.source, DashboardAssetSource::NextDist);
+        assert_eq!(selection.root_dir, next);
+        assert!(policy.validate().is_ok());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn dashboard_asset_policy_maps_spa_routes_and_rejects_traversal() {
         let selection = DashboardAssetPolicy::new("data/dist").select();
 
@@ -256,6 +318,10 @@ mod tests {
         assert!(is_dashboard_index_route("/logs"));
         assert!(is_dashboard_index_route("/tool-use"));
         assert!(is_dashboard_index_route("/alkaid/long-term-memory"));
+        assert!(is_dashboard_index_route("/mcp"));
+        assert!(is_dashboard_index_route("/api-keys"));
+        assert!(is_dashboard_index_route("/observability"));
+        assert!(is_dashboard_index_route("/t2i-templates"));
         assert!(!is_dashboard_index_route("/missing-route"));
         assert_eq!(
             selection.asset_path("/chat"),

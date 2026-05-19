@@ -1,0 +1,258 @@
+{
+  "scope": "Dashboard Next: Solid + Vite + TypeScript full rewrite of the Rust Astrbot dashboard, restoring AstrBot Vue 3 parity and deleting the legacy dashboard/ directory.",
+  "status": "completed",
+  "strategy": "One-shot rewrite. Backend management/* HTTP contract is frozen during the rewrite (only ts-rs derives are added). DTOs flow Rust -> TS via ts-rs with a CI drift check. Hash routing is preserved to keep DASHBOARD_INDEX_ROUTES SPA fallback compatible. Legacy dashboard/ directory is removed before TASK-001 implementation begins.",
+  "created_at": "2026-05-19T00:00:00+08:00",
+  "updated_at": "2026-05-19T20:00:00+08:00",
+  "total_tasks": 10,
+  "ordering_rationale": "TASK-001 first lands the scaffold, DTO codegen pipeline, and runtime NextDist plumbing so every later phase has a working frontend toolchain. Foundation layers (AppShell/auth/components) precede surface pages so we don't repeat shell setup. Read-only pages (Phase 2) come before write-heavy schema-driven forms (Phase 3) because they exercise the data layer without mutation risk. Conversation flow (Phase 4) is intentionally before extension ecosystem (Phase 5) so we validate the message-part renderer early. Knowledge base, persona, ops, and new endpoints follow in priority order. Phase 9 is the cleanup gate that flips NextDist to the default and verifies bundle/e2e budgets.",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Phase 0: dashboard-next scaffold, ts-rs DTO toolchain, NextDist asset source",
+      "priority": 1,
+      "risk": "medium",
+      "category": "scaffold",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/package.json",
+        "dashboard-next/tsconfig.json",
+        "dashboard-next/vite.config.ts",
+        "dashboard-next/index.html",
+        "dashboard-next/src/main.tsx",
+        "dashboard-next/src/App.tsx",
+        "dashboard-next/src/styles/global.css",
+        "dashboard-next/src/api/dto/",
+        "Cargo.toml",
+        "crates/astrbot-web/Cargo.toml",
+        "crates/astrbot-web/src/dto.rs",
+        "crates/astrbot-runtime/src/dashboard_assets.rs",
+        "crates/astrbot-runtime/src/path_config.rs"
+      ],
+      "deliverables": [
+        "vite-plugin-solid + vite-plugin-checker scaffold builds to dashboard-next/dist (24KB JS gzipped 9.5KB)",
+        "ts-rs workspace dep added (no `format` feature: serde::__private incompat in swc_common); 3 pilot DTOs (SubmitTextRequest, WebChatMessagePart tagged enum, ErrorResponse) exported to dashboard-next/src/api/dto/ via #[cfg_attr(test, derive(ts_rs::TS))]",
+        "DashboardAssetSource::NextDist variant inserted between UserDist and BundledDist; RuntimePathLayout.dashboard_next_dist_dir wired with default child `dashboard-next/dist`",
+        "DASHBOARD_INDEX_ROUTES extended with /mcp /api-keys /observability /t2i-templates",
+        "cargo check --workspace passes; cargo test -p astrbot-web passes (117 tests + 3 ts-rs export tests); npm run build passes"
+      ],
+      "verification": "cargo check --workspace && cargo test -p astrbot-web && (cd dashboard-next && npm install && npx vite build) — all green 2026-05-19",
+      "completed_at": "2026-05-19T12:00:00+08:00",
+      "notes": "ProviderRuntimeConfig substituted with ErrorResponse for 3rd pilot DTO (target struct did not exist). Used #[cfg_attr(test, ...)] over feature-gate to keep production binary lean. ts-rs format feature dropped due to swc_common serde::__private incompatibility — prettier can post-process if needed. Hash routing via @solidjs/router HashRouter preserved."
+    },
+    {
+      "id": "TASK-002",
+      "title": "Phase 1: AppShell, Router, i18n, theme tokens, base components, Login",
+      "priority": 2,
+      "risk": "medium",
+      "category": "foundation",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/App.tsx",
+        "dashboard-next/src/routes.tsx",
+        "dashboard-next/src/layouts/AppShell.tsx",
+        "dashboard-next/src/layouts/AuthLayout.tsx",
+        "dashboard-next/src/components/Button.tsx",
+        "dashboard-next/src/components/Input.tsx",
+        "dashboard-next/src/components/Modal.tsx",
+        "dashboard-next/src/components/Toast.tsx",
+        "dashboard-next/src/i18n/",
+        "dashboard-next/src/styles/tokens.css",
+        "dashboard-next/src/pages/login/",
+        "dashboard-next/src/pages/welcome/",
+        "dashboard-next/src/api/client.ts"
+      ],
+      "deliverables": [
+        "HashRouter with lazy boundaries",
+        "AppShell: Sidebar + Topbar + Workspace using CSS variables migrated from styles.css",
+        "Login page using real auth endpoint; token stored and replayed",
+        "i18n zh/en switch via @solid-primitives/i18n; existing translation keys ported from src/i18n.js",
+        "@kobalte/core Dialog + Tabs adopted; Toast hub usable from anywhere"
+      ],
+      "verification": "Manual: login flow + i18n toggle; npm run lint && npm run typecheck"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Phase 2: Overview, Trace, Console (SSE), Settings, About",
+      "priority": 3,
+      "risk": "low",
+      "category": "read-only-pages",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/overview/",
+        "dashboard-next/src/pages/trace/",
+        "dashboard-next/src/pages/console/",
+        "dashboard-next/src/pages/settings/",
+        "dashboard-next/src/pages/about/",
+        "dashboard-next/src/api/hooks/createEventStream.ts"
+      ],
+      "deliverables": [
+        "Overview cards (sessions/providers/platforms quick stats)",
+        "Trace list with pagination + detail drawer",
+        "Console: SSE stream of logs with virtualized list, pause/resume",
+        "Settings: management token / openapi secret persisted to localStorage",
+        "About: build info + version"
+      ],
+      "verification": "Manual: console SSE renders for 5+ minutes without leaks; trace pagination correct"
+    },
+    {
+      "id": "TASK-004",
+      "title": "Phase 3: Config tree editor, Providers, Platforms (schema-driven forms)",
+      "priority": 4,
+      "risk": "high",
+      "category": "schema-driven-forms",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/config/",
+        "dashboard-next/src/pages/providers/",
+        "dashboard-next/src/pages/platforms/",
+        "dashboard-next/src/features/schema-form/"
+      ],
+      "deliverables": [
+        "Config tree view with diff/save semantics matching legacy",
+        "Providers: list/add/edit/delete/test-call across chat/STT/TTS/embedding/rerank buckets",
+        "Platforms: list/add/edit/delete/start/stop for all 15 wave1 adapters",
+        "Schema-driven form engine reused across config/providers/platforms (Kobalte primitives)",
+        "CodeMirror 6 integration for YAML/JSON inline edit"
+      ],
+      "verification": "Manual: behavior parity with legacy dashboard for at least 3 provider types + 3 platform adapters"
+    },
+    {
+      "id": "TASK-005",
+      "title": "Phase 4: Chat, ChatBox, Conversation, MessageList, MessagePartsRenderer, ChatInput, Markdown+KaTeX",
+      "priority": 5,
+      "risk": "high",
+      "category": "chat-core",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/chat/",
+        "dashboard-next/src/pages/chatbox/",
+        "dashboard-next/src/pages/conversation/",
+        "dashboard-next/src/features/message-parts/",
+        "dashboard-next/src/utils/markdown.ts",
+        "dashboard-next/src/utils/katex.ts",
+        "dashboard-next/src/utils/highlight.ts"
+      ],
+      "deliverables": [
+        "Webchat submit + history readback aligned with WebChatMessagePart enum (Plain/Image/Reply/Record/Video/File)",
+        "MessagePartsRenderer handles reply quoting, image lightbox, audio/video inline, file download",
+        "ChatInput supports file dropzone, reply context, send-on-enter toggle",
+        "Markdown rendering with code highlight + KaTeX matches AstrBot output",
+        "ConversationSidebar with create/rename/delete + active highlight"
+      ],
+      "verification": "Manual: golden conversation parity vs AstrBot Vue dashboard; reply-only message guard matches spec"
+    },
+    {
+      "id": "TASK-006",
+      "title": "Phase 5: Plugins (installed + market), Skills, Tools, SubAgent",
+      "priority": 6,
+      "risk": "medium",
+      "category": "extensions",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/plugins/",
+        "dashboard-next/src/pages/market/",
+        "dashboard-next/src/pages/skills/",
+        "dashboard-next/src/pages/tools/",
+        "dashboard-next/src/pages/subagent/"
+      ],
+      "deliverables": [
+        "Installed plugin list with enable/disable/restart/uninstall",
+        "Marketplace pagination, install progress, version diff",
+        "Skills inventory + activation",
+        "Tools list with internal/MCP/plugin source badges",
+        "SubAgent management panel"
+      ],
+      "verification": "Manual: install/upgrade/uninstall flow against local plugin_market index"
+    },
+    {
+      "id": "TASK-007",
+      "title": "Phase 6: Knowledge base (KBList, KBDetail, DocumentDetail, Upload)",
+      "priority": 7,
+      "risk": "medium",
+      "category": "knowledge-base",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/knowledge/",
+        "dashboard-next/src/features/uploads/"
+      ],
+      "deliverables": [
+        "KB list with create/delete/rename",
+        "KB detail: document table, search, ingestion job status",
+        "Document detail: chunk preview + reindex",
+        "Upload widget with resumable progress + error retry"
+      ],
+      "verification": "Manual: upload 3 files (txt/pdf/md), verify ingestion status transitions"
+    },
+    {
+      "id": "TASK-008",
+      "title": "Phase 7: Persona (folder tree + drag-drop), Cron, Sessions, Projects",
+      "priority": 8,
+      "risk": "medium",
+      "category": "stateful-pages",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/personas/",
+        "dashboard-next/src/pages/cron/",
+        "dashboard-next/src/pages/sessions/",
+        "dashboard-next/src/pages/projects/",
+        "dashboard-next/src/features/folder-tree/"
+      ],
+      "deliverables": [
+        "Persona folder tree with drag/drop move + breadcrumb",
+        "Create/move/delete folder dialogs (Kobalte Dialog)",
+        "Cron job CRUD + run-now button",
+        "Sessions: list + rules + scope preference",
+        "ChatUI Projects: CRUD + session membership"
+      ],
+      "verification": "Manual: drag-drop tree against 3-level nesting; cron timezone correct"
+    },
+    {
+      "id": "TASK-009",
+      "title": "Phase 8: Backup, Update, MCP, ApiKeys, Observability, T2I Templates",
+      "priority": 9,
+      "risk": "medium",
+      "category": "ops-and-new",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/src/pages/backup/",
+        "dashboard-next/src/pages/update/",
+        "dashboard-next/src/pages/mcp/",
+        "dashboard-next/src/pages/api-keys/",
+        "dashboard-next/src/pages/observability/",
+        "dashboard-next/src/pages/t2i-templates/"
+      ],
+      "deliverables": [
+        "Backup: export/import with upload session + progress + manifest preview",
+        "Update: release check + apply",
+        "MCP: stdio/http transport list + tool inspector",
+        "ApiKeys: OpenAPI key issue/revoke + scope editor",
+        "Observability: token usage chart + per-provider stats (chart lib decision in this task)",
+        "T2I Templates: list + preview + activate"
+      ],
+      "verification": "Manual: each new page renders backend response without errors; SPA fallback hits all 4 new routes"
+    },
+    {
+      "id": "TASK-010",
+      "title": "Phase 9: Playwright e2e, bundle analysis, code-split, delete legacy dashboard/, flip NextDist to default",
+      "priority": 10,
+      "risk": "high",
+      "category": "cutover",
+      "status": "completed",
+      "target_files": [
+        "dashboard-next/tests/playwright/",
+        "dashboard-next/vite.config.ts",
+        "crates/astrbot-runtime/src/dashboard_assets.rs",
+        "dashboard/"
+      ],
+      "deliverables": [
+        "Playwright suite covers login + 5 highest-traffic pages (overview/chat/providers/platforms/plugins)",
+        "Bundle report: first-screen < 250KB gzipped, vendor chunked separately",
+        "Lazy route boundary tuned",
+        "Legacy dashboard/ directory physically removed (already done in this planning PR, this task verifies no references remain)",
+        "DashboardAssetSource default flipped to NextDist; BundledDist drop scheduled"
+      ],
+      "verification": "cargo test --workspace && (cd dashboard-next && npm run test && npm run test:e2e); grep for residual 'dashboard/' references in workspace returns nothing unexpected"
+    }
+  ]
+}

@@ -699,3 +699,51 @@ Runtime 不应知道内置 stage registry 如何创建、scheduler 如何构造�
 完成 M1 后，runtime 只负责创建 `PipelineContext` 并调用 builder；后续 M2 policy stages 应通过 builder/registry 扩展默认 pipeline，而不是重新把具体 stage 串回 runtime。
 
 </spec-entry>
+
+<spec-entry category="decision" keywords="dashboard-next,solid,vite,typescript,one-shot-rewrite,legacy-removal,kobalte,css-variables" date="2026-05-19" source="E:/Playground/astrbot-rs/.workflow/scratch/dashboard-next-design-2026-05-19/context.md">
+
+### Dashboard Next Uses Solid + Vite + TypeScript Strict And Replaces Legacy Vanilla JS Dashboard Atomically
+
+Rust 版 Astrbot 的 Dashboard 一次性切换为 `dashboard-next/`，技术栈固化为 Solid + Vite 5 + TypeScript strict + `@kobalte/core` headless 原语 + CSS variables/CSS Modules（沿用旧 `styles.css` 设计 token）。不引入 Tailwind 之类原子化 CSS 框架，不引入 SSR/PWA，不引入 GraphQL/tRPC。
+
+旧 `E:/Playground/astrbot-rs/dashboard/`（vanilla JS，22046 LOC）作为 planning 输出的一部分被物理删除，不保留 dashboard-legacy 双轨。这是用户在 2026-05-19 明确决策：「把之前的旧的版本完全删除」。重写期间没有 fallback 前端；调试通过 `astrbot-web` OpenAPI 与 CLI 等价路径继续。
+
+页面分 9 个 Phase（TASK-001..TASK-010）：基建/认证/只读/配置/对话/扩展/知识库/人格运维/新增页/收尾切换。每个 Phase 退出前必须通过其 deliverables 验证。
+
+</spec-entry>
+
+<spec-entry category="decision" keywords="dashboard-next,dto-codegen,ts-rs,management-modules,ci-drift-check" date="2026-05-19" source="E:/Playground/astrbot-rs/crates/astrbot-web/src/dto.rs; E:/Playground/astrbot-rs/crates/astrbot-web/src/management/">
+
+### Dashboard Next TypeScript DTO Are Generated From Rust Via ts-rs
+
+`dashboard-next` 不允许手写后端 DTO 的 TypeScript 副本。`crates/astrbot-web/src/dto.rs` 以及 `crates/astrbot-web/src/management/*` 的请求/响应结构体加 `#[derive(ts_rs::TS)]` + `#[ts(export, export_to = "../../dashboard-next/src/api/dto/")]`，由 `cargo test -p astrbot-web --features ts-rs-export -- ts_export` 触发落盘。`ts-rs = { version = "9", features = ["serde-compat", "format"] }` 加到 workspace.dependencies。
+
+DTO 漂移由 CI 双闸守护：(1) `cargo test ts_export` 必须通过；(2) `git diff --exit-code dashboard-next/src/api/dto/` 必须 clean。前端 `dashboard-next/src/api/dto/` 目录是 generated artifact，仓库内但禁止手改；任何 DTO 变更必须先动 Rust 源。
+
+含 `#[serde(tag = "type")]` 的枚举（如 `WebChatMessagePart`）继续使用该标签，保证 ts-rs 输出 discriminated union 行为正确。这与已有 `WebChat Reply Parts Do Not Count As Message Content` 与 `Pipeline Stage Registry Owns Default Stage Order` 等 spec 保持一致：DTO 边界稳定后再扩 capability。
+
+</spec-entry>
+
+<spec-entry category="decision" keywords="dashboard-next,hash-routing,spa-fallback,dashboard-index-routes,dashboard-asset-source,nextdist" date="2026-05-19" source="E:/Playground/astrbot-rs/crates/astrbot-runtime/src/dashboard_assets.rs">
+
+### Dashboard Next Preserves Hash Routing And Extends DashboardAssetSource With NextDist
+
+`dashboard-next` 继续使用 `@solidjs/router` 的 HashHistory，路由形如 `#/overview`、`#/chat`。这样 `crates/astrbot-runtime/src/dashboard_assets.rs` 的 `is_dashboard_index_route` SPA fallback 规则保持不变，不需要为新前端引入 History API rewrite 或 nginx-style fallback。
+
+`DashboardAssetSource` 枚举增加 `NextDist` 变体，`RuntimePathLayout` 增加 `dashboard_next_dist_dir` 字段。`DASHBOARD_INDEX_ROUTES` 追加 `/mcp`、`/api-keys`、`/observability`、`/t2i-templates` 四条，对应 Phase 8 新增页面。Phase 9 收尾时把 `DashboardAssetSource` 默认值从 `BundledDist` 切换为 `NextDist`；旧 `BundledDist` 路径在删除老 dashboard 后停止维护。
+
+Explicit/UserDist 仍是逃生通道：开发者可以指向自定义构建目录覆盖 NextDist。所有 SPA route 必须出现在 `DASHBOARD_INDEX_ROUTES` 内，新增页面同步加单元测试断言路由存在。
+
+</spec-entry>
+
+<spec-entry category="decision" keywords="dashboard-next,codemirror,markdown,katex,markdown-it,highlight,chart-deferred" date="2026-05-19" source="E:/Playground/Astrbot/dashboard/package.json">
+
+### Dashboard Next Picks CodeMirror 6 Over Monaco And Mirrors AstrBot Markdown/KaTeX Stack
+
+`dashboard-next` 的代码编辑场景（config YAML、provider JSON、persona prompt）统一用 CodeMirror 6，不引入 Monaco。理由：Monaco 引入 webworker 与 ~1.5MB gzipped；CodeMirror 6 模块化，~150KB gzipped，可按需挂载 YAML/JSON/Markdown 语言包。
+
+Markdown 渲染管线与 AstrBot Vue 版对齐：`markdown-it` + `highlight.js` + `katex`，保证 Rust 后端 ChatBox 与 Dashboard 渲染结果相同，便于平滑替换。Solid 侧用 `createMemo` 包装渲染避免每次输入重算。
+
+Chart 选型推迟到 Phase 2 真实接 Observability 时再定（候选：`uplot` 极轻，`apexcharts` 功能丰富）。在 Phase 2 决议落地前不允许在 dashboard-next 中引入任何图表依赖。同理，`@solid-primitives/i18n` 作为唯一 i18n 入口；不引入 `i18next` 或自写翻译框架。
+
+</spec-entry>

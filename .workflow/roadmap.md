@@ -266,6 +266,53 @@ Success criteria:
 - New platforms/providers are registry-only additions.
 - Dashboard never reaches into EventBus/Pipeline internals.
 
+### M8 Dashboard Rewrite
+
+Depends on: M1-M7 (frozen `astrbot-web::management` contract during the rewrite)
+
+Status: planned
+
+Reference:
+- `E:/Playground/astrbot-rs/dashboard/` (legacy vanilla JS, deleted in this milestone)
+- `E:/Playground/astrbot-rs/crates/astrbot-web/src/management/` (26 modules, contract frozen)
+- `E:/Playground/astrbot-rs/crates/astrbot-runtime/src/dashboard_assets.rs` (`DashboardAssetSource`, `DASHBOARD_INDEX_ROUTES`)
+- `E:/Playground/Astrbot/dashboard/` (Vue 3 reference for feature parity)
+- Scratch: `.workflow/scratch/dashboard-next-design-2026-05-19/`
+
+Decision summary:
+- Stack: Solid + Vite 5 + TypeScript strict + `@kobalte/core` + CSS variables/CSS Modules.
+- TS DTOs are generated from Rust via `ts-rs`; CI enforces `git diff --exit-code dashboard-next/src/api/dto/`.
+- Hash routing preserved so `is_dashboard_index_route` SPA fallback keeps working unchanged.
+- `DashboardAssetSource::NextDist` added; `DASHBOARD_INDEX_ROUTES` extended with `/mcp`, `/api-keys`, `/observability`, `/t2i-templates`.
+- Legacy `dashboard/` directory is removed as part of planning; no dashboard-legacy keepalive.
+- One-shot rewrite — no dual-track migration.
+
+Deliverables:
+- `dashboard-next/` Solid + Vite scaffold with strict TS, lint, and Playwright e2e.
+- Functional parity with AstrBot Vue dashboard across 28 routes (24 legacy + 4 new).
+- `ts-rs` workspace dep + DTO export trigger + CI drift gate.
+- Runtime asset wiring for `NextDist` and `dashboard_next_dist_dir` path layout entry.
+- Phase 9 cutover that flips `DashboardAssetSource` default to `NextDist` and trims `BundledDist`.
+
+Backlog (mapped to `.workflow/scratch/dashboard-next-design-2026-05-19/plan.json`):
+1. `M8-T1-dashboard-next-scaffold`: package, vite, tsconfig, App, NextDist asset source, 3 pilot ts-rs DTOs.
+2. `M8-T2-appshell-auth-i18n-base-components`: AppShell, router, i18n, theme tokens, base components, Login.
+3. `M8-T3-readonly-pages`: Overview, Trace, Console (SSE), Settings, About.
+4. `M8-T4-config-providers-platforms`: schema-driven Config tree editor, Providers, Platforms with CodeMirror 6.
+5. `M8-T5-chat-core`: Chat, ChatBox, Conversation, MessagePartsRenderer, Markdown + KaTeX.
+6. `M8-T6-extensions`: Plugins (installed + market), Skills, Tools, SubAgent.
+7. `M8-T7-knowledge-base`: KBList, KBDetail, DocumentDetail, resumable Upload.
+8. `M8-T8-persona-cron-sessions-projects`: persona folder tree with drag-drop, Cron, Sessions, ChatUI Projects.
+9. `M8-T9-ops-and-new-pages`: Backup, Update, MCP, ApiKeys, Observability, T2I Templates.
+10. `M8-T10-cutover`: Playwright e2e, bundle analysis, code-split, flip NextDist default, verify legacy removal.
+
+Success criteria:
+- `dashboard-next/dist` served via `DashboardAssetSource::NextDist` matches AstrBot Vue dashboard feature surface.
+- `git ls-files dashboard/` returns empty (legacy directory removed).
+- DTO drift check green: `cargo test -p astrbot-web ts_export && git diff --exit-code dashboard-next/src/api/dto/`.
+- First-screen bundle ≤ 250 KB gzipped; Playwright covers login + 5 highest-traffic pages.
+- `M7-T3-dashboard-api-and-ui` deferred entry resolved by this milestone.
+
 ## Immediate Backlog
 
 1. `M7-R35-observability-trace-boundary`: introduce trace, log buffer, status event, and management-log boundaries.
@@ -317,17 +364,17 @@ Success criteria:
 47. `M7-R81-metrics-usage-boundary`: introduce metrics, token usage accounting, installation identity, and stats sink boundaries.
 48. `M7-R82-tool-reference-boundary`: define tool output reference, citation extraction, and route-independent refs boundaries.
 49. `M7-T2-provider-parity`: resume remaining voice/provider adapters, concrete media conversion adapters, and provider-specific runtime option schemas after the decoupling gates are green.
-50. `M7-T3-dashboard-api-and-ui`: defer until provider/platform runtime contracts are broader and stable.
+50. `M7-T3-dashboard-api-and-ui`: superseded by `M8 Dashboard Rewrite` (one-shot Solid + Vite + TS rewrite tracked in `.workflow/scratch/dashboard-next-design-2026-05-19/`).
 
 ## Deferred Until Pipeline Contracts Stabilize
 
 - More WebChat upper-layer API breadth.
-- Dashboard management APIs and UI.
+- Dashboard management APIs and UI — superseded by **M8 Dashboard Rewrite** (one-shot Solid + Vite + TS rewrite in `.workflow/scratch/dashboard-next-design-2026-05-19/`); legacy `dashboard/` directory removed in planning.
 - Full platform adapter parity.
 - Provider tool-call orchestration.
 - Persistent attachment storage and WebChat auth.
 - Persistent storage backend selection until storage ports are introduced.
-- Dashboard management mutations/UI until provider/platform/runtime contracts are broader and stable.
+- Dashboard management mutations/UI until provider/platform/runtime contracts are broader and stable. → Lifted: M8 Dashboard Rewrite drives the UI rewrite with the `management/*` HTTP contract frozen during the rewrite.
 - Observability APIs until that boundary exists outside chat transport and pipeline response delivery.
 - Provider manager bucket helpers, plugin test modules, runtime policy config modules, and TTS option normalization are now recorded as follow-up growth guards before those surfaces expand.
 - Dashboard auth/API-key, config mutation/UMOP routing, plugin marketplace/update, session concurrency, realtime chat gateway, and file-token/static serving are now recorded as `TASK-058` through `TASK-063`.

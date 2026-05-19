@@ -209,7 +209,7 @@
       "title": "Dashboard — MessagePartsRenderer + Markdown + KaTeX + 流式光标",
       "category": "dashboard-functional",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/features/message-parts/",
         "dashboard-next/src/features/message-parts/MessagePartsRenderer.tsx",

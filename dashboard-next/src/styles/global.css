@@ -1,4 +1,6 @@
 @import "./tokens.css";
+@import "highlight.js/styles/github-dark.css";
+@import "katex/dist/katex.min.css";
 
 * {
   box-sizing: border-box;
@@ -408,4 +410,51 @@ textarea.input {
   word-break: break-all;
   max-height: 360px;
   overflow: auto;
+}
+
+/* MessagePartsRenderer */
+.message-parts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.message-part--text,
+.message-part--markdown {
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.message-part--markdown p {
+  margin: 0 0 var(--space-2) 0;
+}
+
+.message-part--markdown pre.hljs,
+.message-part--code.hljs {
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow-x: auto;
+}
+
+.message-part--file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-link, var(--color-accent));
+  text-decoration: none;
+}
+
+.message-part--file:hover {
+  text-decoration: underline;
+}
+
+.message-part--cursor {
+  display: inline-block;
+  width: 0.5em;
+  color: var(--color-accent);
+  animation: message-cursor-blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes message-cursor-blink {
+  to { opacity: 0; }
 }

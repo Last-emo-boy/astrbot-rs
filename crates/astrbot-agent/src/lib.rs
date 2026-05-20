@@ -16,6 +16,7 @@ mod run_context;
 mod runner;
 mod skill_prompt;
 mod subagent;
+mod t2i;
 mod tool_image_cache;
 mod tool_loop;
 mod web_search;
@@ -83,6 +84,7 @@ pub use subagent::{
     ResolvedSubagent, StaticSubagentResolver, SubagentConfig, SubagentConfigSource,
     SubagentOrchestrator, SubagentPersonaProfile, SubagentResolver,
 };
+pub use t2i::T2iToolExecutor;
 pub use tool_image_cache::{
     CachedToolImage, InMemoryToolImageCache, NoopToolImageCache, ToolImageCachePort,
     ToolImageCacheRequest, ToolImageData,

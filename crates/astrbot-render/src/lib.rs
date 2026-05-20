@@ -10,7 +10,8 @@ pub use font::{
 };
 pub use local::{
     LocalMarkdownRenderer, LocalRasterOptions, LocalRasterPlan, LocalRenderArtifactWriter,
-    TemplateRenderer, default_t2i_output_dir,
+    LocalRenderEngine, LocalTemplateRasterRenderer, RenderEngineDecision, TemplateRenderer,
+    default_t2i_output_dir,
 };
 pub use markdown::{InlineSpan, MarkdownBlock, MarkdownDocument};
 pub use network::{
@@ -22,5 +23,7 @@ pub use t2i::{
     T2iRenderRequest, T2iRenderResult, T2iRenderer,
 };
 pub use template::{
-    DEFAULT_TEMPLATE_NAME, TemplateCatalog, TemplateDescriptor, TemplateName, TemplateSource,
+    CONVERSATION_RECAP_TEMPLATE_NAME, DEFAULT_TEMPLATE_NAME, ERROR_PROMPT_TEMPLATE_NAME,
+    KNOWLEDGE_CARD_TEMPLATE_NAME, TemplateCatalog, TemplateDescriptor, TemplateName,
+    TemplateSource,
 };

@@ -1,0 +1,6 @@
+id = "builtin-alter-cmd"
+name = "Builtin Alter Cmd"
+version = "0.1.0"
+commands = ["alter_cmd", "alter"]
+permission = "admin"
+description = "Command permission alteration migration example."

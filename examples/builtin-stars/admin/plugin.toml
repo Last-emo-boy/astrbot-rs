@@ -1,0 +1,6 @@
+id = "builtin-admin"
+name = "Builtin Admin"
+version = "0.1.0"
+commands = ["admin", "op", "deop", "wl", "dwl"]
+permission = "admin"
+description = "Admin and whitelist command migration example."

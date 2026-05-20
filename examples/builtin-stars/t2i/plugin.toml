@@ -1,0 +1,6 @@
+id = "builtin-t2i"
+name = "Builtin T2I"
+version = "0.1.0"
+commands = ["t2i"]
+permission = "everyone"
+description = "T2I command migration example."

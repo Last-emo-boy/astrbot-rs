@@ -66,12 +66,12 @@ impl WasmPluginManifest {
         let abi_minor = parse_int(&table, "abi_minor")?.unwrap_or(0);
 
         let capabilities = match table.get("capabilities") {
-            Some(raw) => parse_capability_list(raw).map_err(|message| {
-                ManifestError::InvalidValue {
+            Some(raw) => {
+                parse_capability_list(raw).map_err(|message| ManifestError::InvalidValue {
                     field: "capabilities",
                     message,
-                }
-            })?,
+                })?
+            }
             None => CapabilitySet::empty(),
         };
 
@@ -103,7 +103,10 @@ impl WasmPluginManifest {
     }
 }
 
-fn take_required(table: &HashMap<String, String>, key: &'static str) -> Result<String, ManifestError> {
+fn take_required(
+    table: &HashMap<String, String>,
+    key: &'static str,
+) -> Result<String, ManifestError> {
     table
         .get(key)
         .cloned()
@@ -233,7 +236,8 @@ capabilities = ["log", "messaging"]
 
     #[test]
     fn missing_required_field_errors() {
-        let err = WasmPluginManifest::from_toml("version = \"0.1.0\"\nabi_major = 1\n").unwrap_err();
+        let err =
+            WasmPluginManifest::from_toml("version = \"0.1.0\"\nabi_major = 1\n").unwrap_err();
         assert!(matches!(err, ManifestError::MissingField("id")));
     }
 

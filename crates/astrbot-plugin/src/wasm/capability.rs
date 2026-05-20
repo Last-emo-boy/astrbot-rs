@@ -144,11 +144,8 @@ mod tests {
 
     #[test]
     fn set_deduplicates_and_sorts() {
-        let set = CapabilitySet::from_iter([
-            Capability::Messaging,
-            Capability::Log,
-            Capability::Log,
-        ]);
+        let set =
+            CapabilitySet::from_iter([Capability::Messaging, Capability::Log, Capability::Log]);
         assert_eq!(set.len(), 2);
         assert!(set.contains(Capability::Log));
         assert!(set.contains(Capability::Messaging));

@@ -1,0 +1,6 @@
+id = "builtin-provider"
+name = "Builtin Provider"
+version = "0.1.0"
+commands = ["provider"]
+permission = "admin"
+description = "Provider command migration example."

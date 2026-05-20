@@ -270,7 +270,7 @@ Success criteria:
 
 Depends on: M1-M7 (frozen `astrbot-web::management` contract during the rewrite)
 
-Status: planned
+Status: completed
 
 Reference:
 - `E:/Playground/astrbot-rs/dashboard/` (legacy vanilla JS, deleted in this milestone)
@@ -312,6 +312,41 @@ Success criteria:
 - DTO drift check green: `cargo test -p astrbot-web ts_export && git diff --exit-code dashboard-next/src/api/dto/`.
 - First-screen bundle ≤ 250 KB gzipped; Playwright covers login + 5 highest-traffic pages.
 - `M7-T3-dashboard-api-and-ui` deferred entry resolved by this milestone.
+
+Completed:
+- Scratch source of truth: `.workflow/scratch/dashboard-next-design-2026-05-19/`.
+- `TASK-001` through `TASK-010` completed; `index.json` records 10/10 tasks done.
+- Verification recorded there: `cargo check --workspace --all-targets`, `cargo test -p astrbot-web`, dashboard asset tests, `dashboard-next` TypeScript check, and Vite build.
+
+### M9 Parity Closure
+
+Depends on: M8 and completed M7 parity/boundary work
+
+Status: completed
+
+Reference:
+- Scratch: `.workflow/scratch/parity-gap-roadmap-2026-05-20/`
+- Task source of truth: `.workflow/scratch/parity-gap-roadmap-2026-05-20/plan.json`
+
+Current progress:
+- Total tasks: 36
+- Completed: 36
+- Pending: 0
+- Blocked: 0
+- P0: 14 completed, 0 pending
+- P1: 14 completed, 0 pending
+- P2: 8 completed, 0 pending
+
+Next task:
+- None.
+
+Pending:
+- None.
+
+Completed:
+- Scratch source of truth: `.workflow/scratch/parity-gap-roadmap-2026-05-20/`.
+- `TASK-P0-001` through `TASK-P2-008` completed; `index.json` records 36/36 tasks done.
+- Verification recorded there: `cargo test --workspace --all-targets`, targeted M9 crate tests, all builtin star wasm example checks, and `dashboard-next` TypeScript/build checks.
 
 ## Immediate Backlog
 

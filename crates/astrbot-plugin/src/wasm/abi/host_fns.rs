@@ -188,7 +188,9 @@ mod tests {
         store.set_fuel(1_000_000).expect("fuel");
         store.set_epoch_deadline(u64::MAX);
 
-        let instance = linker.instantiate(&mut store, &module).expect("instantiate");
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .expect("instantiate");
         let ask = instance
             .get_typed_func::<(), i64>(&mut store, "ask")
             .expect("ask export");
@@ -225,7 +227,9 @@ mod tests {
         store.set_fuel(1_000_000).expect("fuel");
         store.set_epoch_deadline(u64::MAX);
 
-        let instance = linker.instantiate(&mut store, &module).expect("instantiate");
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .expect("instantiate");
         let try_log = instance
             .get_typed_func::<(), i32>(&mut store, "try_log")
             .expect("export");
@@ -261,7 +265,9 @@ mod tests {
         store.set_fuel(1_000_000).expect("fuel");
         store.set_epoch_deadline(u64::MAX);
 
-        let instance = linker.instantiate(&mut store, &module).expect("instantiate");
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .expect("instantiate");
         let trigger = instance
             .get_typed_func::<(), i32>(&mut store, "trigger")
             .expect("export");

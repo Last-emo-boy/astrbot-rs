@@ -1,0 +1,6 @@
+id = "builtin-setunset"
+name = "Builtin Set Unset"
+version = "0.1.0"
+commands = ["set", "unset", "setunset"]
+permission = "everyone"
+description = "Session variable set/unset migration example."

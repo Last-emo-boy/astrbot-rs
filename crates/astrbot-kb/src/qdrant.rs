@@ -81,7 +81,11 @@ impl QdrantClient {
             },
         });
         let response = self
-            .request(reqwest::Method::PUT, &format!("/collections/{name}"), Some(body))
+            .request(
+                reqwest::Method::PUT,
+                &format!("/collections/{name}"),
+                Some(body),
+            )
             .await?;
         let status = response.status();
         let text = response.text().await.unwrap_or_default();

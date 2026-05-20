@@ -1,0 +1,6 @@
+id = "builtin-persona"
+name = "Builtin Persona"
+version = "0.1.0"
+commands = ["persona"]
+permission = "admin"
+description = "Persona command migration example."

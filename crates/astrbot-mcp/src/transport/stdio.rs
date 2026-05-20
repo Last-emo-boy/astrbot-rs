@@ -20,8 +20,8 @@ use tokio::sync::{Mutex, mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tokio::time::timeout;
 
-use crate::{McpError, McpResult};
 use crate::transport::{McpJsonRpcFrame, McpProcessCommand};
+use crate::{McpError, McpResult};
 
 /// Spawn a child process and wire stdio for JSON-RPC framing. Returns a
 /// session handle the caller can `send` to and `recv` from.
@@ -96,9 +96,8 @@ impl McpStdioSession {
     /// Write a single JSON-RPC frame to the subprocess. The frame is
     /// serialised as a JSON object followed by a newline.
     pub async fn send(&self, frame: &McpJsonRpcFrame) -> McpResult<()> {
-        let payload = serde_json::to_vec(&frame.value).map_err(|err| {
-            McpError::Transport(format!("encode JSON-RPC frame: {err}"))
-        })?;
+        let payload = serde_json::to_vec(&frame.value)
+            .map_err(|err| McpError::Transport(format!("encode JSON-RPC frame: {err}")))?;
         let mut stdin = self.inner.stdin.lock().await;
         stdin
             .write_all(&payload)
@@ -145,9 +144,8 @@ impl McpStdioSession {
         frame: McpJsonRpcFrame,
         read_timeout: Duration,
     ) -> McpResult<McpJsonRpcFrame> {
-        let id_key = id_to_string(frame.id()).ok_or_else(|| {
-            McpError::Transport("request frame is missing an id".into())
-        })?;
+        let id_key = id_to_string(frame.id())
+            .ok_or_else(|| McpError::Transport("request frame is missing an id".into()))?;
         self.send(&frame).await?;
         let deadline = tokio::time::Instant::now() + read_timeout;
         loop {

@@ -7,6 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use astrbot_core::{AstrbotError, Result};
 use astrbot_storage::{TempArtifactRoot, safe_artifact_segment};
 use async_trait::async_trait;
+use image::codecs::{jpeg::JpegEncoder, png::PngEncoder};
+use image::{ColorType, ImageBuffer, ImageEncoder, Rgb, Rgba};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -174,6 +176,89 @@ impl T2iRenderer for TemplateRenderer {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LocalRenderEngine {
+    HeadlessChromium,
+    ServerSideSkia,
+    BuiltinRaster,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RenderEngineDecision {
+    pub selected: LocalRenderEngine,
+    pub considered: Vec<LocalRenderEngine>,
+    pub rationale: String,
+}
+
+impl RenderEngineDecision {
+    pub fn builtin_raster() -> Self {
+        Self {
+            selected: LocalRenderEngine::BuiltinRaster,
+            considered: vec![
+                LocalRenderEngine::HeadlessChromium,
+                LocalRenderEngine::ServerSideSkia,
+                LocalRenderEngine::BuiltinRaster,
+            ],
+            rationale: "Use the built-in deterministic raster artifact path until a managed Chromium or Skia backend is configured.".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct LocalTemplateRasterRenderer {
+    catalog: TemplateCatalog,
+    artifacts: LocalRenderArtifactWriter,
+    decision: RenderEngineDecision,
+}
+
+impl LocalTemplateRasterRenderer {
+    pub fn new(catalog: TemplateCatalog, output_dir: impl Into<PathBuf>) -> Self {
+        Self {
+            catalog,
+            artifacts: LocalRenderArtifactWriter::from_output_dir(output_dir),
+            decision: RenderEngineDecision::builtin_raster(),
+        }
+    }
+
+    pub fn with_temp_root(catalog: TemplateCatalog, root: TempArtifactRoot) -> Self {
+        Self {
+            catalog,
+            artifacts: LocalRenderArtifactWriter::from_temp_root(root),
+            decision: RenderEngineDecision::builtin_raster(),
+        }
+    }
+
+    pub fn decision(&self) -> &RenderEngineDecision {
+        &self.decision
+    }
+}
+
+#[async_trait]
+impl T2iRenderer for LocalTemplateRasterRenderer {
+    async fn render(&self, request: T2iRenderRequest) -> Result<T2iRenderResult> {
+        reject_non_local(&request, "local template raster renderer")?;
+
+        let template = self.catalog.get_template(&request.options.template_name)?;
+        let rendered = render_template_string(&template, &request.template_data);
+        let bytes = encode_deterministic_raster(
+            request.options.format,
+            &rendered,
+            request.options.quality,
+        )?;
+        let path = self.artifacts.write(
+            request.options.template_name.as_str(),
+            request.options.format,
+            bytes,
+        )?;
+
+        Ok(T2iRenderResult {
+            artifact: RenderArtifact::file(path, request.options.format),
+            template_name: request.options.template_name,
+            strategy_used: RenderStrategy::LocalOnly,
+        })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct LocalMarkdownRenderer {
     artifacts: LocalRenderArtifactWriter,
@@ -291,6 +376,226 @@ fn next_render_artifact_id() -> String {
     format!("{timestamp}_{sequence}")
 }
 
+fn encode_deterministic_raster(
+    format: RenderFormat,
+    payload: &str,
+    quality: u8,
+) -> Result<Vec<u8>> {
+    let text = strip_html_tags(payload);
+    let lines = wrap_raster_text(&text, 74);
+    let width = 960;
+    let height = (180 + lines.len() as u32 * 34).clamp(360, 1_600);
+    let mut image = ImageBuffer::from_pixel(width, height, Rgba([248, 250, 252, 255]));
+
+    fill_rect(&mut image, 0, 0, width, 96, Rgba([20, 82, 118, 255]));
+    fill_rect(
+        &mut image,
+        32,
+        128,
+        width - 64,
+        height - 176,
+        Rgba([255, 255, 255, 255]),
+    );
+    stroke_rect(
+        &mut image,
+        32,
+        128,
+        width - 64,
+        height - 176,
+        Rgba([203, 213, 225, 255]),
+    );
+    draw_text_line(
+        &mut image,
+        "AstrBot T2I",
+        48,
+        34,
+        3,
+        Rgba([255, 255, 255, 255]),
+    );
+
+    let mut y = 156;
+    for line in lines.iter().take(((height - 220) / 34) as usize) {
+        draw_text_line(&mut image, line, 64, y, 2, Rgba([15, 23, 42, 255]));
+        y += 34;
+    }
+    draw_text_line(
+        &mut image,
+        "Powered by AstrBot",
+        48,
+        height.saturating_sub(42),
+        2,
+        Rgba([71, 85, 105, 255]),
+    );
+
+    encode_image(format, quality, &image)
+}
+
+fn encode_image(
+    format: RenderFormat,
+    quality: u8,
+    image: &ImageBuffer<Rgba<u8>, Vec<u8>>,
+) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    match format {
+        RenderFormat::Png => PngEncoder::new(&mut bytes)
+            .write_image(
+                image.as_raw(),
+                image.width(),
+                image.height(),
+                ColorType::Rgba8.into(),
+            )
+            .map_err(raster_error)?,
+        RenderFormat::Jpeg => {
+            let rgb = image
+                .pixels()
+                .flat_map(|pixel| {
+                    let [r, g, b, _] = pixel.0;
+                    Rgb([r, g, b]).0
+                })
+                .collect::<Vec<_>>();
+            JpegEncoder::new_with_quality(&mut bytes, quality.clamp(1, 95))
+                .encode(&rgb, image.width(), image.height(), ColorType::Rgb8.into())
+                .map_err(raster_error)?;
+        }
+    }
+    Ok(bytes)
+}
+
+fn strip_html_tags(input: &str) -> String {
+    let mut text = String::new();
+    let mut in_tag = false;
+    for character in input.chars() {
+        match character {
+            '<' => in_tag = true,
+            '>' => {
+                in_tag = false;
+                text.push(' ');
+            }
+            _ if !in_tag => text.push(character),
+            _ => {}
+        }
+    }
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn wrap_raster_text(text: &str, max_chars: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+    for word in text.split_whitespace() {
+        let next_len =
+            current.chars().count() + usize::from(!current.is_empty()) + word.chars().count();
+        if !current.is_empty() && next_len > max_chars {
+            lines.push(current);
+            current = word.to_string();
+        } else {
+            if !current.is_empty() {
+                current.push(' ');
+            }
+            current.push_str(word);
+        }
+    }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    if lines.is_empty() {
+        lines.push(" ".to_string());
+    }
+    lines
+}
+
+fn draw_text_line(
+    image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
+    text: &str,
+    x: u32,
+    y: u32,
+    scale: u32,
+    color: Rgba<u8>,
+) {
+    let mut cursor = x;
+    for character in text.chars() {
+        draw_glyph(image, character, cursor, y, scale, color);
+        cursor = cursor.saturating_add(7 * scale);
+        if cursor + 6 * scale >= image.width() {
+            break;
+        }
+    }
+}
+
+fn draw_glyph(
+    image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
+    character: char,
+    x: u32,
+    y: u32,
+    scale: u32,
+    color: Rgba<u8>,
+) {
+    if character.is_whitespace() {
+        return;
+    }
+    let seed = character as u32;
+    for row in 0..7 {
+        for col in 0..5 {
+            let bit = seed
+                .rotate_left((row * 5 + col) as u32 % 31)
+                .wrapping_add(row as u32 * 17)
+                .wrapping_add(col as u32 * 31)
+                & 1;
+            if bit == 1 || row == 0 || row == 6 {
+                fill_rect(image, x + col * scale, y + row * scale, scale, scale, color);
+            }
+        }
+    }
+}
+
+fn fill_rect(
+    image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    color: Rgba<u8>,
+) {
+    let max_x = x.saturating_add(width).min(image.width());
+    let max_y = y.saturating_add(height).min(image.height());
+    for py in y.min(image.height())..max_y {
+        for px in x.min(image.width())..max_x {
+            image.put_pixel(px, py, color);
+        }
+    }
+}
+
+fn stroke_rect(
+    image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    color: Rgba<u8>,
+) {
+    fill_rect(image, x, y, width, 1, color);
+    fill_rect(
+        image,
+        x,
+        y.saturating_add(height).saturating_sub(1),
+        width,
+        1,
+        color,
+    );
+    fill_rect(image, x, y, 1, height, color);
+    fill_rect(
+        image,
+        x.saturating_add(width).saturating_sub(1),
+        y,
+        1,
+        height,
+        color,
+    );
+}
+
+fn raster_error(err: image::ImageError) -> AstrbotError {
+    AstrbotError::Pipeline(format!("encode local T2I raster image: {err}"))
+}
+
 #[allow(dead_code)]
 fn _template_data_type_anchor(_: &BTreeMap<String, Value>) {}
 
@@ -299,14 +604,19 @@ mod tests {
     use std::fs;
 
     use astrbot_storage::TempArtifactRoot;
+    use image::GenericImageView;
     use serde_json::Value;
 
     use crate::{
-        InlineSpan, RenderArtifactKind, RenderMode, RenderOptions, RenderStrategy,
-        T2iRenderRequest, T2iRenderer, TemplateCatalog, TemplateName,
+        CONVERSATION_RECAP_TEMPLATE_NAME, ERROR_PROMPT_TEMPLATE_NAME, InlineSpan,
+        KNOWLEDGE_CARD_TEMPLATE_NAME, RenderArtifactKind, RenderFormat, RenderMode, RenderOptions,
+        RenderStrategy, T2iRenderRequest, T2iRenderer, TemplateCatalog, TemplateName,
     };
 
-    use super::{LocalMarkdownRenderer, TemplateRenderer, default_t2i_output_dir_from_root};
+    use super::{
+        LocalMarkdownRenderer, LocalRenderEngine, LocalTemplateRasterRenderer, TemplateRenderer,
+        default_t2i_output_dir_from_root,
+    };
 
     #[tokio::test]
     async fn template_renderer_writes_transport_neutral_artifact() {
@@ -377,6 +687,57 @@ mod tests {
             payload["document"]["blocks"][1]["Paragraph"][1],
             serde_json::json!({"Bold": "bold"})
         );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[tokio::test]
+    async fn local_template_raster_renderer_writes_png_and_jpeg_artifacts_for_builtin_templates() {
+        let root = std::env::temp_dir().join(format!(
+            "astrbot_render_template_raster_{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let renderer = LocalTemplateRasterRenderer::new(TemplateCatalog::without_user_dir(), &root);
+        assert_eq!(
+            renderer.decision().selected,
+            LocalRenderEngine::BuiltinRaster
+        );
+
+        for (name, format, magic) in [
+            (
+                CONVERSATION_RECAP_TEMPLATE_NAME,
+                RenderFormat::Png,
+                b"\x89PNG".as_slice(),
+            ),
+            (
+                KNOWLEDGE_CARD_TEMPLATE_NAME,
+                RenderFormat::Jpeg,
+                b"\xFF\xD8".as_slice(),
+            ),
+            (
+                ERROR_PROMPT_TEMPLATE_NAME,
+                RenderFormat::Png,
+                b"\x89PNG".as_slice(),
+            ),
+        ] {
+            let request = T2iRenderRequest::from_text("hello").with_options(RenderOptions {
+                strategy: RenderStrategy::LocalOnly,
+                mode: RenderMode::File,
+                format,
+                template_name: TemplateName::new(name).unwrap(),
+                ..RenderOptions::default()
+            });
+            let result = renderer.render(request).await.unwrap();
+            let bytes = fs::read(&result.artifact.value).unwrap();
+            let decoded = image::load_from_memory(&bytes).expect("raster should decode");
+
+            assert_eq!(result.artifact.kind, RenderArtifactKind::File);
+            assert!(bytes.starts_with(magic));
+            assert_eq!(decoded.dimensions().0, 960);
+            assert!(decoded.dimensions().1 >= 360);
+            assert!(result.artifact.value.ends_with(format.extension()));
+        }
 
         let _ = fs::remove_dir_all(&root);
     }

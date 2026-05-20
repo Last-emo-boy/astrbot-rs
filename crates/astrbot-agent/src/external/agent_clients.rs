@@ -47,12 +47,7 @@ impl DifyAgentClient {
     }
 
     /// Build the request body Dify expects for blocking mode.
-    pub fn body_for(
-        &self,
-        prompt: &str,
-        conversation_id: Option<&str>,
-        streaming: bool,
-    ) -> Value {
+    pub fn body_for(&self, prompt: &str, conversation_id: Option<&str>, streaming: bool) -> Value {
         let mut body = json!({
             "inputs": {},
             "query": prompt,
@@ -83,9 +78,10 @@ impl DifyAgentClient {
             .await
             .map_err(|err| AstrbotError::Pipeline(format!("Dify HTTP failed: {err}")))?;
         let status = response.status();
-        let text = response.text().await.map_err(|err| {
-            AstrbotError::Pipeline(format!("Dify response read failed: {err}"))
-        })?;
+        let text = response
+            .text()
+            .await
+            .map_err(|err| AstrbotError::Pipeline(format!("Dify response read failed: {err}")))?;
         if !status.is_success() {
             return Err(AstrbotError::Pipeline(format!(
                 "Dify returned {status}: {text}"
@@ -206,9 +202,10 @@ impl CozeAgentClient {
             .await
             .map_err(|err| AstrbotError::Pipeline(format!("Coze HTTP failed: {err}")))?;
         let status = response.status();
-        let text = response.text().await.map_err(|err| {
-            AstrbotError::Pipeline(format!("Coze response read failed: {err}"))
-        })?;
+        let text = response
+            .text()
+            .await
+            .map_err(|err| AstrbotError::Pipeline(format!("Coze response read failed: {err}")))?;
         if !status.is_success() {
             return Err(AstrbotError::Pipeline(format!(
                 "Coze returned {status}: {text}"
@@ -362,10 +359,9 @@ mod tests {
 
     #[test]
     fn dify_sse_message_decodes_as_delta() {
-        let event = parse_dify_sse_event(
-            r#"{"event":"message","answer":"hi","conversation_id":"c1"}"#,
-        )
-        .unwrap();
+        let event =
+            parse_dify_sse_event(r#"{"event":"message","answer":"hi","conversation_id":"c1"}"#)
+                .unwrap();
         assert_eq!(event.event_type, "message");
         assert_eq!(event.text_delta.as_deref(), Some("hi"));
         assert_eq!(event.remote_thread_id.as_deref(), Some("c1"));
@@ -382,10 +378,9 @@ mod tests {
 
     #[test]
     fn dify_blocking_response_emits_final_event() {
-        let events = parse_dify_blocking_response(
-            r#"{"answer":"full text","conversation_id":"c1"}"#,
-        )
-        .unwrap();
+        let events =
+            parse_dify_blocking_response(r#"{"answer":"full text","conversation_id":"c1"}"#)
+                .unwrap();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].final_text.as_deref(), Some("full text"));
     }
@@ -417,11 +412,7 @@ mod tests {
 
     #[test]
     fn dashscope_endpoint_uses_apps_path() {
-        let client = DashScopeAgentClient::new(
-            "https://dashscope.aliyuncs.com/",
-            "k",
-            "app-9",
-        );
+        let client = DashScopeAgentClient::new("https://dashscope.aliyuncs.com/", "k", "app-9");
         assert_eq!(
             client.endpoint(),
             "https://dashscope.aliyuncs.com/api/v1/apps/app-9/completion"

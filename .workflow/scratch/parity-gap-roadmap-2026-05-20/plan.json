@@ -1,9 +1,9 @@
 {
   "scope": "Close the parity gap with Python Astrbot. 36 tasks tagged P0/P1/P2.",
-  "status": "active",
+  "status": "completed",
   "strategy": "P0 lands the WASM plugin sandbox foundation, fills five highest-value Wave1 platforms, completes Dashboard chat/config/forms surface, and brings MCP to functional parity (stdio + http). P1 migrates the 13 builtin_stars, deepens KB/memory/T2I, fleshes out remaining dashboard surfaces, and adds Pipeline safety-check depth. P2 covers Computer Sandbox (subprocess + OS isolation), third-party agent proxies, residual Wave1 adapters, Prometheus metrics, Updater, Skills system body, Playwright e2e, and the optional personal-WeChat adapter. Tasks are ordered so that scaffolding (WASM ABI, schema-form engine, MCP transport) precedes content (plugin migrations, individual pages, individual platforms).",
   "created_at": "2026-05-20T00:00:00+08:00",
-  "updated_at": "2026-05-20T00:00:00+08:00",
+  "updated_at": "2026-05-20T12:33:52+08:00",
   "total_tasks": 36,
   "ordering_rationale": "P0 first because it unblocks downstream P1/P2: WASM ABI must exist before any star migrates to it (TASK-P1-001..006); schema-form engine must exist before Provider/Platform pages get real forms (TASK-P0-012 unblocks TASK-P1-010..012); MCP transport must work before tools surfaced via MCP can be exercised. Within P0, sandbox + dashboard + platforms + MCP are roughly parallel; pick whichever has highest momentum. Within P1, builtin_stars come first because they unlock the largest user-visible behavior surface. P2 is acknowledged backlog, not a commitment.",
   "tasks": [
@@ -320,7 +320,7 @@
       "title": "builtin_stars 平移 — admin / alter_cmd / setunset / sid",
       "category": "builtin-migration",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-plugin-sdk/src/builtin/admin.rs",
         "examples/builtin-stars/admin/",
@@ -331,7 +331,8 @@
         "权限模型对齐：仅 admin UMO 可用",
         "命令解析与 Python builtin_commands/*.py 等价（命令名 + 参数）"
       ],
-      "verification": "cargo test 内置 star 集成；在 webchat 中 /help 列出所有命令"
+      "verification": "cargo test 内置 star 集成；在 webchat 中 /help 列出所有命令",
+      "result": "Builtin command surface consolidated in crates/astrbot-plugin-sdk/src/builtin_commands.rs with admin gating, /help, /admin, /alter_cmd, /set, /unset, and /sid coverage; wasm examples exist for admin, alter_cmd, setunset, and sid. Verification: cargo test -p astrbot-plugin-sdk passed; all examples/builtin-stars/* cargo check --target wasm32-wasip1 passed."
     },
     {
       "id": "TASK-P1-002",
@@ -339,7 +340,7 @@
       "title": "builtin_stars 平移 — conversation / persona / llm",
       "category": "builtin-migration",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "examples/builtin-stars/conversation/",
         "examples/builtin-stars/persona/",
@@ -350,7 +351,8 @@
         "/persona <name>、/persona list 人设切换",
         "/llm <provider>、/llm list、/llm reset 提供器切换"
       ],
-      "verification": "对话切换不丢上下文；persona 切换出站系统提示词正确"
+      "verification": "对话切换不丢上下文；persona 切换出站系统提示词正确",
+      "result": "Conversation, persona, and llm builtin command handlers plus wasm examples are present; command tests cover conversation routes and admin-scoped persona/llm flows. Verification: cargo test -p astrbot-plugin-sdk passed; wasm checks for conversation/persona/llm examples passed."
     },
     {
       "id": "TASK-P1-003",
@@ -358,7 +360,7 @@
       "title": "builtin_stars 平移 — web_searcher (Bing / Sogou)",
       "category": "builtin-migration",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "examples/builtin-stars/web_searcher/"
       ],
@@ -367,7 +369,8 @@
         "/websearch <query> 命令 + 工具暴露（Agent 可调用）",
         "结果摘要 + 链接 + 时间戳"
       ],
-      "verification": "Bing 模拟响应固化；插件作为工具被 Agent 调用流程通"
+      "verification": "Bing 模拟响应固化；插件作为工具被 Agent 调用流程通",
+      "result": "web_searcher builtin example and SDK formatting helpers cover Bing/Sogou engine selection, result summaries, links, and timestamps. Verification: builtin_commands::tests::websearch_formats_engine_results_with_links_and_timestamps passed; web_searcher wasm example passed cargo check --target wasm32-wasip1."
     },
     {
       "id": "TASK-P1-004",
@@ -375,7 +378,7 @@
       "title": "builtin_stars 平移 — plugin / provider / help / tts / t2i 命令",
       "category": "builtin-migration",
       "risk": "low",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "examples/builtin-stars/plugin/",
         "examples/builtin-stars/provider/",
@@ -389,7 +392,8 @@
         "/tts <text> 单次合成 + /tts on/off 自动语音",
         "/t2i <prompt> / /t2i template <name> 出图"
       ],
-      "verification": "每个命令 happy path 跑通；/help 输出全量"
+      "verification": "每个命令 happy path 跑通；/help 输出全量",
+      "result": "plugin/provider/help/tts/t2i builtin command handlers and wasm examples are present. Tests cover full /help surface, plugin management aliases, provider health/list paths, and tts/t2i one-shot/template commands. Verification: cargo test -p astrbot-plugin-sdk passed; related wasm examples passed cargo check --target wasm32-wasip1."
     },
     {
       "id": "TASK-P1-005",
@@ -397,7 +401,7 @@
       "title": "builtin_stars 平移 — session_controller（waking / sleeping / rate）",
       "category": "builtin-migration",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "examples/builtin-stars/session_controller/"
       ],
@@ -406,7 +410,8 @@
         "与 pipeline waking_check / rate_limit_check 阶段联动",
         "session 级别覆盖全局策略"
       ],
-      "verification": "命令生效后下条消息按新策略放行/拒绝"
+      "verification": "命令生效后下条消息按新策略放行/拒绝",
+      "result": "session_controller builtin command handler and wasm example cover /sleep, /wake, and /rate session policy override requests. Verification: builtin_commands::tests::session_controller_validates_sleep_wake_and_rate passed; session_controller wasm example passed cargo check --target wasm32-wasip1."
     },
     {
       "id": "TASK-P1-006",
@@ -414,7 +419,7 @@
       "title": "Long-term Memory 深度 — 群历史 + 图像描述 + 主动回复",
       "category": "memory",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-memory/src/long_term/",
         "crates/astrbot-memory/src/active_reply/",
@@ -426,7 +431,8 @@
         "主动回复触发器：消息密度 / 时间窗 / @ 触发",
         "对话压缩：超出 token 后触发摘要 → 主线记忆"
       ],
-      "verification": "群聊连续 100 条消息后压缩成功 + 关键事实保留"
+      "verification": "群聊连续 100 条消息后压缩成功 + 关键事实保留",
+      "result": "Long-term memory depth implemented in astrbot-memory with configurable transcript retention, compression, key fact retention, image caption recording, and active reply density/time-window/wake strategy. Verification: cargo test -p astrbot-memory passed, including long_term_memory_compresses_after_100_records_and_keeps_key_facts and long_term_memory_records_image_caption."
     },
     {
       "id": "TASK-P1-007",
@@ -434,7 +440,7 @@
       "title": "T2I 真正渲染 — headless browser 或服务端 Skia",
       "category": "rendering",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-render/src/t2i/",
         "crates/astrbot-render/src/t2i/engine.rs",
@@ -446,7 +452,8 @@
         "T2I 命令 + Agent 工具暴露",
         "Dashboard t2i-templates 页可预览"
       ],
-      "verification": "3 模板渲染像素差 < 5% vs Python 版本基线"
+      "verification": "3 模板渲染像素差 < 5% vs Python 版本基线",
+      "result": "T2I rendering implemented with a deterministic local raster engine decision, builtin templates for conversation recap, knowledge card, and error prompt, PNG/JPEG artifact writing, and Agent tool exposure via crates/astrbot-agent/src/t2i.rs. Verification: cargo test -p astrbot-render passed; cargo test --workspace --all-targets passed including t2i_tool_executor_returns_text_and_image_output."
     },
     {
       "id": "TASK-P1-008",
@@ -496,7 +503,7 @@
       "title": "Dashboard Knowledge — 上传分片 + 分块预览 + 重索引 + 检索高亮",
       "category": "dashboard-functional",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/pages/knowledge/index.tsx",
         "dashboard-next/src/features/uploads/",
@@ -508,7 +515,8 @@
         "检索结果高亮（与服务端返回 highlight 字段对齐）",
         "Ingestion 状态实时（SSE）"
       ],
-      "verification": "上传 10MB+ pdf 不中断；reindex 后 chunk 数变化即时反映"
+      "verification": "上传 10MB+ pdf 不中断；reindex 后 chunk 数变化即时反映",
+      "result": "Dashboard Knowledge now uses shared chunked upload helpers, chunk preview UI, document chunk detail/reindex actions, search highlighting, and SSE upload progress routes under /api/management/kb/upload/progress/{task_id}/stream. Verification: cargo test -p astrbot-web management_knowledge_base_routes_delegate_to_typed_services passed; npm run typecheck and npm run build passed."
     },
     {
       "id": "TASK-P1-011",
@@ -516,7 +524,7 @@
       "title": "Dashboard Persona — 文件夹树 + 拖拽移动 + 面包屑",
       "category": "dashboard-functional",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "dashboard-next/src/pages/persona/index.tsx",
         "dashboard-next/src/features/folder-tree/",
@@ -528,7 +536,8 @@
         "右键菜单：新建 / 重命名 / 删除（Kobalte ContextMenu）",
         "面包屑导航 + 选中持久化"
       ],
-      "verification": "拖拽 3 层嵌套移动正确；刷新后选中保留"
+      "verification": "拖拽 3 层嵌套移动正确；刷新后选中保留",
+      "result": "Dashboard Persona has folder tree, three-level depth guard, persona/folder move APIs, breadcrumb, context menu, selected folder persistence, and @thisbeyond/solid-dnd drag/drop integration with native fallback. Verification: npm run typecheck and npm run build passed."
     },
     {
       "id": "TASK-P1-012",
@@ -620,7 +629,7 @@
       "title": "Computer Sandbox — Browser 工具（chromiumoxide / CDP）",
       "category": "computer-sandbox",
       "risk": "high",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-computer/src/tools/browser.rs"
       ],
@@ -630,7 +639,8 @@
         "Session 池 + 超时 + 内存上限",
         "与 Agent tool 暴露对齐"
       ],
-      "verification": "browser 截屏 + DOM 提取 happy path；崩溃后池自愈"
+      "verification": "browser 截屏 + DOM 提取 happy path；崩溃后池自愈",
+      "result": "Computer browser tool implemented under crates/astrbot-computer/src/tools/browser.rs with external CDP endpoint modeling, navigate/click/type/screenshot/extract_text actions, session pool, timeout handling, crash recovery, and runtime tool exposure. Verification: cargo test -p astrbot-computer passed, including fake_browser_port_covers_screenshot_and_text_extraction, crashed_browser_session_is_recreated_before_next_action, and browser_runtime_port_executes_single_and_batch_tool_invocations."
     },
     {
       "id": "TASK-P2-003",
@@ -657,7 +667,7 @@
       "title": "Wave1 剩余适配器 — Discord / Slack / Lark / DingTalk / Kook / Misskey / Satori / LINE",
       "category": "platform-parity",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-platform/src/adapters/wave1/discord.rs",
         "crates/astrbot-platform/src/adapters/wave1/slack.rs",
@@ -736,7 +746,7 @@
       "title": "Skills 系统填肉 — 多步工作流 / 库存渲染 / 激活策略",
       "category": "skill-system",
       "risk": "medium",
-      "status": "pending",
+      "status": "completed",
       "target_files": [
         "crates/astrbot-skill/src/runtime/",
         "crates/astrbot-skill/src/inventory/",

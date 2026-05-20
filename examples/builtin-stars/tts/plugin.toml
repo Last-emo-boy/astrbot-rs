@@ -1,0 +1,6 @@
+id = "builtin-tts"
+name = "Builtin TTS"
+version = "0.1.0"
+commands = ["tts"]
+permission = "everyone"
+description = "TTS command migration example."

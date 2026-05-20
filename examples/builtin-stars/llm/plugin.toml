@@ -1,0 +1,6 @@
+id = "builtin-llm"
+name = "Builtin LLM"
+version = "0.1.0"
+commands = ["llm", "model"]
+permission = "admin"
+description = "LLM and model command migration example."

@@ -19,7 +19,7 @@ pub use conflicts::{
 };
 pub use internal::{
     InternalToolProviderCatalog, InternalToolProviderDescriptor, InternalToolRegistration,
-    builtin_internal_tool_catalog, builtin_internal_tool_registrations,
+    T2I_RENDER_TOOL, builtin_internal_tool_catalog, builtin_internal_tool_registrations,
 };
 pub use reference::{
     ToolCallReferencePayload, ToolReferenceExtractor, ToolReferenceItem, ToolReferenceSet,

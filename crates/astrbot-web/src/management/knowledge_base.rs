@@ -1,4 +1,6 @@
+use std::convert::Infallible;
 use std::sync::Arc;
+use std::time::Duration;
 
 use astrbot_kb::{
     ChunkId, ChunkingOptions, DocumentId, HybridKnowledgeRetriever,
@@ -23,9 +25,11 @@ use axum::{
     Json,
     extract::{Multipart, Path, Query, State},
     http::StatusCode,
+    response::sse::{Event, Sse},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use tokio_stream::wrappers::ReceiverStream;
 
 use crate::ErrorResponse;
 
@@ -259,6 +263,14 @@ pub struct ManagementKnowledgeUploadCompleteRequest {
 pub struct ManagementKnowledgeUploadFailRequest {
     pub task_id: String,
     pub error: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ManagementKnowledgeUploadStreamQuery {
+    #[serde(default)]
+    pub interval_ms: Option<u64>,
+    #[serde(default)]
+    pub max_ticks: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1519,6 +1531,77 @@ pub async fn upload_progress(
         .map_err(internal_error)?
         .ok_or_else(|| not_found("knowledge upload task not found"))?;
     Ok(Json(ManagementKnowledgeUploadTaskResponse { task }))
+}
+
+pub async fn upload_progress_stream(
+    State(state): State<ManagementApiState>,
+    Path(task_id): Path<String>,
+    Query(query): Query<ManagementKnowledgeUploadStreamQuery>,
+) -> Result<
+    Sse<ReceiverStream<std::result::Result<Event, Infallible>>>,
+    (StatusCode, Json<ErrorResponse>),
+> {
+    let knowledge_base = state
+        .knowledge_base()
+        .ok_or_else(knowledge_base_unavailable)?
+        .clone();
+    let task_id = KnowledgeUploadTaskId::new(task_id).map_err(bad_request)?;
+    let interval = Duration::from_millis(query.interval_ms.unwrap_or(1_000).clamp(100, 30_000));
+    let max_ticks = query.max_ticks.unwrap_or(usize::MAX);
+    let (tx, rx) = tokio::sync::mpsc::channel(16);
+
+    tokio::spawn(async move {
+        let mut ticks = 0usize;
+        loop {
+            let task = match knowledge_base.upload_tasks().task(&task_id).await {
+                Ok(Some(task)) => task,
+                Ok(None) => {
+                    let _ = tx
+                        .send(Ok(Event::default()
+                            .event("heartbeat")
+                            .data("knowledge upload task not found")))
+                        .await;
+                    break;
+                }
+                Err(err) => {
+                    let _ = tx
+                        .send(Ok(Event::default().event("error").data(err.to_string())))
+                        .await;
+                    break;
+                }
+            };
+            let terminal = matches!(
+                task.status,
+                KnowledgeUploadTaskStatus::Completed
+                    | KnowledgeUploadTaskStatus::Failed
+                    | KnowledgeUploadTaskStatus::Cancelled
+            );
+            let Ok(payload) = serde_json::to_string(&task) else {
+                break;
+            };
+            if tx
+                .send(Ok(Event::default()
+                    .event("upload")
+                    .id(task.task_id.to_string())
+                    .data(payload)))
+                .await
+                .is_err()
+            {
+                break;
+            }
+            if terminal {
+                break;
+            }
+
+            ticks += 1;
+            if ticks >= max_ticks {
+                break;
+            }
+            tokio::time::sleep(interval).await;
+        }
+    });
+
+    Ok(Sse::new(ReceiverStream::new(rx)))
 }
 
 async fn start_upload_task(

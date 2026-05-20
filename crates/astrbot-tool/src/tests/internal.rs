@@ -78,3 +78,24 @@ fn computer_use_provider_registers_inactive_tools_with_source_compatible_schemas
         .expect("browser skill registration");
     assert_eq!(skill.descriptor.parameters["required"][0], "skill_key");
 }
+
+#[test]
+fn t2i_provider_registers_render_tool_for_agent_use() {
+    let catalog = builtin_internal_tool_catalog();
+    let provider = catalog
+        .providers()
+        .iter()
+        .find(|provider| provider.provider_id == "t2i")
+        .expect("t2i provider should exist");
+    let render = provider
+        .registrations()
+        .iter()
+        .find(|registration| registration.descriptor.name == "astrbot_t2i_render")
+        .expect("t2i render tool should be registered");
+
+    assert_eq!(render.descriptor.parameters["required"][0], "prompt");
+    assert_eq!(
+        render.descriptor.parameters["properties"]["format"]["enum"][0],
+        "png"
+    );
+}

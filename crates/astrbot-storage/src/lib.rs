@@ -64,7 +64,7 @@ pub use kb_document::{
     InMemoryKbDocumentRepository, KbDocumentRecord, KbDocumentRepository, KbMediaRecord,
     KbProfileRecord, SqliteKbDocumentRepository,
 };
-pub use memory::{InMemoryMemoryRepository, MemoryRepository};
+pub use memory::{InMemoryMemoryRepository, MemoryRepository, SqliteLongTermMemoryRepository};
 pub use migration::{
     DeclarativeMigration, InMemoryMigrationStateRepository, MigrationOperation, MigrationOutcome,
     MigrationRecord, MigrationRunner, MigrationStateRepository, StorageMigration,

@@ -1,0 +1,6 @@
+id = "builtin-plugin"
+name = "Builtin Plugin"
+version = "0.1.0"
+commands = ["plugin"]
+permission = "mixed"
+description = "Plugin management command migration example."

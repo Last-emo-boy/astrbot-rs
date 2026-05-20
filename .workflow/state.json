@@ -1,0 +1,58 @@
+{
+  "workflow_name": "astrbot-rs-migration",
+  "project": "astrbot-rs",
+  "updated_at": "2026-05-20T12:33:52+08:00",
+  "source": "state-repair",
+  "current_milestone": "M9-parity-closure",
+  "current_phase": "parity-gap-roadmap-2026-05-20",
+  "phase_slug": "parity-gap-roadmap-2026-05-20",
+  "phase_status": "completed",
+  "phase_artifacts": {
+    "index": ".workflow/scratch/parity-gap-roadmap-2026-05-20/index.json",
+    "plan": ".workflow/scratch/parity-gap-roadmap-2026-05-20/plan.json",
+    "context": ".workflow/scratch/parity-gap-roadmap-2026-05-20/context.md",
+    "reflection_log": ".workflow/scratch/parity-gap-roadmap-2026-05-20/reflection-log.md",
+    "completion_audit": ".workflow/scratch/parity-gap-roadmap-2026-05-20/completion-audit.md"
+  },
+  "execution": {
+    "tasks_completed": 36,
+    "tasks_total": 36,
+    "tasks_pending": 0,
+    "tasks_blocked": 0,
+    "next_task": null,
+    "priority_status": {
+      "P0": {
+        "completed": 14,
+        "pending": 0
+      },
+      "P1": {
+        "completed": 14,
+        "pending": 0
+      },
+      "P2": {
+        "completed": 8,
+        "pending": 0
+      }
+    }
+  },
+  "verification_status": "passed",
+  "review_verdict": "completion-audit-passed",
+  "uat_status": null,
+  "phases_total": 9,
+  "phases_completed": 8,
+  "has_blockers": false,
+  "latest_completed_milestone": "M9-parity-closure",
+  "latest_maestro_session": ".workflow/.maestro/maestro-20260518-full-closure-tasks/status.json",
+  "artifact_registry": {
+    "roadmap": ".workflow/roadmap.md",
+    "m8_dashboard_rewrite": ".workflow/scratch/dashboard-next-design-2026-05-19/index.json",
+    "m9_parity_closure": ".workflow/scratch/parity-gap-roadmap-2026-05-20/index.json",
+    "full_closure_tasks": ".workflow/.maestro/maestro-20260518-full-closure-tasks/status.json"
+  },
+  "accumulated_context": [
+    "M1-M6 are completed in .workflow/roadmap.md.",
+    "M8 Dashboard Rewrite is completed in .workflow/scratch/dashboard-next-design-2026-05-19/index.json with 10/10 tasks done.",
+    "M9 parity closure is completed; .workflow/scratch/parity-gap-roadmap-2026-05-20/plan.json records 36/36 tasks done.",
+    "Completion audit passed with cargo workspace tests, targeted M9 tests, dashboard typecheck/build, and builtin star wasm example checks."
+  ]
+}

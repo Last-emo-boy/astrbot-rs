@@ -3,6 +3,7 @@ mod components;
 mod runtime;
 mod skill_sync;
 pub mod subprocess;
+pub mod tools;
 
 pub use subprocess::{SubprocessOutcome, SubprocessSpec, run_subprocess};
 
@@ -26,4 +27,9 @@ pub use skill_sync::{
     InMemorySandboxSkillCache, PlanningSandboxSkillSyncService, SandboxSkill, SandboxSkillBundle,
     SandboxSkillCache, SandboxSkillSyncPlan, SandboxSkillSyncService, SandboxSkillSyncStage,
     SandboxSkillSyncStep,
+};
+pub use tools::browser::{
+    BrowserAction, BrowserCdpEndpoint, BrowserCommand, BrowserCommandResult,
+    BrowserComputerRuntimePort, BrowserSession, BrowserSessionPool, BrowserToolError,
+    BrowserToolLimits, BrowserToolPort, FakeBrowserToolPort,
 };

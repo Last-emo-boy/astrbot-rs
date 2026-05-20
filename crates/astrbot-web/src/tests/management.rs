@@ -3851,11 +3851,28 @@ async fn management_knowledge_base_routes_delegate_to_typed_services() {
     .await;
     assert_eq!(complete_response.status(), StatusCode::OK);
 
-    let poll_response = get(router, "/api/management/kb/upload/progress/upload-1").await;
+    let poll_response = get(
+        router.clone(),
+        "/api/management/kb/upload/progress/upload-1",
+    )
+    .await;
     assert_eq!(poll_response.status(), StatusCode::OK);
     let task: serde_json::Value = response_json(poll_response).await;
     assert_eq!(task["task"]["status"], "completed");
     assert_eq!(task["task"]["result"]["doc_count"], 1);
+
+    let stream_response = get(
+        router,
+        "/api/management/kb/upload/progress/upload-1/stream?max_ticks=1",
+    )
+    .await;
+    assert_eq!(stream_response.status(), StatusCode::OK);
+    let stream_body = to_bytes(stream_response.into_body(), usize::MAX)
+        .await
+        .expect("sse body");
+    let stream_text = String::from_utf8(stream_body.to_vec()).expect("sse should be utf8");
+    assert!(stream_text.contains("event: upload"));
+    assert!(stream_text.contains("\"status\":\"completed\""));
 }
 
 #[tokio::test]

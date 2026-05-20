@@ -11,9 +11,11 @@ astrbot-kb = { path = "../astrbot-kb" }
 astrbot-memory = { path = "../astrbot-memory" }
 astrbot-plugin = { path = "../astrbot-plugin" }
 astrbot-provider = { path = "../astrbot-provider" }
+astrbot-render = { path = "../astrbot-render" }
 astrbot-skill = { path = "../astrbot-skill" }
 astrbot-tool = { path = "../astrbot-tool" }
 async-trait.workspace = true
+base64.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true

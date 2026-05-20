@@ -174,7 +174,8 @@ mod tests {
             .expect("module compiles");
 
         let ctx = WasmStoreContext::new("test.fuel", PluginResourceLimits::default());
-        let mut store = new_plugin_store(&engine, ctx, /* fuel */ 10_000, /* epoch */ None);
+        let mut store =
+            new_plugin_store(&engine, ctx, /* fuel */ 10_000, /* epoch */ None);
 
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).expect("instantiate");
         let spin = instance
@@ -245,7 +246,9 @@ mod tests {
 
         let limits = PluginResourceLimits::with_memory(64 * 1024); // 1 page
         let ctx = WasmStoreContext::new("test.mem", limits);
-        let mut store = new_plugin_store(&engine, ctx, /* fuel */ 1_000_000, /* epoch */ None);
+        let mut store = new_plugin_store(
+            &engine, ctx, /* fuel */ 1_000_000, /* epoch */ None,
+        );
 
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).expect("instantiate");
         let grow = instance

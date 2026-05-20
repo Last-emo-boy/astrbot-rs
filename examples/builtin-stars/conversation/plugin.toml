@@ -1,0 +1,6 @@
+id = "builtin-conversation"
+name = "Builtin Conversation"
+version = "0.1.0"
+commands = ["reset", "stop", "history", "ls", "new", "groupnew", "switch", "rename", "del", "key"]
+permission = "mixed"
+description = "Conversation command migration example."

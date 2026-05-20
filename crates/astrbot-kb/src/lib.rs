@@ -46,9 +46,7 @@ pub use preflight::{
     KnowledgeEmbeddingPreflight, KnowledgeProviderPreflightReport,
     KnowledgeProviderPreflightRequest, KnowledgeProviderPreflightService, KnowledgeRerankPreflight,
 };
-pub use qdrant::{
-    QdrantClient, QdrantDistance, QdrantPoint, QdrantSearchHit, QdrantSearchRequest,
-};
+pub use qdrant::{QdrantClient, QdrantDistance, QdrantPoint, QdrantSearchHit, QdrantSearchRequest};
 pub use rank_fusion::{RankFusionHit, ReciprocalRankFusion};
 pub use repository::{
     InMemoryKnowledgeDocumentRepository, KnowledgeDocumentRepository,

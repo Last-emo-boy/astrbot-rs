@@ -6,6 +6,9 @@ use astrbot_core::{AstrbotError, Result};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_TEMPLATE_NAME: &str = "base";
+pub const CONVERSATION_RECAP_TEMPLATE_NAME: &str = "conversation_recap";
+pub const KNOWLEDGE_CARD_TEMPLATE_NAME: &str = "knowledge_card";
+pub const ERROR_PROMPT_TEMPLATE_NAME: &str = "error_prompt";
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct TemplateName(String);
@@ -182,6 +185,22 @@ fn default_builtin_templates() -> BTreeMap<TemplateName, String> {
                 .to_string(),
         ),
         (
+            TemplateName::new(CONVERSATION_RECAP_TEMPLATE_NAME)
+                .expect("static template name is valid"),
+            r#"<!doctype html><html><body><section class="conversation-recap"><h1>Conversation Recap</h1><article>{{ text }}</article><footer>{{ version }}</footer></section></body></html>"#
+                .to_string(),
+        ),
+        (
+            TemplateName::new(KNOWLEDGE_CARD_TEMPLATE_NAME).expect("static template name is valid"),
+            r#"<!doctype html><html><body><section class="knowledge-card"><h1>{{ title }}</h1><article>{{ text }}</article><footer>{{ source }}</footer></section></body></html>"#
+                .to_string(),
+        ),
+        (
+            TemplateName::new(ERROR_PROMPT_TEMPLATE_NAME).expect("static template name is valid"),
+            r#"<!doctype html><html><body><section class="error-prompt"><h1>Execution Error</h1><pre>{{ text }}</pre><footer>{{ version }}</footer></section></body></html>"#
+                .to_string(),
+        ),
+        (
             TemplateName::new("astrbot_powershell").expect("static template name is valid"),
             r#"<!doctype html><html><body><pre>{{ text }}</pre><footer>{{ version }}</footer></body></html>"#
                 .to_string(),
@@ -230,7 +249,10 @@ fn is_safe_template_name(name: &str) -> bool {
 mod tests {
     use std::fs;
 
-    use super::{TemplateCatalog, TemplateName, TemplateSource};
+    use super::{
+        CONVERSATION_RECAP_TEMPLATE_NAME, ERROR_PROMPT_TEMPLATE_NAME, KNOWLEDGE_CARD_TEMPLATE_NAME,
+        TemplateCatalog, TemplateName, TemplateSource,
+    };
 
     #[test]
     fn rejects_path_traversal_template_names() {
@@ -267,5 +289,20 @@ mod tests {
         assert!(fallback.contains("{{ text }}"));
 
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn builtin_templates_cover_common_t2i_surfaces() {
+        let catalog = TemplateCatalog::without_user_dir();
+        let names = catalog
+            .list_templates()
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.name.as_str().to_string())
+            .collect::<Vec<_>>();
+
+        assert!(names.contains(&CONVERSATION_RECAP_TEMPLATE_NAME.to_string()));
+        assert!(names.contains(&KNOWLEDGE_CARD_TEMPLATE_NAME.to_string()));
+        assert!(names.contains(&ERROR_PROMPT_TEMPLATE_NAME.to_string()));
     }
 }

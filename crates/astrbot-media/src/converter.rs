@@ -44,7 +44,12 @@ impl AudioCodec {
     }
 
     pub fn from_extension(extension: &str) -> Self {
-        match extension.trim().trim_start_matches('.').to_ascii_lowercase().as_str() {
+        match extension
+            .trim()
+            .trim_start_matches('.')
+            .to_ascii_lowercase()
+            .as_str()
+        {
             "silk" => AudioCodec::Silk,
             "amr" => AudioCodec::Amr,
             "mp3" => AudioCodec::Mp3,
@@ -136,11 +141,8 @@ mod tests {
     #[tokio::test]
     async fn passthrough_returns_bytes_unchanged_when_same_codec() {
         let converter = PassthroughMediaConverter;
-        let request = MediaConvertRequest::new(
-            AudioCodec::Mp3,
-            AudioCodec::Mp3,
-            vec![0x49, 0x44, 0x33],
-        );
+        let request =
+            MediaConvertRequest::new(AudioCodec::Mp3, AudioCodec::Mp3, vec![0x49, 0x44, 0x33]);
         let response = converter.convert(request).await.unwrap();
         assert_eq!(response.codec, AudioCodec::Mp3);
         assert_eq!(response.bytes, vec![0x49, 0x44, 0x33]);
@@ -149,8 +151,7 @@ mod tests {
     #[tokio::test]
     async fn passthrough_errors_on_cross_codec_conversion() {
         let converter = PassthroughMediaConverter;
-        let request =
-            MediaConvertRequest::new(AudioCodec::Silk, AudioCodec::Mp3, vec![0u8; 16]);
+        let request = MediaConvertRequest::new(AudioCodec::Silk, AudioCodec::Mp3, vec![0u8; 16]);
         assert!(converter.convert(request).await.is_err());
     }
 }

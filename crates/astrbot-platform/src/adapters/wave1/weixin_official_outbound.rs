@@ -31,11 +31,7 @@ impl WechatOfficialOutboundClient {
     ) -> Self {
         Self {
             access_token: access_token.into(),
-            api_base_url: api_base_url
-                .into()
-                .trim()
-                .trim_end_matches('/')
-                .to_string(),
+            api_base_url: api_base_url.into().trim().trim_end_matches('/').to_string(),
             platform_id: platform_id.into(),
         }
     }
@@ -190,8 +186,7 @@ mod tests {
     #[test]
     fn image_chain_emits_image_with_media_id() {
         let session = MessageSession::new("wx1", "private:oXyZ");
-        let chain =
-            MessageChain::new(vec![MessageComponent::image("media-abc-123")]);
+        let chain = MessageChain::new(vec![MessageComponent::image("media-abc-123")]);
         let requests = client().requests_for_chain(&session, &chain);
         assert_eq!(requests.len(), 1);
         let body = body_as_value(&requests[0]);

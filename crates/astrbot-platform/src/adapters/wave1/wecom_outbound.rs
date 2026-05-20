@@ -41,11 +41,7 @@ impl WeComOutboundClient {
         Self {
             access_token: access_token.into(),
             agent_id,
-            api_base_url: api_base_url
-                .into()
-                .trim()
-                .trim_end_matches('/')
-                .to_string(),
+            api_base_url: api_base_url.into().trim().trim_end_matches('/').to_string(),
             platform_id: platform_id.into(),
         }
     }
@@ -198,7 +194,10 @@ mod tests {
         ]);
         let requests = client().requests_for_chain(&session, &chain);
         assert_eq!(requests.len(), 3);
-        assert_eq!(body_as_value(&requests[0])["text"]["content"], "part1\npart2");
+        assert_eq!(
+            body_as_value(&requests[0])["text"]["content"],
+            "part1\npart2"
+        );
         assert_eq!(body_as_value(&requests[1])["msgtype"], "image");
         assert_eq!(body_as_value(&requests[2])["msgtype"], "file");
     }

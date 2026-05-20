@@ -35,12 +35,14 @@
 #![cfg_attr(target_arch = "wasm32", no_std)]
 #![cfg_attr(target_arch = "wasm32", allow(internal_features))]
 
+extern crate alloc;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate std;
-extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+
+pub mod builtin_commands;
 
 pub use serde::{Deserialize, Serialize};
 pub use serde_json;
@@ -208,7 +210,7 @@ macro_rules! plugin_main {
         /// Bump allocator: hands out fresh `Vec<u8>` regions and forgets
         /// about them. `astrbot_free` is the inverse — callers pass the
         /// `(ptr, len)` they got from `astrbot_alloc`.
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn astrbot_alloc(len: i32) -> i32 {
             if len <= 0 {
                 return 0;
@@ -220,26 +222,26 @@ macro_rules! plugin_main {
             ptr as i32
         }
 
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn astrbot_free(ptr: i32, len: i32) {
             if ptr <= 0 || len <= 0 {
                 return;
             }
             unsafe {
-                let _ = ::alloc::vec::Vec::from_raw_parts(ptr as *mut u8, len as usize, len as usize);
+                let _ =
+                    ::alloc::vec::Vec::from_raw_parts(ptr as *mut u8, len as usize, len as usize);
             }
         }
 
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn astrbot_abi_version() -> i32 {
             $crate::ABI_VERSION_MAJOR
         }
 
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn astrbot_init(ptr: i32, len: i32) -> i64 {
-            let request_bytes = unsafe {
-                ::core::slice::from_raw_parts(ptr as *const u8, len as usize)
-            };
+            let request_bytes =
+                unsafe { ::core::slice::from_raw_parts(ptr as *const u8, len as usize) };
             let info: $crate::PluginInitInfo = match $crate::serde_json::from_slice(request_bytes) {
                 Ok(v) => v,
                 Err(_) => return 0,
@@ -254,11 +256,10 @@ macro_rules! plugin_main {
             $crate::publish_bytes(bytes)
         }
 
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub extern "C" fn astrbot_dispatch(ptr: i32, len: i32) -> i64 {
-            let event_bytes = unsafe {
-                ::core::slice::from_raw_parts(ptr as *const u8, len as usize)
-            };
+            let event_bytes =
+                unsafe { ::core::slice::from_raw_parts(ptr as *const u8, len as usize) };
             let event: $crate::PluginEvent = match $crate::serde_json::from_slice(event_bytes) {
                 Ok(v) => v,
                 Err(_) => return 0,

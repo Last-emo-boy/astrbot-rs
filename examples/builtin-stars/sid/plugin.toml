@@ -1,0 +1,6 @@
+id = "builtin-sid"
+name = "Builtin SID"
+version = "0.1.0"
+commands = ["sid"]
+permission = "everyone"
+description = "Session ID command migration example."

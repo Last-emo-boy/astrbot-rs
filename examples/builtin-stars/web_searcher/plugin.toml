@@ -1,0 +1,6 @@
+id = "builtin-web-searcher"
+name = "Builtin Web Searcher"
+version = "0.1.0"
+commands = ["websearch", "web_search"]
+permission = "everyone"
+description = "Web searcher migration example."

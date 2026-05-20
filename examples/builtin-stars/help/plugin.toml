@@ -1,0 +1,6 @@
+id = "builtin-help"
+name = "Builtin Help"
+version = "0.1.0"
+commands = ["help"]
+permission = "everyone"
+description = "Help command migration example."

@@ -1,14 +1,14 @@
 {
   "type": "parity-roadmap",
   "scope": "Close the functional gap between astrbot-rs (Rust rewrite) and Python Astrbot. Covers WASM plugin sandbox, Wave1 platform parity, Dashboard front-end functionality, MCP transport, built-in stars migration, Computer Sandbox, and ancillary subsystems.",
-  "status": "active",
+  "status": "completed",
   "created_at": "2026-05-20T00:00:00+08:00",
-  "updated_at": "2026-05-20T00:00:00+08:00",
+  "updated_at": "2026-05-20T12:33:52+08:00",
   "milestone": "M9-parity-closure",
   "plan": {
     "total_tasks": 36,
-    "completed_tasks": 0,
-    "pending_tasks": 36,
+    "completed_tasks": 36,
+    "pending_tasks": 0,
     "blocked_tasks": 0,
     "priority_breakdown": {
       "P0": 14,
@@ -19,9 +19,9 @@
   "execution": {
     "reflection_rounds": 0,
     "current_task_id": null,
-    "next_task": "TASK-P0-001"
+    "next_task": null
   },
-  "latest_update": "Plan authored 2026-05-20. Architecture decisions confirmed: wasmtime for plugin sandbox, OS subprocess for Computer Sandbox, ECharts for dashboard charts, Wave1 P0 = Telegram + WeChat Official Account + WeCom + QQ Official Webhook + QQ Guild WSS. Personal WeChat moved to P2 backlog because Python original does not implement it.",
+  "latest_update": "Completion audit passed 2026-05-20T12:33:52+08:00. M9 parity closure is completed with 36/36 tasks completed, 0 pending, and 0 blocked. Verification passed: cargo test --workspace --all-targets, cargo test -p astrbot-plugin-sdk, cargo test -p astrbot-memory, cargo test -p astrbot-render, cargo test -p astrbot-computer, cargo test -p astrbot-web management_knowledge_base_routes_delegate_to_typed_services, dashboard-next npm run typecheck, dashboard-next npm run build, and all examples/builtin-stars/* cargo check --target wasm32-wasip1.",
   "reference": [
     "E:/Playground/Astrbot/astrbot/core/platform/sources/",
     "E:/Playground/Astrbot/astrbot/core/provider/sources/",
@@ -32,6 +32,7 @@
     "E:/Playground/astrbot-rs/crates/astrbot-platform/src/adapters/wave1/",
     "E:/Playground/astrbot-rs/dashboard-next/src/pages/",
     "E:/Playground/astrbot-rs/.workflow/roadmap.md",
-    "E:/Playground/astrbot-rs/.workflow/scratch/dashboard-next-design-2026-05-19/plan.json"
+    "E:/Playground/astrbot-rs/.workflow/scratch/dashboard-next-design-2026-05-19/plan.json",
+    "E:/Playground/astrbot-rs/.workflow/scratch/parity-gap-roadmap-2026-05-20/completion-audit.md"
   ]
 }

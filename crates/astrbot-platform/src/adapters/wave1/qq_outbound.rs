@@ -68,11 +68,7 @@ impl QqOfficialOutboundClient {
     ) -> Self {
         Self {
             access_token: access_token.into(),
-            api_base_url: api_base_url
-                .into()
-                .trim()
-                .trim_end_matches('/')
-                .to_string(),
+            api_base_url: api_base_url.into().trim().trim_end_matches('/').to_string(),
             platform_id: platform_id.into(),
             is_v2,
         }
@@ -149,7 +145,10 @@ impl QqOfficialOutboundClient {
         }
 
         if !pending_text.is_empty() {
-            requests.insert(0, self.post_text(&endpoint, &pending_text, reply_to, channel));
+            requests.insert(
+                0,
+                self.post_text(&endpoint, &pending_text, reply_to, channel),
+            );
         }
         requests
     }
@@ -159,7 +158,10 @@ impl QqOfficialOutboundClient {
     }
 
     fn auth_header(&self) -> (String, String) {
-        ("authorization".to_string(), format!("QQBot {}", self.access_token))
+        (
+            "authorization".to_string(),
+            format!("QQBot {}", self.access_token),
+        )
     }
 
     fn post(&self, endpoint: &str, body: Value, action: &str) -> PlatformApiRequest {
@@ -196,12 +198,7 @@ impl QqOfficialOutboundClient {
         self.post(endpoint, body, action)
     }
 
-    fn post_image(
-        &self,
-        endpoint: &str,
-        url: &str,
-        channel: QqChannel,
-    ) -> PlatformApiRequest {
+    fn post_image(&self, endpoint: &str, url: &str, channel: QqChannel) -> PlatformApiRequest {
         let mut body = json!({ "image": url });
         body["msg_type"] = Value::from(7);
         let action = if matches!(channel, QqChannel::Group | QqChannel::GuildChannel) {
@@ -223,8 +220,7 @@ mod tests {
 
     #[test]
     fn webhook_user_direct_endpoint() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         assert_eq!(
             client.endpoint_for(QqChannel::UserDirect, "u-1"),
             "https://api.sgroup.qq.com/v2/users/u-1/messages"
@@ -233,8 +229,7 @@ mod tests {
 
     #[test]
     fn webhook_group_endpoint() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         assert_eq!(
             client.endpoint_for(QqChannel::Group, "g-1"),
             "https://api.sgroup.qq.com/v2/groups/g-1/messages"
@@ -243,8 +238,7 @@ mod tests {
 
     #[test]
     fn guild_channel_endpoint() {
-        let client =
-            QqOfficialOutboundClient::guild("tok", "https://api.sgroup.qq.com/", "qq2");
+        let client = QqOfficialOutboundClient::guild("tok", "https://api.sgroup.qq.com/", "qq2");
         assert_eq!(
             client.endpoint_for(QqChannel::GuildChannel, "c-9001"),
             "https://api.sgroup.qq.com/channels/c-9001/messages"
@@ -253,14 +247,11 @@ mod tests {
 
     #[test]
     fn webhook_text_carries_msg_type_and_authorization() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         let session = MessageSession::new("qq1", "private:u-1");
         let chain = MessageChain::new(vec![MessageComponent::plain("hi")]);
         let req = &client.requests_for_chain(&session, &chain)[0];
-        assert!(req
-            .endpoint
-            .ends_with("/v2/users/u-1/messages"));
+        assert!(req.endpoint.ends_with("/v2/users/u-1/messages"));
         let body = body_as_value(req);
         assert_eq!(body["content"], "hi");
         assert_eq!(body["msg_type"], 0);
@@ -274,8 +265,7 @@ mod tests {
 
     #[test]
     fn reply_attaches_msg_id() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         let session = MessageSession::new("qq1", "private:u-1");
         let chain = MessageChain::new(vec![
             MessageComponent::reply("99", ""),
@@ -288,8 +278,7 @@ mod tests {
 
     #[test]
     fn group_session_routes_to_group_endpoint() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         let session = MessageSession::group("qq1", "group:g-77");
         let chain = MessageChain::new(vec![MessageComponent::plain("hi")]);
         let req = &client.requests_for_chain(&session, &chain)[0];
@@ -298,8 +287,7 @@ mod tests {
 
     #[test]
     fn guild_group_session_routes_to_channels() {
-        let client =
-            QqOfficialOutboundClient::guild("tok", "https://api.sgroup.qq.com/", "qq2");
+        let client = QqOfficialOutboundClient::guild("tok", "https://api.sgroup.qq.com/", "qq2");
         let session = MessageSession::group("qq2", "group:c-9001");
         let chain = MessageChain::new(vec![MessageComponent::plain("hi")]);
         let req = &client.requests_for_chain(&session, &chain)[0];
@@ -308,8 +296,7 @@ mod tests {
 
     #[test]
     fn image_chain_uses_msg_type_7() {
-        let client =
-            QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
+        let client = QqOfficialOutboundClient::webhook("tok", "https://api.sgroup.qq.com/", "qq1");
         let session = MessageSession::new("qq1", "private:u-1");
         let chain = MessageChain::new(vec![MessageComponent::image("https://i/p.png")]);
         let req = &client.requests_for_chain(&session, &chain)[0];

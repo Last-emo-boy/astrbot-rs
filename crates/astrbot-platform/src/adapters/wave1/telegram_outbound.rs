@@ -137,17 +137,11 @@ impl TelegramOutboundClient {
     }
 
     fn send_photo(&self, chat_id: &str, url: &str) -> PlatformApiRequest {
-        self.post(
-            "sendPhoto",
-            json!({ "chat_id": chat_id, "photo": url }),
-        )
+        self.post("sendPhoto", json!({ "chat_id": chat_id, "photo": url }))
     }
 
     fn send_voice(&self, chat_id: &str, url: &str) -> PlatformApiRequest {
-        self.post(
-            "sendVoice",
-            json!({ "chat_id": chat_id, "voice": url }),
-        )
+        self.post("sendVoice", json!({ "chat_id": chat_id, "voice": url }))
     }
 
     fn send_document(&self, chat_id: &str, name: &str, url: &str) -> PlatformApiRequest {
@@ -159,10 +153,7 @@ impl TelegramOutboundClient {
     }
 
     fn send_video(&self, chat_id: &str, url: &str) -> PlatformApiRequest {
-        self.post(
-            "sendVideo",
-            json!({ "chat_id": chat_id, "video": url }),
-        )
+        self.post("sendVideo", json!({ "chat_id": chat_id, "video": url }))
     }
 }
 
@@ -189,15 +180,9 @@ mod tests {
     #[test]
     fn chat_id_strips_session_prefix() {
         let session = MessageSession::new("tg1", "private:42");
-        assert_eq!(
-            TelegramOutboundClient::chat_id_from_session(&session),
-            "42"
-        );
+        assert_eq!(TelegramOutboundClient::chat_id_from_session(&session), "42");
         let group = MessageSession::group("tg1", "group:9001");
-        assert_eq!(
-            TelegramOutboundClient::chat_id_from_session(&group),
-            "9001"
-        );
+        assert_eq!(TelegramOutboundClient::chat_id_from_session(&group), "9001");
     }
 
     #[test]

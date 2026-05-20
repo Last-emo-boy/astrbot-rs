@@ -1337,6 +1337,10 @@ fn management_routes() -> Router<ManagementApiState> {
             "/api/management/kb/upload/progress/{task_id}",
             get(knowledge_base::upload_progress),
         )
+        .route(
+            "/api/management/kb/upload/progress/{task_id}/stream",
+            get(knowledge_base::upload_progress_stream),
+        )
         .route("/api/kb/list", get(knowledge_base::legacy_list))
         .route("/api/kb/get", get(knowledge_base::legacy_get))
         .route("/api/kb/create", post(knowledge_base::legacy_create))

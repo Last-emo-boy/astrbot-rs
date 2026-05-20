@@ -14,6 +14,7 @@ use crate::commands;
 use crate::webchat_server::{prepare_webchat_server, prepare_webchat_server_with_config_apply};
 
 const OPENAI_CHAT_PROVIDER_TYPE: &str = "openai_chat_completion";
+const MOCK_CHAT_PROVIDER_TYPE: &str = "mock_chat_completion";
 
 #[test]
 fn default_invocation_uses_smoke_mode() {
@@ -377,11 +378,9 @@ async fn cli_webchat_server_submits_events_to_runtime() {
         .json(&serde_json::json!({
             "provider": {
                 "id": "cli-openai",
-                "type": OPENAI_CHAT_PROVIDER_TYPE,
+                "type": MOCK_CHAT_PROVIDER_TYPE,
                 "enabled": true,
-                "model": "chat-model",
-                "api_base": "https://example.invalid/v1",
-                "api_key": "sk-cli",
+                "mock_response": "cli provider check ok",
                 "timeout_secs": 30
             },
             "set_default": true

@@ -319,9 +319,7 @@ impl GitHubReleaseFetcher {
             .header("accept", "application/vnd.github+json")
             .send()
             .await
-            .map_err(|err| {
-                AstrbotError::Pipeline(format!("GitHub release fetch failed: {err}"))
-            })?;
+            .map_err(|err| AstrbotError::Pipeline(format!("GitHub release fetch failed: {err}")))?;
         let status = response.status();
         let body = response.text().await.map_err(|err| {
             AstrbotError::Pipeline(format!("GitHub release body read failed: {err}"))
@@ -429,7 +427,10 @@ mod tests {
         assert_eq!(metadata.version, "v4.1.0");
         assert_eq!(metadata.title.as_deref(), Some("Release 4.1.0"));
         assert_eq!(metadata.notes.as_deref(), Some("Lots of fixes."));
-        assert_eq!(metadata.published_at.as_deref(), Some("2026-05-20T00:00:00Z"));
+        assert_eq!(
+            metadata.published_at.as_deref(),
+            Some("2026-05-20T00:00:00Z")
+        );
     }
 
     #[test]

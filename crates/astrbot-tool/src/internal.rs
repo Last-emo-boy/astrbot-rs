@@ -5,6 +5,8 @@ use crate::{
     WEB_SEARCH_BOCHA_TOOL, WEB_SEARCH_TAVILY_TOOL, WEB_SEARCH_TOOL,
 };
 
+pub const T2I_RENDER_TOOL: &str = "astrbot_t2i_render";
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct InternalToolRegistration {
     pub descriptor: ToolDescriptor,
@@ -111,6 +113,7 @@ pub fn builtin_internal_tool_catalog() -> InternalToolProviderCatalog {
         cron_provider(),
         knowledge_base_provider(),
         send_message_provider(),
+        t2i_provider(),
         web_searcher_provider(),
         computer_use_provider(),
     ])
@@ -221,6 +224,37 @@ fn send_message_provider() -> InternalToolProviderDescriptor {
             )
             .with_handler_name("SendMessageToUserTool"),
         )
+}
+
+fn t2i_provider() -> InternalToolProviderDescriptor {
+    InternalToolProviderDescriptor::new("t2i", "astrbot.core.tools.t2i").with_registration(
+        InternalToolRegistration::new(
+            "t2i",
+            T2I_RENDER_TOOL,
+            "Render a text prompt into a T2I image artifact.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "Text content to render into an image."
+                    },
+                    "template": {
+                        "type": "string",
+                        "description": "Optional T2I template name.",
+                        "default": "base"
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["png", "jpeg"],
+                        "default": "jpeg"
+                    }
+                },
+                "required": ["prompt"]
+            }),
+        )
+        .with_handler_name("T2iRenderTool"),
+    )
 }
 
 fn web_searcher_provider() -> InternalToolProviderDescriptor {

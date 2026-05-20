@@ -158,7 +158,10 @@ impl WasmPluginLoader {
         let linker = make_default_linker(self.engine.engine())
             .map_err(|err| WasmLoaderError::Engine(err.to_string()))?;
 
-        let base = WasmStoreContext::new(manifest.id.clone(), crate::wasm::PluginResourceLimits::default());
+        let base = WasmStoreContext::new(
+            manifest.id.clone(),
+            crate::wasm::PluginResourceLimits::default(),
+        );
         let state = AbiHostState::new(base).with_capabilities(manifest.capabilities.as_str_vec());
         let mut store = make_store(&self.engine, state, config);
 
@@ -455,9 +458,7 @@ capabilities = ["log"]
         let err = loader
             .load_bytes(&manifest, &raw_wasm, WasmInstanceConfig::default())
             .unwrap_err();
-        assert!(
-            matches!(err, WasmLoaderError::MissingExport(ref name) if name == "astrbot_alloc")
-        );
+        assert!(matches!(err, WasmLoaderError::MissingExport(ref name) if name == "astrbot_alloc"));
     }
 
     #[test]

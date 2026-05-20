@@ -298,6 +298,9 @@ impl AgentActiveReplyDecider {
             session_kind: event.session.kind,
             is_at_or_wake_command: event.is_at_or_wake_command(),
             roll,
+            recent_message_count: 1,
+            window_seconds: None,
+            seconds_since_last_reply: None,
         })
     }
 }

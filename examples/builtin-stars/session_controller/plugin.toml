@@ -1,0 +1,6 @@
+id = "builtin-session-controller"
+name = "Builtin Session Controller"
+version = "0.1.0"
+commands = ["sleep", "wake", "rate", "session"]
+permission = "everyone"
+description = "Session controller migration example."

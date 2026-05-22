@@ -3,6 +3,7 @@ pub mod agent;
 pub mod backup;
 pub mod computer;
 pub mod config;
+pub mod context_compression;
 pub mod cron;
 pub mod db;
 pub mod errors;
